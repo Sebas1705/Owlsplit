@@ -1,6 +1,6 @@
 # Dominio
 
-Reglas de negocio de Owlo. Todo lo que aquí se describe vive en `core:money` y `domain:usecases` (Kotlin común puro) y debe producir **exactamente** el mismo resultado en todos los dispositivos.
+Reglas de negocio de Owlsplit. Todo lo que aquí se describe vive en `core:money` y `domain:usecases` (Kotlin común puro) y debe producir **exactamente** el mismo resultado en todos los dispositivos.
 
 ## Entidades
 

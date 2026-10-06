@@ -1,6 +1,6 @@
 # Sistema de diseño
 
-Dirección **fintech limpia** (estilo Revolut/Monzo), decidida en [ADR 0006](adr/0006-fintech-visual-direction.md). Mockup de referencia: [mockups/owlo-fintech-v3.html](mockups/owlo-fintech-v3.html).
+Dirección **fintech limpia** (estilo Revolut/Monzo), decidida en [ADR 0006](adr/0006-fintech-visual-direction.md). Mockup de referencia: [mockups/owlsplit-fintech-v3.html](mockups/owlsplit-fintech-v3.html).
 
 ## Principios
 
@@ -10,7 +10,7 @@ Dirección **fintech limpia** (estilo Revolut/Monzo), decidida en [ADR 0006](adr
 4. **Contenedores, no tarjetas sueltas.** Listas en filas dentro de contenedores redondeados sobre fondo gris claro (o grafito sobre negro).
 5. **Claro y oscuro son de primera.** Toda pantalla se diseña y prueba en ambos.
 
-Se implementa sobre **Material 3** de Compose Multiplatform con un `OwloTheme` propio (`core:ui`): los componentes de M3 reciben los tokens de abajo y los componentes propios solo usan tokens, nunca colores literales.
+Se implementa sobre **Material 3** de Compose Multiplatform con un `OwlsplitTheme` propio (`core:ui`): los componentes de M3 reciben los tokens de abajo y los componentes propios solo usan tokens, nunca colores literales.
 
 ## Color
 
@@ -74,7 +74,7 @@ Búho geométrico: cuadrado redondeado en `accent` con dos anillos blancos por o
 |---|---|
 | `BalanceHero` | Balance grande centrado, etiqueta y chip de estado de sync |
 | `QuickActionButton` | Botón circular de 48 dp sobre `surface` con etiqueta debajo |
-| `OwloContainer` | Contenedor `surface` de 16 dp con título opcional |
+| `OwlsplitContainer` | Contenedor `surface` de 16 dp con título opcional |
 | `GroupRow` | Icono de grupo, nombre, metadatos y saldo coloreado |
 | `SegmentedControl` | Píldora `surfaceVariant` con la opción activa en `surface` |
 | `MemberBalanceRow` | Avatar, nombre, barra fina de 4 dp proporcional y saldo |

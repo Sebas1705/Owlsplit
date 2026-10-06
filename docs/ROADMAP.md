@@ -1,6 +1,6 @@
 # Roadmap
 
-Owlo se construye en subproyectos independientes. Cada uno pasa por **diseño → plan → implementación** y tiene su propio documento en `docs/designs/`.
+Owlsplit se construye en subproyectos independientes. Cada uno pasa por **diseño → plan → implementación** y tiene su propio documento en `docs/designs/`.
 
 | # | Subproyecto | Estado | Depende de |
 |---|---|---|---|
@@ -12,7 +12,7 @@ Owlo se construye en subproyectos independientes. Cada uno pasa por **diseño �
 
 ## 1. Núcleo (MVP)
 
-Cuentas anónimas vinculables, grupos, miembros con pesos, gastos con varios pagadores y cuatro tipos de reparto, transferencias, saldos, simplificación de deudas, multidivisa con tipo congelado, invitaciones por enlace y QR, historial, sincronización offline-first. Diseño: [designs/2026-10-07-owlo-core-design.md](designs/2026-10-07-owlo-core-design.md).
+Cuentas anónimas vinculables, grupos, miembros con pesos, gastos con varios pagadores y cuatro tipos de reparto, transferencias, saldos, simplificación de deudas, multidivisa con tipo congelado, invitaciones por enlace y QR, historial, sincronización offline-first. Diseño: [designs/2026-10-07-owlsplit-core-design.md](designs/2026-10-07-owlsplit-core-design.md).
 
 ## 2. Liquidar con un toque y recordatorios
 

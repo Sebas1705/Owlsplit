@@ -1,6 +1,6 @@
 # Sincronización
 
-Owlo es **local-first**: SQLDelight es la fuente de verdad de la UI y Firestore es el medio de intercambio entre dispositivos. Decisión en [ADR 0003](adr/0003-local-first-sqldelight-sync.md).
+Owlsplit es **local-first**: SQLDelight es la fuente de verdad de la UI y Firestore es el medio de intercambio entre dispositivos. Decisión en [ADR 0003](adr/0003-local-first-sqldelight-sync.md).
 
 ## Principios
 

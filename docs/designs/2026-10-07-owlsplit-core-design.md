@@ -1,11 +1,11 @@
-# Owlo — Núcleo (MVP): diseño
+# Owlsplit — Núcleo (MVP): diseño
 
 - **Fecha:** 2026-10-07
 - **Estado:** aprobado (pendiente de revisión final del documento escrito)
 - **Subproyecto:** 1 de 5 (ver [ROADMAP](../ROADMAP.md))
 - **Inspiración:** Settle Up (Play Store) — mismo problema, mejor diseño y más funciones
 
-## 1. Qué es Owlo
+## 1. Qué es Owlsplit
 
 App móvil para apuntar gastos compartidos en grupo (viajes, pisos, cenas, regalos) y saber en todo momento quién debe a quién y cómo saldar con el menor número de pagos. Funciona sin conexión y se sincroniza entre todos los miembros del grupo.
 
@@ -35,9 +35,9 @@ Liquidación con Bizum/PayPal/Revolut, recordatorios push, gastos recurrentes, p
 | Arquitectura de UI | MVI de la plantilla, Koin, Navigation tipada | plantilla |
 | Tipos de cambio | Frankfurter (BCE), sin clave, con caché; tipo manual como alternativa | [DOMAIN](../DOMAIN.md#divisas) |
 
-- Package / bundle id: `es.sebas1705.owlo`
+- Package / bundle id: `es.sebas1705.owlsplit`
 - Restricción: **iOS no compila en Windows**. El desarrollo diario se hace en Android; iOS se compila en CI (runner macOS) o en un Mac.
-- Perfiles `development` / `staging` / `production` (de la plantilla), cada uno con su proyecto Firebase y su configuración en Doppler (`owlo`).
+- Perfiles `development` / `staging` / `production` (de la plantilla), cada uno con su proyecto Firebase y su configuración en Doppler (`owlsplit`).
 
 ## 3. Alcance funcional del MVP
 
@@ -123,7 +123,7 @@ domain:usecases                           CreateExpense, CalculateBalances, Simp
                                           ConvertCurrency, JoinGroup, ClaimMember, LinkAccount…
 data:models  data:local (SQLDelight)  data:remote (Firebase GitLive)
 data:sync    data:fx (Ktor → Frankfurter)  data:repository
-core:common  core:money  core:ui (design system Owlo)  core:security
+core:common  core:money  core:ui (design system Owlsplit)  core:security
 ```
 
 - `core:money` y `domain:usecases` son **Kotlin común puro**, sin dependencias de plataforma: la lógica crítica se escribe y prueba una vez.
@@ -160,7 +160,7 @@ Reglas clave: solo los uids de `memberUids` leen o escriben un grupo; unirse sol
 
 ## 8. Diseño visual y UX
 
-Dirección **fintech limpia**: las cifras son las protagonistas, fondo gris muy claro con contenedores blancos redondeados (negro y grafito en oscuro), un único acento azul eléctrico, botones de acción circulares y píldoras. Tokens, componentes y reglas en [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md). Mockup aprobado: [mockups/owlo-fintech-v3.html](../mockups/owlo-fintech-v3.html).
+Dirección **fintech limpia**: las cifras son las protagonistas, fondo gris muy claro con contenedores blancos redondeados (negro y grafito en oscuro), un único acento azul eléctrico, botones de acción circulares y píldoras. Tokens, componentes y reglas en [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md). Mockup aprobado: [mockups/owlsplit-fintech-v3.html](../mockups/owlsplit-fintech-v3.html).
 
 ### Navegación
 
@@ -180,7 +180,7 @@ Barra inferior con **Inicio · Actividad · Perfil**.
 | Actividad | Historial de todos los grupos, filtrable por grupo |
 | Perfil | Cuenta, vincular, preferencias, borrar cuenta |
 
-Estados vacíos con el logotipo de Owlo y una acción clara (“Crea tu primer grupo”).
+Estados vacíos con el logotipo de Owlsplit y una acción clara (“Crea tu primer grupo”).
 
 ### Accesibilidad
 - Contraste mínimo AA en ambos temas; el color nunca es el único indicador (signo + texto “te deben/debes”).
@@ -217,7 +217,7 @@ Español e inglés desde el MVP (recursos de Compose Multiplatform). Formatos de
 
 - **PR**: build Android, `allTests` comunes, detekt, tests de reglas con emulador, compilación del framework iOS en runner macOS.
 - **main**: despliegue de reglas e índices de Firestore (proyecto de producción vía cuenta de servicio con permisos mínimos).
-- **Tag `vX.Y.Z`**: APK/AAB firmado → GitHub Release + Firebase App Distribution (grupo `testers`). Secretos en Doppler `owlo` (dev/stg/prd), token de solo lectura en GitHub.
+- **Tag `vX.Y.Z`**: APK/AAB firmado → GitHub Release + Firebase App Distribution (grupo `testers`). Secretos en Doppler `owlsplit` (dev/stg/prd), token de solo lectura en GitHub.
 - Política de dependencias como en YouKnow (Dependabot agrupado minor+patch).
 
 ## 12. Criterios de aceptación del MVP
@@ -239,4 +239,4 @@ Español e inglés desde el MVP (recursos de Compose Multiplatform). Formatos de
 | Sin Mac para iOS | CI en macOS; validación manual de iOS en hitos |
 | Complejidad del motor de sync | Diseño acotado (por documento, sin merge de campos), tests exhaustivos con Firestore falso |
 | Coste de Firestore con muchos listeners | Listeners solo para grupos abiertos o recientes; consultas incrementales por `updatedAt` |
-| Nombre “Owlo” | Verificar disponibilidad en Play Store, App Store, dominio y marca antes de publicar |
+| Nombre “Owlsplit” | Comprobado el 2026-10-07: `owlsplit.com` y `owlsplit.app` libres, sin marcas en TMview (EUIPO, OEPM, USPTO, WIPO…) y sin apps con ese nombre. Antes de lanzar: comprar los dominios y registrar la marca en la EUIPO (clases 9 y 36). El nombre inicial “Owlo” se descartó por una marca registrada en Francia (clases 9 y 42) y una app “OWLO” en ambas tiendas |

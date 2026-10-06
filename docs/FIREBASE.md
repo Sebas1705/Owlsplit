@@ -6,9 +6,9 @@ Decisión en [ADR 0002](adr/0002-firebase-gitlive.md). SDK KMP: `dev.gitlive:fir
 
 | Perfil | Proyecto Firebase | Doppler | Uso |
 |---|---|---|---|
-| development | `owlo-dev` | `owlo/dev` | Desarrollo local y emuladores |
-| staging | `owlo-stg` | `owlo/stg` | Pruebas internas (App Distribution) |
-| production | `owlo-prd` | `owlo/prd` | Tiendas |
+| development | `owlsplit-dev` | `owlsplit/dev` | Desarrollo local y emuladores |
+| staging | `owlsplit-stg` | `owlsplit/stg` | Pruebas internas (App Distribution) |
+| production | `owlsplit-prd` | `owlsplit/prd` | Tiendas |
 
 Los ids definitivos se fijan al crearlos (si los nombres están cogidos, se añade sufijo) y se anotan aquí. Una app Android y una iOS por proyecto. Plan **Spark** (gratuito) durante el MVP: no se usan Cloud Functions ni Storage (Storage exige Blaze para buckets nuevos; llegará con el escaneo de tickets).
 
