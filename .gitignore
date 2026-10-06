@@ -1,0 +1,15 @@
+# Gradle / IDE (se ampliará al generar el proyecto con la plantilla)
+.gradle/
+build/
+.idea/
+.kotlin/
+local.properties
+*.iml
+.DS_Store
+
+# Secretos: vienen de Doppler, nunca se suben
+google-services.json
+GoogleService-Info.plist
+*.jks
+*.keystore
+.env
