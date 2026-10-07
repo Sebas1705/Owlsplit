@@ -18,10 +18,8 @@ dependencyResolutionManagement {
     }
 }
 
-// ── App entry-points ─────────────────────────────────────────────────────────
 include(":composeApp")
 
-// ── Core ─────────────────────────────────────────────────────────────────────
 include(
     ":core:common",
     ":core:ui",
@@ -32,21 +30,6 @@ include(
     ":core:testing",
 )
 
-// ── Data ─────────────────────────────────────────────────────────────────────
-include(
-    ":data:models",
-    ":data:local",
-    ":data:network",
-    ":data:repository",
-)
+include(":data:local")
 
-// ── Domain ────────────────────────────────────────────────────────────────────
 include(":domain:usecases")
-
-// ── Features ──────────────────────────────────────────────────────────────────
-include(
-    ":feature:auth",
-    ":feature:home",
-    ":feature:settings",
-    ":feature:profile",
-)
