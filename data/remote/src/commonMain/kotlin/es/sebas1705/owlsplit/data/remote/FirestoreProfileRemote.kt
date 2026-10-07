@@ -1,0 +1,50 @@
+package es.sebas1705.owlsplit.data.remote
+
+import dev.gitlive.firebase.firestore.BaseTimestamp
+import dev.gitlive.firebase.firestore.FirebaseFirestore
+import dev.gitlive.firebase.firestore.FirebaseFirestoreException
+import dev.gitlive.firebase.firestore.Timestamp
+import es.sebas1705.owlsplit.data.models.Session
+import es.sebas1705.owlsplit.data.models.UserProfile
+import es.sebas1705.owlsplit.data.repository.account.AccountResult
+import es.sebas1705.owlsplit.data.repository.account.ProfileRemote
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.serialization.Serializable
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+
+@Serializable
+internal data class UserDto(
+    val displayName: String,
+    val avatar: String,
+    val preferredCurrency: String,
+    val linkedProviders: List<String>,
+    val updatedAt: BaseTimestamp,
+)
+
+/** `users/{uid}`: only its owner reads and writes it. */
+class FirestoreProfileRemote(
+    private val firestore: FirebaseFirestore,
+    private val timeout: Duration = 20.seconds,
+) : ProfileRemote {
+
+    override suspend fun save(session: Session, profile: UserProfile): AccountResult = call {
+        val dto = UserDto(profile.name, profile.avatar, profile.currency, session.providers, Timestamp.ServerTimestamp)
+        firestore.collection(USERS).document(session.uid).set(UserDto.serializer(), dto, merge = true)
+    }
+
+    override suspend fun delete(uid: String): AccountResult = call {
+        firestore.collection(USERS).document(uid).delete()
+    }
+
+    /** Offline a write never completes (the SDK queues it): report it instead of waiting. */
+    private suspend fun call(block: suspend () -> Unit): AccountResult = try {
+        withTimeoutOrNull(timeout) { block() }?.let { AccountResult.Done } ?: AccountResult.Offline
+    } catch (e: FirebaseFirestoreException) {
+        AccountResult.Failed(e.message.orEmpty())
+    }
+
+    private companion object {
+        const val USERS = "users"
+    }
+}
