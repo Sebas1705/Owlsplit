@@ -17,3 +17,9 @@ INSERT OR REPLACE INTO change_log VALUES ?;
 
 selectByGroup:
 SELECT * FROM change_log WHERE group_id = ? ORDER BY created_at DESC, id;
+
+selectById:
+SELECT * FROM change_log WHERE id = ?;
+
+markSynced:
+UPDATE change_log SET sync_state = 'SYNCED' WHERE id = ?;
