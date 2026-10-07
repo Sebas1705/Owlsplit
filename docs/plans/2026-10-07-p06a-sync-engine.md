@@ -918,3 +918,11 @@ class SyncEngine(
 
 - 11 tests de sincronización en verde (7 de subida + 4 del motor) y los de P4 siguen en verde con el reloj ligado al planificador.
 - Ninguna ruta de pérdida silenciosa: todo rechazo termina en sincronizado, conflicto guardado, acceso perdido o reintento con `last_error`.
+
+## Desviaciones durante la ejecución (2026-10-07)
+
+- **FIFO por grupo estricto**: el procesador recorre todo el outbox (no solo lo listo); una entrada que espera su reintento retiene a las siguientes de su grupo. Lo destapó el test de reintentos.
+- **Bucle de subida**: despierta en el primer reintento entre las cabezas de grupo (`nextWakeAt`). Despertar en el mínimo global giraba en vacío cuando una entrada lista estaba detrás de una cabeza en espera (el test de conflicto en la bajada se colgaba). Las consultas `selectReady` y `nextAttemptAt` se eliminaron.
+- **Aplicar remoto normaliza** `serverVersion = version` y `SYNCED`, sin fiarse del adaptador.
+- **`RemoteApplier`** separado de `SyncLocalStore` (Detekt `TooManyFunctions`); el procesador usa `when` en lugar de varios `continue`.
+- Incidencia de proceso: un `git add -A` arrastró `node_modules` de P5 (la rama salía de un `main` sin ese `.gitignore`); se corrigió antes de subir nada.

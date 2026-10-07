@@ -31,8 +31,10 @@ class SyncEngine(
     private val io: CoroutineDispatcher,
     random: Random = Random.Default,
 ) {
-    private val local = SyncLocalStore(db, Writer(db, ctx))
-    private val processor = OutboxProcessor(local, remote, random)
+    private val writer = Writer(db, ctx)
+    private val local = SyncLocalStore(db, writer)
+    private val applier = RemoteApplier(db, writer)
+    private val processor = OutboxProcessor(local, applier, remote, random)
     private val pushLock = Mutex()
 
     /** Number of writes waiting to be uploaded. */
@@ -65,7 +67,7 @@ class SyncEngine(
         remote.observeMyGroups(uid).collect { docs ->
             // Before applying: once applied, a group that dropped me no longer lists me locally either.
             val known = local.syncedGroupIdsOf(uid)
-            docs.forEach { local.apply(it) }
+            docs.forEach { applier.apply(it) }
             val ids = docs.filterNot { it.group.meta.deleted }.mapTo(HashSet()) { it.id }
             (known - ids).forEach { local.markAccessLost(it) }
             (listeners.keys - ids).forEach { listeners.remove(it)?.cancel() }
@@ -78,7 +80,7 @@ class SyncEngine(
             launch {
                 val since = (local.cursor(groupId, collection) - CURSOR_MARGIN_MILLIS).coerceAtLeast(0)
                 remote.observe(groupId, collection, since).collect { docs ->
-                    docs.forEach { local.apply(it) }
+                    docs.forEach { applier.apply(it) }
                     docs.maxOfOrNull { it.updatedAt }?.let { local.advanceCursor(groupId, collection, it) }
                 }
             }

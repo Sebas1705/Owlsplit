@@ -20,8 +20,9 @@ class OutboxProcessorTest {
     private class Harness(scope: TestScope) {
         val env = TestEnv(scope)
         val remote = FakeRemoteStore { env.ctx.clock.now().toEpochMilliseconds() }
-        val local = SyncLocalStore(env.db, Writer(env.db, env.ctx))
-        val processor = OutboxProcessor(local, remote, Random(0))
+        private val writer = Writer(env.db, env.ctx)
+        val local = SyncLocalStore(env.db, writer)
+        val processor = OutboxProcessor(local, RemoteApplier(env.db, writer), remote, Random(0))
 
         suspend fun push() = processor.processReady()
         suspend fun group(id: String) = env.groups.observeGroup(id).first()!!
@@ -110,7 +111,9 @@ class OutboxProcessorTest {
         val g = h.env.groups.create(trip, "Ana")
         h.push()
         val theirs = h.remoteGroup(g)
-        h.remote.serverWrite(theirs.copy(group = theirs.group.copy(name = "Theirs", meta = theirs.group.meta.copy(version = 2))))
+        h.remote.serverWrite(
+            theirs.copy(group = theirs.group.copy(name = "Theirs", meta = theirs.group.meta.copy(version = 2)))
+        )
 
         h.env.groups.update(g, trip.copy(name = "Mine"))
         h.push()
@@ -127,7 +130,9 @@ class OutboxProcessorTest {
         val g = h.env.groups.create(trip, "Ana")
         h.push()
         val doc = h.remoteGroup(g)
-        h.remote.serverWrite(doc.copy(group = doc.group.copy(memberUids = listOf("uid-luis"), meta = doc.group.meta.copy(version = 2))))
+        h.remote.serverWrite(
+            doc.copy(group = doc.group.copy(memberUids = listOf("uid-luis"), meta = doc.group.meta.copy(version = 2)))
+        )
 
         h.env.groups.update(g, trip.copy(name = "Still mine?"))
         h.push()

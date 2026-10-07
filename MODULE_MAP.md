@@ -13,8 +13,8 @@
 | `core:money` | Dinero, divisas, multiplicación-división exacta, reparto por restos mayores, tipos de cambio | — |
 | `data:models` | Documentos (`Group`, `Member`, `Expense`, `Transfer`, `ChangeLogEntry`) con `SyncMeta`, serializables | P6 |
 | `data:local` | Esquema SQLDelight completo v1 (`AppDatabase`), snapshot `databases/1.db` y `verifyMigrations` | P6, P9 |
-| `data:repository` | Repositorios con Flows; cada escritura guarda la entidad, compacta el outbox y registra el historial en una transacción | P6, P8, P9 |
+| `data:repository` | Repositorios con Flows (cada escritura guarda la entidad, compacta el outbox y registra el historial en una transacción) y motor de sincronización `sync` (`RemoteStore`, `SyncEngine`) | P6b, P8, P9 |
 | `data:remote` | Firebase (GitLive): auth y Firestore; test de humo instrumentado | P6, P8 |
 | `domain:usecases` | `ledger` (partes, netos, saldos, pagos sugeridos) y `ObserveGroupBalances` | P8, P9 |
 
-Módulos previstos: `data:sync` (P6), `feature:*` (P8–P10).
+Módulos previstos: `feature:*` (P8–P10). El motor de sincronización vive en `data:repository` (paquete `sync`), no en un módulo `data:sync`.

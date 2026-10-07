@@ -92,7 +92,10 @@ class SyncEngineTest {
         val synced = h.remote.doc(OutboxType.EXPENSE, e) as RemoteDoc.ExpenseDoc
         h.remote.serverWrite(
             RemoteDoc.ExpenseDoc(
-                synced.expense.copy(title = "Theirs", meta = synced.expense.meta.copy(version = 2, updatedAt = h.env.nowMillis + 1)),
+                synced.expense.copy(
+                    title = "Theirs",
+                    meta = synced.expense.meta.copy(version = 2, updatedAt = h.env.nowMillis + 1)
+                ),
             ),
         )
 
@@ -111,7 +114,9 @@ class SyncEngineTest {
         val job = h.engine.start(this, "uid-ana")
         h.settle()
         val doc = h.remote.doc(OutboxType.GROUP, g) as RemoteDoc.GroupDoc
-        h.remote.serverWrite(doc.copy(group = doc.group.copy(memberUids = listOf("uid-luis"), meta = doc.group.meta.copy(version = 2))))
+        h.remote.serverWrite(
+            doc.copy(group = doc.group.copy(memberUids = listOf("uid-luis"), meta = doc.group.meta.copy(version = 2)))
+        )
         h.settle()
         assertTrue(h.engine.isAccessLost(g))
         job.cancel()

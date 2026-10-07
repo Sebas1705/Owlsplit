@@ -8,6 +8,7 @@ import kotlin.random.Random
 /** One upload pass over the outbox (docs/SYNC.md, "Subida"). */
 internal class OutboxProcessor(
     private val local: SyncLocalStore,
+    private val applier: RemoteApplier,
     private val remote: RemoteStore,
     private val random: Random,
 ) {
@@ -16,16 +17,12 @@ internal class OutboxProcessor(
         val blocked = HashSet<String>()
         // FIFO per group: an entry still waiting for its retry holds back the later ones of its group.
         for (entry in local.all()) {
-            if (entry.group_id in blocked) continue
-            if (entry.next_attempt_at > now) {
-                blocked += entry.group_id
-                continue
+            when {
+                entry.group_id in blocked -> Unit
+                entry.next_attempt_at > now -> blocked += entry.group_id
+                local.isAccessLost(entry.group_id) -> local.scheduleRetry(entry, now + RECHECK_MILLIS, "access lost")
+                !process(entry) -> blocked += entry.group_id
             }
-            if (local.isAccessLost(entry.group_id)) {
-                local.scheduleRetry(entry, local.now() + RECHECK_MILLIS, "access lost")
-                continue
-            }
-            if (!process(entry)) blocked += entry.group_id
         }
     }
 
@@ -68,7 +65,7 @@ internal class OutboxProcessor(
                     true
                 }
                 found.doc.version >= version -> {
-                    local.resolveConflict(entry, found.doc)
+                    applier.resolveConflict(entry, found.doc)
                     true
                 }
                 // Rejected for another reason (validation): a bug, keep it visible in last_error.
