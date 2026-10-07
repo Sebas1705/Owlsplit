@@ -1,0 +1,39 @@
+CREATE TABLE member_entity (
+    id TEXT NOT NULL PRIMARY KEY,
+    group_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    avatar TEXT,
+    default_weight INTEGER NOT NULL,
+    user_uid TEXT,
+    active INTEGER NOT NULL,
+    sort_key INTEGER NOT NULL,
+    version INTEGER NOT NULL,
+    server_version INTEGER NOT NULL,
+    updated_at INTEGER,
+    updated_by TEXT NOT NULL,
+    deleted INTEGER NOT NULL,
+    sync_state TEXT NOT NULL
+);
+
+CREATE INDEX member_by_group ON member_entity(group_id);
+
+upsert:
+INSERT OR REPLACE INTO member_entity VALUES ?;
+
+selectVisibleByGroup:
+SELECT * FROM member_entity WHERE group_id = ? AND deleted = 0 ORDER BY sort_key, id;
+
+selectById:
+SELECT * FROM member_entity WHERE id = ?;
+
+nextSortKey:
+SELECT coalesce(max(sort_key), -1) + 1 FROM member_entity WHERE group_id = ?;
+
+countMovements:
+SELECT
+    (SELECT count(*) FROM expense_payer p JOIN expense_entity e ON e.id = p.expense_id
+        WHERE p.member_id = :memberId AND e.deleted = 0)
+  + (SELECT count(*) FROM expense_split s JOIN expense_entity e ON e.id = s.expense_id
+        WHERE s.member_id = :memberId AND s.split_value > 0 AND e.deleted = 0)
+  + (SELECT count(*) FROM transfer_entity t
+        WHERE (t.from_member_id = :memberId OR t.to_member_id = :memberId) AND t.deleted = 0);

@@ -14,11 +14,12 @@ Owlsplit es **local-first**: SQLDelight es la fuente de verdad de la UI y Firest
 
 | Tabla | Propósito |
 |---|---|
-| `group`, `member`, `expense`, `transfer`, `change_log` | Entidades (espejo de Firestore + columnas locales) |
+| `group_entity`, `member_entity`, `expense_entity`, `transfer_entity`, `change_log` | Entidades (espejo de Firestore + columnas locales). Booleanos como `INTEGER` 0/1 |
+| `expense_payer`, `expense_split` | Pagadores y valores de reparto de cada gasto (se reescriben enteros en cada edición) |
 | `outbox` | Cola de escrituras pendientes: `id`, `groupId`, `entityType`, `entityId`, `baseVersion`, `payloadJson`, `attempts`, `nextAttemptAt`, `lastError`, `createdAt` |
 | `sync_cursor` | Por grupo y colección: último `updatedAt` remoto aplicado |
 | `conflict` | Ediciones locales rechazadas, para reaplicar o descartar |
-| `fx_rate_cache` | Tipos de cambio con fecha de obtención |
+| `fx_rate_cache` | Tipos de cambio con fecha de obtención (llega en P9, primera migración) |
 
 Columnas locales de cada entidad: `syncState` (`SYNCED`, `PENDING`, `CONFLICT`), `serverVersion`.
 

@@ -22,13 +22,14 @@ Follow the 5-step recipe in `MODULE_MAP.md#adding-a-new-feature-module`.
 
 ## Changing the database schema
 
-1. Edit the `.sq` file in `data/local/src/commonMain/sqldelight/`
-2. Run `./gradlew generateCommonMainAppDatabaseInterface` to regenerate
-3. Update the DAO and repository accordingly
+1. Edit the `.sq` file in `data/local/src/commonMain/sqldelight/`. Once a schema has shipped, never edit it in place: add a migration `n.sqm` instead.
+2. Run `./gradlew :data:local:generateCommonMainAppDatabaseSchema` **on its own** (not together with other tasks) to refresh the `databases/n.db` snapshot.
+3. Run `./gradlew verifySqlDelightMigration` and update the row mapping in `data/repository/Rows.kt`.
+4. SQLite on Android 7 is 3.9: no `UPSERT`, and booleans are `INTEGER` 0/1 (no `AS Boolean`).
 
 ## Environment
 
-- Kotlin 2.1.0 / Compose Multiplatform 1.7.3
+- Kotlin 2.4.20 / Compose Multiplatform 1.11.1 / AGP 8.13.2 / Gradle 9.5.1 (see docs/plans/README.md for why these pins)
 - Targets: `androidTarget` (minSdk 24, compileSdk 36), `iosArm64 + iosSimulatorArm64`
 - DI: Koin 4.x (no Hilt — incompatible with KMP)
 - DB: SQLDelight 2.x (no Room — not yet fully KMP)

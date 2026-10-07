@@ -6,7 +6,7 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation(libs.sqldelight.runtime)
+            api(libs.sqldelight.runtime)
             implementation(libs.sqldelight.coroutines)
         }
         androidMain.dependencies { implementation(libs.sqldelight.android.driver) }
@@ -23,6 +23,11 @@ sqldelight {
         create("AppDatabase") {
             packageName.set("es.sebas1705.owlsplit.data.local.db")
             srcDirs.setFrom("src/commonMain/sqldelight")
+            // Snapshots of every released schema (regenerate with generateCommonMainAppDatabaseSchema,
+            // run on its own); verifySqlDelightMigration checks
+            // that migrations (n.sqm) turn snapshot n into n + 1.
+            schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
+            verifyMigrations.set(true)
         }
     }
 }

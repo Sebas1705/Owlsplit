@@ -1,0 +1,71 @@
+CREATE TABLE expense_entity (
+    id TEXT NOT NULL PRIMARY KEY,
+    group_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL,
+    note TEXT,
+    date TEXT NOT NULL,
+    currency TEXT NOT NULL,
+    amount_minor INTEGER NOT NULL,
+    fx_rate_scaled INTEGER NOT NULL,
+    split_type TEXT NOT NULL,
+    receipt_url TEXT,
+    recurrence_id TEXT,
+    created_by TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    version INTEGER NOT NULL,
+    server_version INTEGER NOT NULL,
+    updated_at INTEGER,
+    updated_by TEXT NOT NULL,
+    deleted INTEGER NOT NULL,
+    sync_state TEXT NOT NULL
+);
+
+CREATE INDEX expense_by_group ON expense_entity(group_id, deleted, date);
+
+CREATE TABLE expense_payer (
+    expense_id TEXT NOT NULL,
+    member_id TEXT NOT NULL,
+    amount_minor INTEGER NOT NULL,
+    PRIMARY KEY (expense_id, member_id)
+);
+
+CREATE TABLE expense_split (
+    expense_id TEXT NOT NULL,
+    member_id TEXT NOT NULL,
+    split_value INTEGER NOT NULL,
+    PRIMARY KEY (expense_id, member_id)
+);
+
+upsert:
+INSERT OR REPLACE INTO expense_entity VALUES ?;
+
+deletePayers:
+DELETE FROM expense_payer WHERE expense_id = ?;
+
+insertPayer:
+INSERT INTO expense_payer VALUES ?;
+
+deleteSplits:
+DELETE FROM expense_split WHERE expense_id = ?;
+
+insertSplit:
+INSERT INTO expense_split VALUES ?;
+
+selectVisibleByGroup:
+SELECT * FROM expense_entity WHERE group_id = ? AND deleted = 0 ORDER BY date DESC, created_at DESC, id;
+
+selectById:
+SELECT * FROM expense_entity WHERE id = ?;
+
+payersByGroup:
+SELECT p.* FROM expense_payer p JOIN expense_entity e ON e.id = p.expense_id WHERE e.group_id = ?;
+
+splitsByGroup:
+SELECT s.* FROM expense_split s JOIN expense_entity e ON e.id = s.expense_id WHERE e.group_id = ?;
+
+payersByExpense:
+SELECT * FROM expense_payer WHERE expense_id = ?;
+
+splitsByExpense:
+SELECT * FROM expense_split WHERE expense_id = ?;

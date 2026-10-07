@@ -1,0 +1,29 @@
+CREATE TABLE group_entity (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    icon TEXT NOT NULL,
+    accent TEXT NOT NULL,
+    base_currency TEXT NOT NULL,
+    start_date TEXT,
+    end_date TEXT,
+    invite_code TEXT NOT NULL,
+    member_uids TEXT NOT NULL,
+    archived_by TEXT NOT NULL,
+    created_by TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    version INTEGER NOT NULL,
+    server_version INTEGER NOT NULL,
+    updated_at INTEGER,
+    updated_by TEXT NOT NULL,
+    deleted INTEGER NOT NULL,
+    sync_state TEXT NOT NULL
+);
+
+upsert:
+INSERT OR REPLACE INTO group_entity VALUES ?;
+
+selectVisible:
+SELECT * FROM group_entity WHERE deleted = 0 ORDER BY name COLLATE NOCASE, id;
+
+selectById:
+SELECT * FROM group_entity WHERE id = ?;
