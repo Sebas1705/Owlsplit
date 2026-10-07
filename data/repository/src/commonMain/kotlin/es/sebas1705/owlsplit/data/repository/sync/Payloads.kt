@@ -28,7 +28,10 @@ fun decodeRemoteDoc(type: OutboxType, payload: String, version: Long, updatedAt:
             .let { RemoteDoc.ExpenseDoc(it.copy(meta = it.meta.server())) }
         OutboxType.TRANSFER -> json.decodeFromString(Transfer.serializer(), payload)
             .let { RemoteDoc.TransferDoc(it.copy(meta = it.meta.server())) }
-        OutboxType.CHANGE_LOG -> RemoteDoc.ChangeLogDoc(json.decodeFromString(ChangeLogEntry.serializer(), payload))
+        OutboxType.CHANGE_LOG -> RemoteDoc.ChangeLogDoc(
+            json.decodeFromString(ChangeLogEntry.serializer(), payload),
+            updatedAt
+        )
     }
 }
 

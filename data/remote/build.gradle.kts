@@ -14,6 +14,7 @@ kotlin {
         commonMain.dependencies {
             api(libs.gitlive.firebase.auth)
             api(libs.gitlive.firebase.firestore)
+            api(project(":data:repository"))
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
         }

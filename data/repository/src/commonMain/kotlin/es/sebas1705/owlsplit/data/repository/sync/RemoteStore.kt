@@ -48,12 +48,11 @@ sealed interface RemoteDoc {
         override val type: OutboxType get() = OutboxType.TRANSFER
     }
 
-    /** History entries are create-only: version 1, ordered by creation time. */
-    data class ChangeLogDoc(val entry: ChangeLogEntry) : RemoteDoc {
+    /** History entries are create-only (version 1); [updatedAt] is the server time of that creation. */
+    data class ChangeLogDoc(val entry: ChangeLogEntry, override val updatedAt: Long = entry.createdAt) : RemoteDoc {
         override val groupId: String get() = entry.groupId
         override val id: String get() = entry.id
         override val version: Long get() = 1L
-        override val updatedAt: Long get() = entry.createdAt
         override val type: OutboxType get() = OutboxType.CHANGE_LOG
     }
 }
