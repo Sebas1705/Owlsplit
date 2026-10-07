@@ -2,18 +2,18 @@
 
 ## Overview
 
-Owlsplit is a **Kotlin Multiplatform** template targeting **Android**, **Desktop (JVM)** and **iOS**.
+Owlsplit is a **Kotlin Multiplatform** template targeting **Android** and **iOS**.
 It follows **Clean Architecture** with a strict layered module graph.
 
 ```
 ┌──────────────────────────────────────────────────────┐
 │                   composeApp / iosApp                │  ← Entry points
 ├──────────────────────────────────────────────────────┤
-│          feature:auth │ feature:home │ feature:…     │  ← UI + MVI
+│              feature:… (P8–P10)                      │  ← UI + MVI
 ├──────────────────────────────────────────────────────┤
 │                  domain:usecases                     │  ← Business logic
 ├──────────────────────────────────────────────────────┤
-│   data:repository  │  data:network  │  data:local    │  ← Data layer
+│   data:repository  │  data:remote   │  data:local    │  ← Data layer
 ├──────────────────────────────────────────────────────┤
 │  data:models │ core:common │ core:ui │ core:security  │  ← Shared foundations
 └──────────────────────────────────────────────────────┘
@@ -26,7 +26,7 @@ It follows **Clean Architecture** with a strict layered module graph.
 | App   | `composeApp`, `iosApp` | feature, domain, data, core |
 | Feature | `feature:*` | domain, data:models, core |
 | Domain | `domain:usecases` | data:repository (interface), data:models, core:common |
-| Data | `data:repository`, `data:network`, `data:local` | data:models, core |
+| Data | `data:repository`, `data:remote`, `data:sync`, `data:local` | data:models, core |
 | Core | `core:*` | nothing project-local |
 
 ## Key patterns
@@ -44,7 +44,6 @@ Coroutine work happens inside `execute { suspend block }`.
 ### Expect / Actual
 Platform-specific implementations live under:
 - `androidMain` — Android SDK
-- `desktopMain` — JVM / Java stdlib
 - `iosMain` — Kotlin/Native + Darwin/Foundation
 
 Classes with `expect`: `SecureStorage`, `DatabaseDriverFactory`, `httpEngineFactory`, `createDataStore`.
@@ -60,7 +59,6 @@ Schema files live in `data/local/src/commonMain/sqldelight/`.
 ### Networking
 [Ktor 3.x](https://ktor.io/) with per-platform engine:
 - Android → OkHttp
-- Desktop → Java (HttpClient)
 - iOS → Darwin (NSURLSession)
 
 ### Image loading

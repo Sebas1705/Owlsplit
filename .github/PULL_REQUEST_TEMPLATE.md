@@ -12,7 +12,7 @@
 - [ ] No suspend inside `updateState {}` lambda
 - [ ] All modules declare `:core:security` if they use it transitively
 - [ ] Detekt passes (`./gradlew detekt`)
-- [ ] Desktop target compiles (`./gradlew :composeApp:compileKotlinDesktop`)
+- [ ] iOS framework compiles (CI job "iOS framework")
 - [ ] New feature module added to `settings.gradle.kts`
 
 ## Changelog label

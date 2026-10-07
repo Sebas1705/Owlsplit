@@ -14,7 +14,6 @@ Do not open a public issue for security vulnerabilities.
 ## Token storage
 
 - Android: `EncryptedSharedPreferences` (AES-256-GCM via Jetpack Security Crypto)
-- Desktop: `java.util.prefs.Preferences` (system keychain on macOS, registry-backed on Windows)
 - iOS: `NSUserDefaults` — consider migrating to Keychain for production use
 
 ## Network
