@@ -23,7 +23,7 @@ jobs:
         with: { distribution: temurin, java-version: 21 }
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew detekt testDebugUnitTest :composeApp:assembleDebug --continue
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: test-reports
