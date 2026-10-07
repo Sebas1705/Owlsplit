@@ -28,9 +28,6 @@ SELECT * FROM outbox ORDER BY created_at, id;
 countAll:
 SELECT count(*) FROM outbox;
 
-selectReady:
-SELECT * FROM outbox WHERE next_attempt_at <= ? ORDER BY created_at, id;
-
 selectById:
 SELECT * FROM outbox WHERE id = ?;
 

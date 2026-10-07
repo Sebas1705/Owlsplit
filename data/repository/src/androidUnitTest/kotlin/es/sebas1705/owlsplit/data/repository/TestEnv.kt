@@ -24,7 +24,8 @@ class TestEnv(val scope: TestScope = TestScope()) {
     val ctx = RepositoryContext(
         uid = { uid },
         clock = object : Clock {
-            override fun now(): Instant = Instant.fromEpochMilliseconds(nowMillis)
+            // Tied to the test scheduler so that delay() also moves the engine clock.
+            override fun now(): Instant = Instant.fromEpochMilliseconds(nowMillis + scope.testScheduler.currentTime)
         },
         ids = { "id${nextId++}" },
         inviteCodes = { "CODE${nextCode++}" },

@@ -17,7 +17,8 @@ internal class SyncLocalStore(private val db: AppDatabase, private val writer: W
 
     fun now(): Long = writer.now()
 
-    fun ready(now: Long): List<Outbox> = db.outboxQueries.selectReady(now).executeAsList()
+    /** The whole outbox in upload order. */
+    fun all(): List<Outbox> = db.outboxQueries.selectAll().executeAsList()
 
     /** -1 when the outbox is empty. */
     fun nextAttemptAt(): Long = db.outboxQueries.nextAttemptAt().executeAsOne()
