@@ -24,13 +24,20 @@ internal class Writer(private val db: AppDatabase, private val ctx: RepositoryCo
 
     /** Metadata of a brand-new document. */
     fun createdMeta() = SyncMeta(
-        version = 1, serverVersion = 0, updatedAt = null, updatedBy = uid(), deleted = false,
+        version = 1,
+        serverVersion = 0,
+        updatedAt = null,
+        updatedBy = uid(),
+        deleted = false,
         syncState = SyncState.PENDING,
     )
 
     /** Metadata after a local edit of a document whose last synced version is [old].serverVersion. */
     fun editedMeta(old: SyncMeta, deleted: Boolean = old.deleted) = old.copy(
-        version = old.serverVersion + 1, updatedBy = uid(), deleted = deleted, syncState = SyncState.PENDING,
+        version = old.serverVersion + 1,
+        updatedBy = uid(),
+        deleted = deleted,
+        syncState = SyncState.PENDING,
     )
 
     /** Queues [payload] for upload, compacting with a pending entry of the same document. */

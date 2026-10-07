@@ -89,7 +89,10 @@ class ExpenseRepositoryImpl(
         q.deleteSplits(expense.id)
         expense.splitValues.forEach { (member, value) -> q.insertSplit(Expense_split(expense.id, member, value)) }
         writer.enqueue(
-            expense.groupId, OutboxType.EXPENSE, expense.id, old?.meta?.serverVersion ?: 0,
+            expense.groupId,
+            OutboxType.EXPENSE,
+            expense.id,
+            old?.meta?.serverVersion ?: 0,
             json.encodeToString(Expense.serializer(), expense),
         )
         val diff = if (action == ChangeAction.UPDATED) Diffs.expense(old, expense) else emptyList()

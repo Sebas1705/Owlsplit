@@ -44,7 +44,11 @@ internal fun Group_entity.toModel() = Group(
 internal fun Group.toRow() = Group_entity(
     id = id, name = name, icon = icon, accent = accent, base_currency = baseCurrency,
     start_date = startDate?.toString(), end_date = endDate?.toString(), invite_code = inviteCode,
-    member_uids = json.encodeToString(stringList, memberUids), archived_by = json.encodeToString(stringList, archivedBy),
+    member_uids = json.encodeToString(
+        stringList,
+        memberUids
+    ),
+    archived_by = json.encodeToString(stringList, archivedBy),
     created_by = createdBy, created_at = createdAt, version = meta.version, server_version = meta.serverVersion,
     updated_at = meta.updatedAt, updated_by = meta.updatedBy, deleted = meta.deleted.asInt(),
     sync_state = meta.syncState.name,
@@ -95,9 +99,14 @@ internal fun Transfer.toRow() = Transfer_entity(
 )
 
 internal fun Change_log.toModel() = ChangeLogEntry(
-    id = id, groupId = group_id, entityType = EntityType.valueOf(entity_type), entityId = entity_id,
-    action = ChangeAction.valueOf(action), authorUid = author_uid,
-    diff = json.decodeFromString(fieldChanges, diff), createdAt = created_at,
+    id = id,
+    groupId = group_id,
+    entityType = EntityType.valueOf(entity_type),
+    entityId = entity_id,
+    action = ChangeAction.valueOf(action),
+    authorUid = author_uid,
+    diff = json.decodeFromString(fieldChanges, diff),
+    createdAt = created_at,
 )
 
 internal fun ChangeLogEntry.toRow(state: SyncState) = Change_log(

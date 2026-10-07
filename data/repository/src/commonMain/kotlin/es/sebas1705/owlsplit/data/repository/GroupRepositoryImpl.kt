@@ -49,8 +49,13 @@ class GroupRepositoryImpl(
         db.transaction {
             val old = requireGroup(id)
             val new = old.copy(
-                name = input.name, icon = input.icon, accent = input.accent, baseCurrency = input.baseCurrency,
-                startDate = input.startDate, endDate = input.endDate, meta = writer.editedMeta(old.meta),
+                name = input.name,
+                icon = input.icon,
+                accent = input.accent,
+                baseCurrency = input.baseCurrency,
+                startDate = input.startDate,
+                endDate = input.endDate,
+                meta = writer.editedMeta(old.meta),
             )
             save(new, old, ChangeAction.UPDATED)
         }

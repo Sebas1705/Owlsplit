@@ -19,8 +19,11 @@ class MemberRepositoryImpl(
 ) : MemberRepository {
     private val writer = Writer(db, ctx)
 
-    override fun observeMembers(groupId: String): Flow<List<Member>> =
-        db.memberEntityQueries.selectVisibleByGroup(groupId).asFlow().mapToList(io).map { rows -> rows.map { it.toModel() } }
+    override fun observeMembers(groupId: String): Flow<List<Member>> = db.memberEntityQueries
+        .selectVisibleByGroup(groupId)
+        .asFlow()
+        .mapToList(io)
+        .map { rows -> rows.map { it.toModel() } }
 
     override suspend fun add(groupId: String, input: MemberInput): String = withContext(io) {
         db.transactionWithResult {
@@ -64,7 +67,10 @@ class MemberRepositoryImpl(
         fun save(db: AppDatabase, writer: Writer, member: Member, old: Member?, action: ChangeAction) {
             db.memberEntityQueries.upsert(member.toRow())
             writer.enqueue(
-                member.groupId, OutboxType.MEMBER, member.id, old?.meta?.serverVersion ?: 0,
+                member.groupId,
+                OutboxType.MEMBER,
+                member.id,
+                old?.meta?.serverVersion ?: 0,
                 json.encodeToString(Member.serializer(), member),
             )
             writer.log(member.groupId, EntityType.MEMBER, member.id, action, Diffs.member(old, member))

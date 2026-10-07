@@ -20,8 +20,11 @@ class TransferRepositoryImpl(
 ) : TransferRepository {
     private val writer = Writer(db, ctx)
 
-    override fun observeTransfers(groupId: String): Flow<List<Transfer>> =
-        db.transferEntityQueries.selectVisibleByGroup(groupId).asFlow().mapToList(io).map { rows -> rows.map { it.toModel() } }
+    override fun observeTransfers(groupId: String): Flow<List<Transfer>> = db.transferEntityQueries
+        .selectVisibleByGroup(groupId)
+        .asFlow()
+        .mapToList(io)
+        .map { rows -> rows.map { it.toModel() } }
 
     override suspend fun create(groupId: String, input: TransferInput): String = withContext(io) {
         db.transactionWithResult {
@@ -52,7 +55,10 @@ class TransferRepositoryImpl(
     private fun save(transfer: Transfer, old: Transfer?, action: ChangeAction) {
         db.transferEntityQueries.upsert(transfer.toRow())
         writer.enqueue(
-            transfer.groupId, OutboxType.TRANSFER, transfer.id, old?.meta?.serverVersion ?: 0,
+            transfer.groupId,
+            OutboxType.TRANSFER,
+            transfer.id,
+            old?.meta?.serverVersion ?: 0,
             json.encodeToString(Transfer.serializer(), transfer),
         )
         writer.log(transfer.groupId, EntityType.TRANSFER, transfer.id, action, emptyList())

@@ -18,7 +18,8 @@ import kotlin.test.assertNull
 
 class ObserveGroupBalancesTest {
     private val meta = SyncMeta(1, 0, null, "u", false, SyncState.PENDING)
-    private val group = Group("g", "Piso", "home", "green", "EUR", null, null, "C", listOf("u"), emptyList(), "u", 0, meta)
+    private val group =
+        Group("g", "Piso", "home", "green", "EUR", null, null, "C", listOf("u"), emptyList(), "u", 0, meta)
 
     private fun member(id: String, sort: Long) = Member(id, "g", id, null, 1, null, true, sort, meta)
 

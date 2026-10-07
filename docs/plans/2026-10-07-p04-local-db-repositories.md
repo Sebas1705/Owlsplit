@@ -2062,3 +2062,11 @@ gh pr create --title "P4: local database and repositories" --body "Implements do
 - `./gradlew testDebugUnitTest` verde: `data:local` 6, `data:repository` 10, `domain:usecases` 29, más los de P1–P3.
 - `verifySqlDelightMigration` en verde y `1.db` versionado.
 - Ningún `INSERT … ON CONFLICT` en los `.sq` (`grep -rn "ON CONFLICT" data/local/src` vacío).
+
+## Desviaciones durante la ejecución (2026-10-07)
+
+- **Booleanos**: SQLDelight 2.4 no trata `INTEGER AS Boolean` como tipo nativo (exige un adaptador por tabla). Se guardan como `INTEGER` 0/1 y `Rows.kt` convierte (`asFlag()` / `asInt()`). Los tests de `SchemaTest` usan `1`/`0`.
+- **Registro de módulos**: Gradle 9 no admite incluir en `settings.gradle.kts` un módulo cuyo directorio no existe; `:data:repository` se registra en la Tarea 4, no en la 1.
+- **Snapshot del esquema**: `verifySqlDelightMigration` busca los `.db` dentro de las fuentes SQLDelight, así que el snapshot vive en `src/commonMain/sqldelight/databases/1.db`; `generateCommonMainAppDatabaseSchema` se ejecuta sola (junto a otras tareas Gradle detecta un solapamiento entrada/salida).
+- `Diffs.transfer` eliminado: las transferencias no se editan (solo crear, borrar, restaurar).
+- La autocorrección de Detekt reformateó listas de argumentos; dos cadenas de llamadas se reescribieron a mano para que se lean bien.
