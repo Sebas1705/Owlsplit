@@ -14,4 +14,6 @@
 | `data:local` | SQLDelight (`AppDatabase`) | P4 |
 | `domain:usecases` | Casos de uso; `ledger`: partes, netos, saldos y pagos sugeridos | P4+ |
 
-Módulos previstos: `data:models`, `data:repository` (P4), `data:remote`, `data:sync` (P2, P6), `feature:*` (P8–P10).
+| `data:remote` | Firebase (GitLive): auth y Firestore; test de humo instrumentado | P6, P8 |
+
+Módulos previstos: `data:models`, `data:repository` (P4), `data:sync` (P6), `feature:*` (P8–P10).

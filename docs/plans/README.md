@@ -9,7 +9,7 @@ Los planes se escriben en detalle (código completo, comandos exactos) **justo a
 | # | Plan | Entrega verificable | Depende de | Estado |
 |---|---|---|---|---|
 | P1 | [Base del proyecto](2026-10-07-p01-foundation.md) | Proyecto KMP generado desde la plantilla, versiones actuales, ejemplo de la plantilla eliminado, app que arranca en Android, CI verde | — | Hecho |
-| P2 | [Firebase dev + prueba de humo GitLive](2026-10-07-p02-firebase-smoke.md) | Proyecto `owlsplit-dev`, Doppler, configuración por entorno y test instrumentado que hace auth anónima + escritura + listener contra Firestore real | P1 | Escrito |
+| P2 | [Firebase dev + prueba de humo GitLive](2026-10-07-p02-firebase-smoke.md) | Proyecto `owlsplit-dev`, Doppler, configuración por entorno y test instrumentado que hace auth anónima + escritura + listener contra Firestore real | P1 | Hecho |
 | P3 | [Dinero y cálculo de saldos](2026-10-07-p03-money-ledger.md) | `core:money` y `domain` (`ledger`): divisas, reparto, conversión, saldos y simplificación, con tests de tablas y de propiedades | P1 | Hecho |
 | P4 | Base de datos local y repositorios | Esquema SQLDelight completo (entidades, outbox, cursores, conflictos), DAOs, repositorios con Flows, migraciones verificadas | P1, P3 | Pendiente |
 | P5 | Reglas de Firestore | `firebase/firestore.rules`, índices y `firebase/rules-test` con el emulador, en CI | P2 | Pendiente |
