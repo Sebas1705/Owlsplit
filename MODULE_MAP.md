@@ -10,8 +10,8 @@
 | `core:datastore` | Preferencias (`AppPreferences`) | P8 |
 | `core:logging` | Kermit | — |
 | `core:testing` | Utilidades de test | — |
-| `core:money` (se crea en P3) | Dinero, divisas, reparto de restos, tipos de cambio | P3 |
+| `core:money` | Dinero, divisas, multiplicación-división exacta, reparto por restos mayores, tipos de cambio | — |
 | `data:local` | SQLDelight (`AppDatabase`) | P4 |
-| `domain:usecases` | Casos de uso; `ledger` (saldos y deudas) | P3 |
+| `domain:usecases` | Casos de uso; `ledger`: partes, netos, saldos y pagos sugeridos | P4+ |
 
 Módulos previstos: `data:models`, `data:repository` (P4), `data:remote`, `data:sync` (P2, P6), `feature:*` (P8–P10).

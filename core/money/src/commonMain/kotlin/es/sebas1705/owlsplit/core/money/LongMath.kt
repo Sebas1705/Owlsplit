@@ -2,8 +2,6 @@ package es.sebas1705.owlsplit.core.money
 
 import kotlin.math.abs
 
-internal data class QuotRem(val quotient: Long, val remainder: Long)
-
 private const val LOW_32_MASK = 0xFFFF_FFFFuL
 private const val HALF_BITS = 32
 private const val LONG_BITS = 64

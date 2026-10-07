@@ -43,14 +43,15 @@ object NetCalculator {
 
     private fun validatePayers(expense: ExpenseEntry, members: List<LedgerMember>) {
         val knownIds = members.mapTo(HashSet()) { it.id }
-        expense.payers.keys.firstOrNull { it !in knownIds }?.let {
-            throw InvalidEntryException(expense.id, SplitIssue.UnknownMember(it))
-        }
-        if (expense.payers.values.any { it < 0 }) throw InvalidEntryException(expense.id, SplitIssue.NegativeValue)
+        val unknown = expense.payers.keys.firstOrNull { it !in knownIds }
         val paid = expense.payers.values.sum()
-        if (paid != expense.amountMinor) {
-            throw InvalidEntryException(expense.id, SplitIssue.PayersSumMismatch(expense.amountMinor - paid))
+        val issue = when {
+            unknown != null -> SplitIssue.UnknownMember(unknown)
+            expense.payers.values.any { it < 0 } -> SplitIssue.NegativeValue
+            paid != expense.amountMinor -> SplitIssue.PayersSumMismatch(expense.amountMinor - paid)
+            else -> null
         }
+        if (issue != null) throw InvalidEntryException(expense.id, issue)
     }
 
     /**
