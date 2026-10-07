@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import es.sebas1705.owlsplit.core.ui.theme.GroupAccent
 import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
 
 /** Initials on a neutral tone. Decorative: the name is always next to it, so screen readers skip it. */
@@ -27,7 +28,9 @@ fun Avatar(
         modifier.size(size).background(background, CircleShape).clearAndSetSemantics {},
         contentAlignment = Alignment.Center,
     ) {
-        Text(initials(name), style = Owlsplit.type.label, color = content)
+        // Large avatars (profile) get a title-sized initial; list avatars keep the label size.
+        val style = if (size >= LARGE_AVATAR) Owlsplit.type.title else Owlsplit.type.label
+        Text(initials(name), style = style, color = content)
     }
 }
 
@@ -38,3 +41,11 @@ internal fun initials(name: String): String =
         .take(2)
         .joinToString("") { it.first().uppercase() }
         .ifEmpty { "?" }
+
+/** The user's avatar: initials on their colour (`accent:<GroupAccent>`, see `UserProfile.avatar`). */
+@Composable
+fun ProfileAvatar(name: String, accent: GroupAccent, modifier: Modifier = Modifier, size: Dp = 36.dp) {
+    val colors = Owlsplit.colors
+    Avatar(name, modifier, size, background = accent.container(colors), content = accent.content(colors))
+}
+private val LARGE_AVATAR = 64.dp

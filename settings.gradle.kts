@@ -34,3 +34,5 @@ include(
 include(":data:models", ":data:local", ":data:remote", ":data:repository")
 
 include(":domain:usecases")
+
+include(":feature:onboarding", ":feature:profile")

@@ -1,23 +1,9 @@
 package es.sebas1705.owlsplit.data.repository.account
 
+import es.sebas1705.owlsplit.data.models.AccountResult
 import es.sebas1705.owlsplit.data.models.Session
 import es.sebas1705.owlsplit.data.models.UserProfile
 import kotlinx.coroutines.flow.Flow
-
-sealed interface AccountResult {
-    data object Done : AccountResult
-
-    /** The credential already belongs to another account (linking). */
-    data object CredentialInUse : AccountResult
-
-    /** The provider asks for a fresh sign-in before a sensitive operation (deleting the account). */
-    data object RecentLoginRequired : AccountResult
-
-    /** No connection, or the server could not be reached. */
-    data object Offline : AccountResult
-
-    data class Failed(val reason: String) : AccountResult
-}
 
 /** Firebase Auth as the app needs it. Implemented in `data:remote`. */
 interface AccountService {
@@ -47,4 +33,7 @@ interface ProfileRemote {
     suspend fun save(session: Session, profile: UserProfile): AccountResult
 
     suspend fun delete(uid: String): AccountResult
+
+    /** The profile stored for [uid] (signing in on a new device); null if none or unreachable. */
+    suspend fun load(uid: String): UserProfile?
 }

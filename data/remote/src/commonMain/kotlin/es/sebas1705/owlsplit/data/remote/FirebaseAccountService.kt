@@ -7,7 +7,7 @@ import dev.gitlive.firebase.auth.FirebaseAuthUserCollisionException
 import dev.gitlive.firebase.auth.FirebaseUser
 import dev.gitlive.firebase.auth.GoogleAuthProvider
 import es.sebas1705.owlsplit.data.models.Session
-import es.sebas1705.owlsplit.data.repository.account.AccountResult
+import es.sebas1705.owlsplit.data.models.AccountResult
 import es.sebas1705.owlsplit.data.repository.account.AccountService
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow

@@ -10,8 +10,10 @@ import kotlinx.coroutines.launch
 
 abstract class MVIBaseViewModel<S : MVIBaseState, I : MVIBaseIntent> : ViewModel() {
 
-    private val _uiState = MutableStateFlow(initState())
-    val uiState: StateFlow<S> = _uiState.asStateFlow()
+    // Lazy: initState() may read constructor properties of the subclass, not yet set while this
+    // base constructor runs.
+    private val _uiState by lazy { MutableStateFlow(initState()) }
+    val uiState: StateFlow<S> by lazy { _uiState.asStateFlow() }
 
     protected val currentState: S get() = _uiState.value
 

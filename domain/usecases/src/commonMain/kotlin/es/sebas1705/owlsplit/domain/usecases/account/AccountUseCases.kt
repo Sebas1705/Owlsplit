@@ -2,7 +2,7 @@ package es.sebas1705.owlsplit.domain.usecases.account
 
 import es.sebas1705.owlsplit.data.models.Session
 import es.sebas1705.owlsplit.data.repository.GroupRepository
-import es.sebas1705.owlsplit.data.repository.account.AccountResult
+import es.sebas1705.owlsplit.data.models.AccountResult
 import es.sebas1705.owlsplit.data.repository.account.AccountService
 import es.sebas1705.owlsplit.data.repository.account.ProfileRemote
 import es.sebas1705.owlsplit.data.repository.sync.SyncControl

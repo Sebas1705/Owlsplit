@@ -7,7 +7,7 @@ import es.sebas1705.owlsplit.data.models.SyncState
 import es.sebas1705.owlsplit.data.models.UserProfile
 import es.sebas1705.owlsplit.data.repository.GroupInput
 import es.sebas1705.owlsplit.data.repository.GroupRepository
-import es.sebas1705.owlsplit.data.repository.account.AccountResult
+import es.sebas1705.owlsplit.data.models.AccountResult
 import es.sebas1705.owlsplit.data.repository.account.AccountService
 import es.sebas1705.owlsplit.data.repository.account.ProfileRemote
 import es.sebas1705.owlsplit.data.repository.sync.SyncControl
@@ -61,6 +61,7 @@ class AccountUseCasesTest {
     private inner class Profiles : ProfileRemote {
         override suspend fun save(session: Session, profile: UserProfile) = AccountResult.Done
         override suspend fun delete(uid: String) = AccountResult.Done.also { log += "deleteProfile $uid" }
+        override suspend fun load(uid: String): UserProfile? = null
     }
 
     private val reset = DeviceReset { log += "reset" }

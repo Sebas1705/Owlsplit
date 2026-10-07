@@ -6,7 +6,7 @@ import dev.gitlive.firebase.firestore.FirebaseFirestoreException
 import dev.gitlive.firebase.firestore.Timestamp
 import es.sebas1705.owlsplit.data.models.Session
 import es.sebas1705.owlsplit.data.models.UserProfile
-import es.sebas1705.owlsplit.data.repository.account.AccountResult
+import es.sebas1705.owlsplit.data.models.AccountResult
 import es.sebas1705.owlsplit.data.repository.account.ProfileRemote
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
@@ -37,6 +37,18 @@ class FirestoreProfileRemote(
         firestore.collection(USERS).document(uid).delete()
     }
 
+    @Suppress("SwallowedException") // Unreachable or denied: there is simply no profile to restore.
+    override suspend fun load(uid: String): UserProfile? = try {
+        withTimeoutOrNull(timeout) {
+            val snapshot = firestore.collection(USERS).document(uid).get()
+            if (!snapshot.exists) return@withTimeoutOrNull null
+            val dto = snapshot.data(UserReadDto.serializer())
+            UserProfile(dto.displayName, dto.avatar, dto.preferredCurrency)
+        }
+    } catch (e: FirebaseFirestoreException) {
+        null
+    }
+
     /** Offline a write never completes (the SDK queues it): report it instead of waiting. */
     private suspend fun call(block: suspend () -> Unit): AccountResult = try {
         withTimeoutOrNull(timeout) { block() }?.let { AccountResult.Done } ?: AccountResult.Offline
@@ -48,3 +60,6 @@ class FirestoreProfileRemote(
         const val USERS = "users"
     }
 }
+
+@Serializable
+internal data class UserReadDto(val displayName: String, val avatar: String = "", val preferredCurrency: String = "EUR")

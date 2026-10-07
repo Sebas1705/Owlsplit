@@ -5,7 +5,7 @@ kotlin {
         commonMain.dependencies {
             api(project(":core:money"))
             implementation(project(":core:common"))
-            implementation(project(":data:models"))
+            api(project(":data:models"))
             implementation(project(":data:repository"))
             implementation(libs.koin.core)
             implementation(libs.kotlinx.coroutines.core)
