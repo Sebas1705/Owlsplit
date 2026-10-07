@@ -1,12 +1,183 @@
 rules_version = '2';
+
+// Owlsplit — see docs/FIREBASE.md. Documents are never deleted by clients (soft delete via
+// `deleted`), except invites when a group regenerates its code. Every write carries
+// version = previous + 1, updatedAt = server time and updatedBy = the caller.
 service cloud.firestore {
   match /databases/{database}/documents {
-    // P2 smoke test only: each user may read and write its own document.
-    match /smoke/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    function signedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+    function data() { return request.resource.data; }
+    function changedKeys() { return request.resource.data.diff(resource.data).affectedKeys(); }
+
+    function stamped() {
+      return data().updatedAt == request.time && data().updatedBy == uid();
     }
-    match /{document=**} {
-      allow read, write: if false;
+    function created() { return data().version == 1 && stamped() && data().deleted == false; }
+    function nextVersion() { return data().version == resource.data.version + 1 && stamped(); }
+
+    function group(groupId) { return get(/databases/$(database)/documents/groups/$(groupId)); }
+    function isMemberOf(groupId) { return signedIn() && uid() in group(groupId).data.memberUids; }
+
+    function isText(v, min, max) { return v is string && v.size() >= min && v.size() <= max; }
+    function isOptText(v, max) { return v == null || (v is string && v.size() <= max); }
+    function isDate(v) { return v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'); }
+    function isOptDate(v) { return v == null || isDate(v); }
+    function isCurrency(v) { return v is string && v.matches('^[A-Z]{3}$'); }
+    function isAmount(v) { return v is int && v > 0 && v <= 1000000000000; }
+    function isRate(v) { return v is int && v > 0 && v <= 900000000000000; }
+    function isMemberMap(m) { return m is map && m.size() > 0 && m.size() <= 50; }
+    function isMeta(d) { return d.version is int && d.updatedBy is string && d.deleted is bool; }
+
+    // ── Users ────────────────────────────────────────────────────────────────
+    match /users/{userId} {
+      allow read, write: if signedIn() && uid() == userId;
+    }
+
+    // ── Groups ───────────────────────────────────────────────────────────────
+    match /groups/{groupId} {
+      function validGroup() {
+        return data().keys().hasOnly(['name', 'icon', 'accent', 'baseCurrency', 'startDate', 'endDate',
+            'inviteCode', 'memberUids', 'archivedBy', 'createdBy', 'createdAt', 'lastJoinCode',
+            'version', 'updatedAt', 'updatedBy', 'deleted'])
+          && isText(data().name, 1, 60) && isText(data().icon, 1, 40) && isText(data().accent, 1, 20)
+          && isCurrency(data().baseCurrency) && isOptDate(data().startDate) && isOptDate(data().endDate)
+          && data().inviteCode is string && data().inviteCode.size() == 8
+          && data().memberUids is list && data().memberUids.size() >= 1 && data().memberUids.size() <= 50
+          && data().archivedBy is list && isMeta(data());
+      }
+      // Members may only add or remove their own uid in archivedBy.
+      function archiveIsOwn() {
+        let before = resource.data.archivedBy.toSet();
+        let after = data().archivedBy.toSet();
+        return after.difference(before).hasOnly([uid()]) && before.difference(after).hasOnly([uid()]);
+      }
+      function editAsMember() {
+        return uid() in resource.data.memberUids && validGroup() && nextVersion()
+          && !changedKeys().hasAny(['createdBy', 'createdAt', 'lastJoinCode'])
+          && data().memberUids == resource.data.memberUids
+          && archiveIsOwn();
+      }
+      function leave() {
+        return uid() in resource.data.memberUids && nextVersion()
+          && changedKeys().hasOnly(['memberUids', 'version', 'updatedAt', 'updatedBy'])
+          && data().memberUids.toSet() == resource.data.memberUids.toSet().difference([uid()].toSet());
+      }
+      // Written with arrayUnion/increment/serverTimestamp: the joiner cannot read the group.
+      function join() {
+        return !(uid() in resource.data.memberUids) && nextVersion()
+          && changedKeys().hasOnly(['memberUids', 'lastJoinCode', 'version', 'updatedAt', 'updatedBy'])
+          && data().lastJoinCode == resource.data.inviteCode
+          && data().memberUids == resource.data.memberUids.concat([uid()])
+          && data().memberUids.size() <= 50;
+      }
+
+      allow read: if signedIn() && uid() in resource.data.memberUids;
+      allow create: if signedIn() && validGroup() && created()
+        && data().memberUids == [uid()] && data().createdBy == uid() && data().archivedBy == [];
+      allow update: if signedIn() && (editAsMember() || leave() || join());
+      allow delete: if false;
+
+      // ── Members ────────────────────────────────────────────────────────────
+      match /members/{memberId} {
+        function validMember() {
+          return data().keys().hasOnly(['name', 'avatar', 'defaultWeight', 'userUid', 'active', 'sortKey',
+              'version', 'updatedAt', 'updatedBy', 'deleted'])
+            && isText(data().name, 1, 40) && isOptText(data().avatar, 300)
+            && data().defaultWeight is int && data().defaultWeight >= 1 && data().defaultWeight <= 100
+            && (data().userUid == null || data().userUid is string)
+            && data().active is bool && data().sortKey is int && isMeta(data());
+        }
+        // A member can be claimed (null → me) or released (me → null), never taken from someone else.
+        function claimIsOwn() {
+          return !changedKeys().hasAny(['userUid'])
+            || (resource.data.userUid == null && data().userUid == uid())
+            || (resource.data.userUid == uid() && data().userUid == null);
+        }
+
+        allow read: if isMemberOf(groupId);
+        allow create: if isMemberOf(groupId) && validMember() && created()
+          && (data().userUid == null || data().userUid == uid());
+        allow update: if isMemberOf(groupId) && validMember() && nextVersion() && claimIsOwn();
+        allow delete: if false;
+      }
+
+      // ── Expenses ───────────────────────────────────────────────────────────
+      match /expenses/{expenseId} {
+        // Sums (payers = amount, exact shares = amount) cannot be checked without loops:
+        // the client guarantees them and ObserveGroupBalances skips inconsistent entries.
+        function validExpense() {
+          return data().keys().hasOnly(['title', 'category', 'note', 'date', 'currency', 'amountMinor',
+              'fxRateScaled', 'payers', 'splitType', 'splitValues', 'receiptUrl', 'recurrenceId',
+              'createdBy', 'createdAt', 'version', 'updatedAt', 'updatedBy', 'deleted'])
+            && isText(data().title, 1, 80)
+            && data().category in ['FOOD', 'GROCERIES', 'TRANSPORT', 'ACCOMMODATION', 'LEISURE', 'SHOPPING',
+              'HOME', 'UTILITIES', 'HEALTH', 'GIFTS', 'OTHER']
+            && isOptText(data().note, 500) && isDate(data().date) && isCurrency(data().currency)
+            && isAmount(data().amountMinor) && isRate(data().fxRateScaled)
+            && isMemberMap(data().payers) && isMemberMap(data().splitValues)
+            && data().splitType in ['EQUAL', 'WEIGHTS', 'EXACT', 'PERCENT']
+            && isOptText(data().receiptUrl, 500) && isOptText(data().recurrenceId, 100) && isMeta(data());
+        }
+
+        allow read: if isMemberOf(groupId);
+        allow create: if isMemberOf(groupId) && validExpense() && created() && data().createdBy == uid();
+        allow update: if isMemberOf(groupId) && validExpense() && nextVersion()
+          && !changedKeys().hasAny(['createdBy', 'createdAt']);
+        allow delete: if false;
+      }
+
+      // ── Transfers ──────────────────────────────────────────────────────────
+      match /transfers/{transferId} {
+        function validTransfer() {
+          return data().keys().hasOnly(['fromMemberId', 'toMemberId', 'amountMinor', 'currency', 'fxRateScaled',
+              'date', 'note', 'createdBy', 'createdAt', 'version', 'updatedAt', 'updatedBy', 'deleted'])
+            && data().fromMemberId is string && data().toMemberId is string
+            && data().fromMemberId != data().toMemberId
+            && isAmount(data().amountMinor) && isCurrency(data().currency) && isRate(data().fxRateScaled)
+            && isDate(data().date) && isOptText(data().note, 500) && isMeta(data());
+        }
+
+        allow read: if isMemberOf(groupId);
+        allow create: if isMemberOf(groupId) && validTransfer() && created() && data().createdBy == uid();
+        allow update: if isMemberOf(groupId) && validTransfer() && nextVersion()
+          && !changedKeys().hasAny(['createdBy', 'createdAt', 'fromMemberId', 'toMemberId', 'amountMinor']);
+        allow delete: if false;
+      }
+
+      // ── History (create-only) ──────────────────────────────────────────────
+      match /changelog/{entryId} {
+        allow read: if isMemberOf(groupId);
+        allow create: if isMemberOf(groupId)
+          && data().keys().hasOnly(['entityType', 'entityId', 'action', 'authorUid', 'diff', 'createdAt'])
+          && data().entityType in ['GROUP', 'MEMBER', 'EXPENSE', 'TRANSFER']
+          && data().action in ['CREATED', 'UPDATED', 'DELETED', 'RESTORED', 'JOINED', 'CONFLICT']
+          && data().authorUid == uid() && data().entityId is string
+          && data().diff is list && data().diff.size() <= 20;
+        allow update, delete: if false;
+      }
+    }
+
+    // ── Invites: doc id = invite code ────────────────────────────────────────
+    match /invites/{code} {
+      function validInvite() {
+        return data().keys().hasOnly(['groupId', 'groupName', 'groupIcon', 'memberCount', 'createdBy', 'createdAt'])
+          && data().groupId is string && isText(data().groupName, 1, 60) && isText(data().groupIcon, 1, 40)
+          && data().memberCount is int && data().createdBy == uid();
+      }
+
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if validInvite() && isMemberOf(data().groupId) && group(data().groupId).data.inviteCode == code;
+      allow update: if validInvite() && isMemberOf(resource.data.groupId) && data().groupId == resource.data.groupId;
+      allow delete: if isMemberOf(resource.data.groupId);
+    }
+
+    // ── P2 smoke test (kept to re-run it when GitLive is upgraded) ───────────
+    match /smoke/{userId} {
+      allow read, write: if signedIn() && uid() == userId;
     }
   }
 }
