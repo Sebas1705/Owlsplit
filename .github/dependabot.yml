@@ -24,6 +24,9 @@ updates:
         versions: [">= 3.6.0"]
       - dependency-name: "io.ktor*"
         versions: [">= 3.6.0"]
+      # AGP 8.x uses a Gradle internal API removed in Gradle 9.6.
+      - dependency-name: "gradle-wrapper"
+        versions: [">= 9.6.0"]
 
   - package-ecosystem: github-actions
     directory: "/"
