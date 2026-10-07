@@ -39,6 +39,3 @@ UPDATE outbox SET attempts = attempts + 1, next_attempt_at = ?, last_error = ? W
 
 advanceBase:
 UPDATE outbox SET base_version = ? WHERE id = ?;
-
-nextAttemptAt:
-SELECT coalesce(min(next_attempt_at), -1) FROM outbox;

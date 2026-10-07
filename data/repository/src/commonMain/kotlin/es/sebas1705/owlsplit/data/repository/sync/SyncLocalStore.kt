@@ -7,6 +7,7 @@ import es.sebas1705.owlsplit.data.local.db.Outbox
 import es.sebas1705.owlsplit.data.models.ChangeAction
 import es.sebas1705.owlsplit.data.models.EntityType
 import es.sebas1705.owlsplit.data.models.OutboxType
+import es.sebas1705.owlsplit.data.models.SyncMeta
 import es.sebas1705.owlsplit.data.models.SyncState
 import es.sebas1705.owlsplit.data.repository.Writer
 import es.sebas1705.owlsplit.data.repository.toModel
@@ -20,8 +21,12 @@ internal class SyncLocalStore(private val db: AppDatabase, private val writer: W
     /** The whole outbox in upload order. */
     fun all(): List<Outbox> = db.outboxQueries.selectAll().executeAsList()
 
-    /** -1 when the outbox is empty. */
-    fun nextAttemptAt(): Long = db.outboxQueries.nextAttemptAt().executeAsOne()
+    /**
+     * When the next upload pass can make progress: the earliest retry time among the first entry
+     * of each group (later entries wait behind their group head). -1 when the outbox is empty.
+     */
+    fun nextWakeAt(): Long =
+        all().groupBy { it.group_id }.values.minOfOrNull { it.first().next_attempt_at } ?: -1L
 
     fun scheduleRetry(entry: Outbox, at: Long, error: String) = db.outboxQueries.scheduleRetry(at, error, entry.id)
 
@@ -89,13 +94,16 @@ internal class SyncLocalStore(private val db: AppDatabase, private val writer: W
     }
 
     private fun write(remote: RemoteDoc) {
+        // What the server holds is synced by definition, whatever the adapter put in serverVersion.
+        fun SyncMeta.synced() = copy(serverVersion = version, syncState = SyncState.SYNCED)
         when (remote) {
-            is RemoteDoc.GroupDoc -> db.groupEntityQueries.upsert(remote.group.toRow())
-            is RemoteDoc.MemberDoc -> db.memberEntityQueries.upsert(remote.member.toRow())
-            is RemoteDoc.TransferDoc -> db.transferEntityQueries.upsert(remote.transfer.toRow())
+            is RemoteDoc.GroupDoc -> db.groupEntityQueries.upsert(remote.group.copy(meta = remote.group.meta.synced()).toRow())
+            is RemoteDoc.MemberDoc -> db.memberEntityQueries.upsert(remote.member.copy(meta = remote.member.meta.synced()).toRow())
+            is RemoteDoc.TransferDoc ->
+                db.transferEntityQueries.upsert(remote.transfer.copy(meta = remote.transfer.meta.synced()).toRow())
             is RemoteDoc.ExpenseDoc -> {
                 val q = db.expenseEntityQueries
-                val e = remote.expense
+                val e = remote.expense.copy(meta = remote.expense.meta.synced())
                 q.upsert(e.toRow())
                 q.deletePayers(e.id)
                 e.payers.forEach { (member, amount) -> q.insertPayer(Expense_payer(e.id, member, amount)) }
