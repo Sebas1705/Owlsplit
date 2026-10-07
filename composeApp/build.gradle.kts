@@ -90,6 +90,7 @@ kotlin {
             implementation(project(":core:datastore"))
             implementation(project(":core:logging"))
             implementation(project(":data:local"))
+            implementation(project(":data:remote"))
             implementation(project(":domain:usecases"))
         }
         androidMain.dependencies {
