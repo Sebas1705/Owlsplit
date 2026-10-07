@@ -4,7 +4,7 @@ App para Android e iOS que lleva los gastos compartidos de grupos (viajes, pisos
 
 Inspirada en Settle Up, con un diseño cuidado (estilo fintech limpio) y más funciones por delante: liquidar con un toque, gastos recurrentes, presupuestos y estadísticas, y escaneo de tickets.
 
-> **Estado:** fase de diseño. El núcleo (MVP) está definido y documentado; todavía no hay código.
+> **Estado:** en construcción (P1 completado). Ver [planes](docs/plans/README.md).
 
 ## Documentación
 
@@ -22,6 +22,20 @@ Inspirada en Settle Up, con un diseño cuidado (estilo fintech limpio) y más fu
 ## Stack previsto
 
 Kotlin Multiplatform · Compose Multiplatform · SQLDelight · Koin · Ktor · Firebase (Auth, Firestore) vía GitLive, sobre la plantilla Templetry `kmp/modular-features`.
+
+## Desarrollo
+
+Requisitos: JDK 21 y Android SDK (platform 36). iOS solo compila en macOS.
+
+```bash
+export JAVA_HOME="/c/Users/sebss/.jdks/jdk-21.0.12.1+1"
+export ANDROID_HOME="/c/Users/sebss/Android/sdk"
+./gradlew :composeApp:assembleDebug                     # APK de desarrollo
+./gradlew testDebugUnitTest detekt                      # tests y análisis estático
+./gradlew :composeApp:assembleDebug -PappEnv=staging    # otro entorno
+```
+
+Estructura de módulos en [MODULE_MAP.md](MODULE_MAP.md); planes de implementación en [docs/plans](docs/plans/README.md).
 
 ## Licencia
 

@@ -1,0 +1,12 @@
+schema_version: 1
+template:
+  name: kmp-modular-features
+  source: "github.com/Templetry/kmp@main/modular-features"
+  commit: d675d00a4a3ba6da71c6f95d28e5a5df28855298
+variables:
+  base_package: es.sebas1705.owlsplit
+  project_name: Owlsplit
+features:
+  desktop: false
+  environments: true
+  ios: true

@@ -1,0 +1,30 @@
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: "/"
+    schedule: { interval: weekly, day: monday }
+    groups:
+      kotlin: { patterns: ["org.jetbrains.kotlin*"] }
+      compose: { patterns: ["org.jetbrains.compose*", "org.jetbrains.androidx*"] }
+      ktor: { patterns: ["io.ktor*"] }
+      koin: { patterns: ["io.insert-koin*"] }
+      sqldelight: { patterns: ["app.cash.sqldelight*"] }
+    # Held back until the move to AGP 9: these versions need compileSdk 37,
+    # which AGP 8.13 does not support (see docs/plans/README.md).
+    ignore:
+      - dependency-name: "com.android.application"
+        versions: [">= 9.0.0"]
+      - dependency-name: "com.android.library"
+        versions: [">= 9.0.0"]
+      - dependency-name: "org.jetbrains.compose*"
+        versions: [">= 1.12.0"]
+      - dependency-name: "org.jetbrains.androidx.lifecycle*"
+        versions: [">= 2.11.0"]
+      - dependency-name: "io.coil-kt.coil3*"
+        versions: [">= 3.6.0"]
+      - dependency-name: "io.ktor*"
+        versions: [">= 3.6.0"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule: { interval: weekly, day: monday }

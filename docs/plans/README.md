@@ -8,7 +8,7 @@ Los planes se escriben en detalle (código completo, comandos exactos) **justo a
 
 | # | Plan | Entrega verificable | Depende de | Estado |
 |---|---|---|---|---|
-| P1 | [Base del proyecto](2026-10-07-p01-foundation.md) | Proyecto KMP generado desde la plantilla, versiones actuales, ejemplo de la plantilla eliminado, app que arranca en Android, CI verde | — | Escrito |
+| P1 | [Base del proyecto](2026-10-07-p01-foundation.md) | Proyecto KMP generado desde la plantilla, versiones actuales, ejemplo de la plantilla eliminado, app que arranca en Android, CI verde | — | Hecho |
 | P2 | [Firebase dev + prueba de humo GitLive](2026-10-07-p02-firebase-smoke.md) | Proyecto `owlsplit-dev`, Doppler, configuración por entorno y test instrumentado que hace auth anónima + escritura + listener contra Firestore real | P1 | Escrito |
 | P3 | [Dinero y cálculo de saldos](2026-10-07-p03-money-ledger.md) | `core:money` y `domain` (`ledger`): divisas, reparto, conversión, saldos y simplificación, con tests de tablas y de propiedades | P1 | Escrito |
 | P4 | Base de datos local y repositorios | Esquema SQLDelight completo (entidades, outbox, cursores, conflictos), DAOs, repositorios con Flows, migraciones verificadas | P1, P3 | Pendiente |
@@ -41,18 +41,20 @@ export ANDROID_HOME="/c/Users/sebss/Android/sdk"
 
 El JDK 26 del sistema no sirve para Gradle/Kotlin. iOS no compila en Windows: se compila en CI (macOS).
 
-## Versiones fijadas (2026-10-07, últimas estables)
+## Versiones fijadas (2026-10-07, validadas en P1)
 
 | Pieza | Versión | Nota |
 |---|---|---|
-| Gradle | 9.1.0 | La que ya funciona en YouKnow en este PC |
+| Gradle | 9.5.1 | 9.1 compila build-logic con Kotlin 2.2, que no lee metadatos de Kotlin 2.4; AGP 8 se rompe con Gradle ≥ 9.6 |
 | Kotlin | 2.4.20 | |
-| Compose Multiplatform | 1.12.1 (material3 1.9.0) | |
-| Android Gradle Plugin | 8.13.2 | AGP 9 exige el plugin `com.android.kotlin.multiplatform.library`; se migra en un plan aparte cuando la plantilla lo haga |
+| Compose Multiplatform | 1.11.1 (material3 1.9.0) | 1.12 exige compileSdk 37 |
+| Android Gradle Plugin | 8.13.2 | Admite como máximo compileSdk 36. AGP 9 exige el plugin `com.android.kotlin.multiplatform.library`; se migra en un plan aparte cuando la plantilla lo haga |
 | compileSdk / targetSdk / minSdk | 36 / 36 / 24 | |
 | SQLDelight | 2.4.1 | |
 | Koin | 4.2.2 | |
-| Ktor | 3.6.0 | |
+| Ktor | 3.5.2 | 3.6 arrastra OkHttp 5.5, que exige compileSdk 37 |
+| Lifecycle (JetBrains) | 2.10.0 | 2.11 exige compileSdk 37 |
+| Coil | 3.5.0 | 3.6 exige compileSdk 37 |
 | GitLive Firebase | 2.7.0 | Se valida en P2 |
 | kotlinx-coroutines / serialization / datetime | 1.11.0 / 1.11.0 / 0.8.0 | |
 | Detekt | 1.23.8 | Con su Kotlin fijado a 2.0.21 (incompatibilidad conocida con Kotlin ≥ 2.1) |
