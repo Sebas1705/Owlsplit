@@ -34,6 +34,7 @@ class TestEnv(val scope: TestScope = TestScope()) {
     val groups = GroupRepositoryImpl(db, ctx, dispatcher)
     val members = MemberRepositoryImpl(db, ctx, dispatcher)
     val changeLog = ChangeLogRepositoryImpl(db, dispatcher)
+    val expenses = ExpenseRepositoryImpl(db, ctx, dispatcher)
 
     fun outbox() = db.outboxQueries.selectAll().executeAsList()
 }
