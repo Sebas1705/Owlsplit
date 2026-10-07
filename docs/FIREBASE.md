@@ -10,7 +10,15 @@ Decisión en [ADR 0002](adr/0002-firebase-gitlive.md). SDK KMP: `dev.gitlive:fir
 | staging | `owlsplit-stg` | `owlsplit/stg` | Pruebas internas (App Distribution) |
 | production | `owlsplit-prd` | `owlsplit/prd` | Tiendas |
 
-Los ids definitivos se fijan al crearlos (si los nombres están cogidos, se añade sufijo) y se anotan aquí. Una app Android y una iOS por proyecto. Plan **Spark** (gratuito) durante el MVP: no se usan Cloud Functions ni Storage (Storage exige Blaze para buckets nuevos; llegará con el escaneo de tickets).
+Los ids definitivos se fijan al crearlos (si los nombres están cogidos, se añade sufijo) y se anotan aquí. Una app Android y una iOS por proyecto.
+
+| Proyecto | Estado | Firestore | App Android | App iOS |
+|---|---|---|---|---|
+| `owlsplit-dev` | Creado 2026-10-07 (P2); Auth anónimo activo | `(default)`, `eur3` | `1:217818479934:android:046eb4b90d7880ae2f406f` (`es.sebas1705.owlsplit.dev`) | `1:217818479934:ios:7d3e0b78a8f438342f406f` (`es.sebas1705.owlsplit.dev`) |
+| `owlsplit-stg` | Pendiente (P11) | — | — | — |
+| `owlsplit-prd` | Pendiente (P11) | — | — | — |
+
+Notas de creación: un proyecto nuevo trae desactivada la API de Firestore (se activa antes de crear la base de datos), y Authentication solo se inicializa desde la consola (*Comenzar*); por API exige Identity Platform con facturación. Plan **Spark** (gratuito) durante el MVP: no se usan Cloud Functions ni Storage (Storage exige Blaze para buckets nuevos; llegará con el escaneo de tickets).
 
 Servicios del MVP: **Authentication** (anónimo, Google, Apple), **Firestore**, **Hosting** (página de invitación + `assetlinks.json` + `apple-app-site-association`), **Crashlytics** y **App Distribution**.
 

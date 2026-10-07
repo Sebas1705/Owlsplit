@@ -16,3 +16,6 @@ Hace falta autenticación, almacenamiento compartido en tiempo real entre miembr
 ## Alternativas descartadas
 - **Supabase**: mejor modelo relacional, pero el offline habría que construirlo igual y no aporta experiencia previa.
 - **Backend propio** (Ktor o Workers + D1): máximo control, demasiado trabajo antes de tener algo usable.
+
+## Validación (P2, 2026-10-07)
+Prueba de humo superada con GitLive 2.7.0 (`data:remote`, `scripts/run-firebase-smoke.sh`): auth anónima, escritura y listener en tiempo real en Android (emulador API 36) contra `owlsplit-dev`; el framework iOS con GitLive compila en CI. Queda pendiente ejecutarlo en un dispositivo iOS, que necesita un Mac y el proyecto Xcode que la plantilla no genera (checklist de P11).
