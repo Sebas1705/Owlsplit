@@ -22,6 +22,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -75,9 +76,15 @@ fun OwlsplitTextField(
 
 /** Secondary action next to a primary pill: plain accent text. */
 @Composable
-fun TextActionButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun TextActionButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    color: Color = Owlsplit.colors.accentText,
+) {
     TextButton(onClick = onClick, enabled = enabled, modifier = modifier.heightIn(min = Sizes.touchTarget)) {
-        Text(text, style = Owlsplit.type.bodyStrong, color = Owlsplit.colors.accentText)
+        Text(text, style = Owlsplit.type.bodyStrong, color = color)
     }
 }
 

@@ -13,13 +13,19 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 /** The user's profile as stored on this device. */
 data class StoredProfile(val name: String, val avatar: String, val currency: String)
 
-class AppPreferences(private val dataStore: DataStore<Preferences>) {
+/** Light/dark preference, separate so screens can be tested without a DataStore. */
+interface ThemeSettings {
+    val themeMode: Flow<ThemeMode>
+    suspend fun setThemeMode(mode: ThemeMode)
+}
+
+class AppPreferences(private val dataStore: DataStore<Preferences>) : ThemeSettings {
 
     // ── Theme ─────────────────────────────────────────────────────────────────
-    val themeMode: Flow<ThemeMode> = dataStore.data.map { prefs ->
+    override val themeMode: Flow<ThemeMode> = dataStore.data.map { prefs ->
         prefs[Keys.THEME]?.let { name -> ThemeMode.entries.firstOrNull { it.name == name } } ?: ThemeMode.SYSTEM
     }
-    suspend fun setThemeMode(mode: ThemeMode) { dataStore.edit { it[Keys.THEME] = mode.name } }
+    override suspend fun setThemeMode(mode: ThemeMode) { dataStore.edit { it[Keys.THEME] = mode.name } }
 
     // ── Locale (P11) ──────────────────────────────────────────────────────────
     val language: Flow<String?> = dataStore.data.map { it[Keys.LANGUAGE] }

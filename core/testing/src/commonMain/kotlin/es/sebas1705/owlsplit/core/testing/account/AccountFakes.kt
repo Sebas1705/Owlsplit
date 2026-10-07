@@ -8,7 +8,13 @@ import es.sebas1705.owlsplit.domain.usecases.account.GoogleCredentials
 import es.sebas1705.owlsplit.data.models.GoogleTokenResult
 import es.sebas1705.owlsplit.data.repository.account.ProfileRepository
 import es.sebas1705.owlsplit.data.repository.sync.SyncControl
+import es.sebas1705.owlsplit.data.models.Group
+import es.sebas1705.owlsplit.data.repository.GroupInput
+import es.sebas1705.owlsplit.data.repository.GroupRepository
+import es.sebas1705.owlsplit.data.repository.account.ProfileRemote
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 
 /** Firebase Auth in memory. Results can be scripted per operation. */
 class FakeAccounts(initial: Session? = ANONYMOUS) : AccountService {
@@ -84,4 +90,28 @@ class FakeSync(var online: Boolean = true) : SyncControl {
     override suspend fun flush() = online
 
     override fun isAccessLost(groupId: String) = false
+}
+
+/** `users/{uid}` in memory. */
+class FakeProfileRemote : ProfileRemote {
+    val deleted = mutableListOf<String>()
+
+    override suspend fun save(session: Session, profile: UserProfile) = AccountResult.Done
+
+    override suspend fun delete(uid: String): AccountResult {
+        deleted += uid
+        return AccountResult.Done
+    }
+
+    override suspend fun load(uid: String): UserProfile? = null
+}
+
+/** A user without groups (account flows that only need to list them). */
+class NoGroups : GroupRepository {
+    override fun observeGroups(): Flow<List<Group>> = flowOf(emptyList())
+    override fun observeGroup(id: String): Flow<Group?> = flowOf(null)
+    override suspend fun create(input: GroupInput, creatorName: String): String = error("unused")
+    override suspend fun update(id: String, input: GroupInput) = error("unused")
+    override suspend fun setArchived(id: String, archived: Boolean) = error("unused")
+    override suspend fun leave(id: String) = error("unused")
 }
