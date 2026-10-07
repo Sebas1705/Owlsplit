@@ -40,3 +40,6 @@ compose.resources {
     packageOfResClass = "es.sebas1705.owlsplit.core.ui.resources"
     publicResClass = false
 }
+
+// Compose UI tests need ui-test-manifest, which only the debug variant gets: host tests run on debug.
+tasks.matching { it.name == "testReleaseUnitTest" }.configureEach { enabled = false }

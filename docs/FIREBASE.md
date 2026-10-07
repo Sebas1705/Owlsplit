@@ -26,7 +26,7 @@ Servicios del MVP: **Authentication** (anónimo, Google, Apple), **Firestore**, 
 
 ```
 users/{uid}
-  displayName, avatar, preferredCurrency, linkedProviders[], createdAt
+  displayName, avatar ("accent:<COLOR>"), preferredCurrency, linkedProviders[], updatedAt
 
 groups/{groupId}
   name, icon, accent, baseCurrency, startDate?, endDate?,
@@ -92,6 +92,16 @@ cd firebase && npx firebase-tools emulators:exec --only firestore --project demo
 
   El uid anónimo se queda en `memberUids` de esos grupos sin uso (no se muestra; se limpiará cuando haya Cloud Functions).
 - Cerrar sesión solo disponible con cuenta vinculada (en anónima significaría perder el acceso).
+
+### Estado (P8)
+
+- Implementado en `FirebaseAccountService` y los casos de uso de `domain:usecases/account`. La app inicia sesión anónima sola (`SyncStarter`) y el onboarding no termina sin sesión.
+- **Google en Android**: Credential Manager (`AndroidGoogleCredentials`) con el *Web client id* `default_web_client_id`, que el plugin de Google Services genera desde `google-services.json` **solo cuando Google está activado** en Authentication. Sin él, la app oculta "Ya tengo cuenta" y muestra "Vincular estará disponible pronto".
+  - Huella SHA‑1 de la clave de depuración ya registrada en la app Android de `owlsplit-dev` (2026-10-07). La de la clave de publicación se añadirá en P11.
+  - Para activarlo: consola de Firebase → Authentication → Sign-in method → Google → Activar (correo de soporte); después volver a descargar `google-services.json` a Doppler y ejecutar `scripts/doppler-sync-local.sh`.
+- **"Ya tengo cuenta"** (instalación nueva): `signInWithCredential` y se recupera el perfil de `users/{uid}`.
+- **La credencial ya pertenece a otra cuenta**: por ahora se informa y no se cambia nada; el traspaso de grupos descrito arriba necesita unirse por código (P10).
+- **Apple e iOS**: aplazados a P11 (falta el proyecto Xcode); obligatorio para publicar en App Store si se ofrece Google.
 
 ## Borrado de cuenta
 

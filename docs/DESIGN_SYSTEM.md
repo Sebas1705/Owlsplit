@@ -85,7 +85,11 @@ Búho geométrico: cuadrado redondeado en `accent` con dos anillos blancos por o
 | `AvatarToggle` | Avatar que alterna incluido (`accent`) / excluido (`surfaceVariant`) |
 | `SyncStatusChip` | Sincronizado · N pendientes · Sin conexión · Error |
 | `PrimaryPillButton` | Botón principal ancho en píldora, `accent` |
-| `EmptyState` | Logotipo, titular, una línea y una acción |
+| `EmptyState` | Logotipo, titular, una línea y una acción opcional |
+| `ProfileAvatar` | Iniciales sobre el color elegido (`accent:<COLOR>`); a partir de 64 dp la inicial usa el estilo `title` |
+| `OwlsplitTextField` | Campo de una línea sobre `surface`, etiqueta encima y error debajo |
+| `TextActionButton` | Acción secundaria en texto (`accentText` o el color que se pase, p. ej. `error` en diálogos destructivos) |
+| `AccentPicker` | Fila de los 8 colores de `GroupAccent`, cada uno con nombre para lectores de pantalla (`accentName`) |
 | `Avatar` | Foto o iniciales sobre tono neutro; 24, 30, 36 y 48 dp |
 | `OwlsplitLogo` | El búho geométrico dibujado en Canvas (sin imágenes) |
 | `AmountText` | Importe con los decimales al 60 % y número que rueda al cambiar (`animate = false` lo desactiva) |
