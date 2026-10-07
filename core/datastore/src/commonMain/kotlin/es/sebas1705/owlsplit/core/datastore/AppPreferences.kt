@@ -20,11 +20,11 @@ class AppPreferences(private val dataStore: DataStore<Preferences>) {
 
     // ── Onboarding ────────────────────────────────────────────────────────────
     val onboardingDone: Flow<Boolean> = dataStore.data.map { it[Keys.ONBOARDING_DONE] ?: false }
-    suspend fun setOnboardingDone()    { dataStore.edit { it[Keys.ONBOARDING_DONE] = true } }
+    suspend fun setOnboardingDone() { dataStore.edit { it[Keys.ONBOARDING_DONE] = true } }
 
     private object Keys {
-        val DARK_MODE       = booleanPreferencesKey("dark_mode")
-        val LANGUAGE        = stringPreferencesKey("language")
+        val DARK_MODE = booleanPreferencesKey("dark_mode")
+        val LANGUAGE = stringPreferencesKey("language")
         val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
     }
 }

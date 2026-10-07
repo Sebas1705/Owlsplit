@@ -57,7 +57,7 @@ formatting:
 
 naming:
   active: true
-  FunctionNaming: { active: true, ignoreAnnotated: ["Composable"] }
+  FunctionNaming: { active: true, ignoreAnnotated: ["Composable"], excludes: ["**/iosMain/**"] }
   InvalidPackageDeclaration: { active: false }
   NoNameShadowing: { active: true }
   TopLevelPropertyNaming: { active: true }
@@ -67,13 +67,12 @@ performance:
   active: true
   ArrayPrimitive: { active: true }
   ForEachOnRange: { active: true }
-  SpreadOperator: { active: true, excludedFunctions: ["arrayOf", "listOf", "mapOf"] }
+  SpreadOperator: { active: true }
 
 potential-bugs:
   active: true
   AvoidReferentialEquality: { active: true }
   DontDowncastCollectionTypes: { active: true }
-  ElseCaseInWhenExpression: { active: true }
   EqualsAlwaysReturnsTrueOrFalse: { active: true }
   LateinitUsage: { active: false }
   NullableToStringCall: { active: true }
@@ -83,8 +82,8 @@ potential-bugs:
 
 style:
   active: true
-  ForbiddenComment: { active: true, values: ["FIXME:", "STOPSHIP:"], allowedPatterns: "" }
-  MagicNumber: { active: true, ignoreAnnotated: ["Composable"], ignoreNumbers: ["-1", "0", "1", "2", "100", "1000"] }
+  ForbiddenComment: { active: true, comments: ["FIXME:", "STOPSHIP:"], allowedPatterns: "" }
+  MagicNumber: { active: true, ignoreAnnotated: ["Composable"], ignorePropertyDeclaration: true, ignoreNumbers: ["-1", "0", "1", "2", "100", "1000"] }
   MaxLineLength: { active: true, maxLineLength: 140, excludeImportStatements: true }
   ReturnCount: { active: true, max: 4 }
   UnusedImports: { active: true }

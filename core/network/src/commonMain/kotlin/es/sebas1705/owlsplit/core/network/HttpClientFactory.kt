@@ -16,14 +16,14 @@ fun buildHttpClient(
     tokenProvider: (() -> String?)? = null,
     json: Json = Json {
         ignoreUnknownKeys = true
-        isLenient          = true
-        prettyPrint        = false
-        encodeDefaults     = true
+        isLenient = true
+        prettyPrint = false
+        encodeDefaults = true
     },
 ): HttpClient = HttpClient(httpEngineFactory()) {
     install(ContentNegotiation) { json(json) }
     install(Logging) {
-        level  = LogLevel.BODY
+        level = LogLevel.BODY
         logger = object : Logger {
             override fun log(message: String) = AppLogger.d("Ktor", message)
         }

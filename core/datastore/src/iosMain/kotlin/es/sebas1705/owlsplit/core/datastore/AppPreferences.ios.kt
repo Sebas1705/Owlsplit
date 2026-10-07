@@ -12,7 +12,11 @@ import platform.Foundation.NSUserDomainMask
 @OptIn(ExperimentalForeignApi::class)
 actual fun createDataStore(): DataStore<Preferences> {
     val docDir = NSFileManager.defaultManager.URLForDirectory(
-        NSDocumentDirectory, NSUserDomainMask, null, true, null
+        NSDocumentDirectory,
+        NSUserDomainMask,
+        null,
+        true,
+        null
     )!!.path!!
     return PreferenceDataStoreFactory.createWithPath(
         produceFile = { "$docDir/app_prefs.preferences_pb".toPath() }

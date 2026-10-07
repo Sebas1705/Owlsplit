@@ -11,7 +11,9 @@ actual class SecureStorage {
         val master = MasterKey.Builder(appContext)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build()
         EncryptedSharedPreferences.create(
-            appContext, "secure_prefs", master,
+            appContext,
+            "secure_prefs",
+            master,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
         )
@@ -22,6 +24,6 @@ actual class SecureStorage {
     actual fun putString(key: String, value: String) =
         prefs.edit().putString(key, value).apply()
     actual fun remove(key: String) = prefs.edit().remove(key).apply()
-    actual fun clear()             = prefs.edit().clear().apply()
+    actual fun clear() = prefs.edit().clear().apply()
     actual fun hasKey(key: String) = prefs.contains(key)
 }
