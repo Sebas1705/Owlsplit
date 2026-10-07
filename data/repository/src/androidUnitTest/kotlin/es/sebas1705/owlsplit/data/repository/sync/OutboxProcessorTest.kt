@@ -22,7 +22,8 @@ class OutboxProcessorTest {
         val remote = FakeRemoteStore { env.ctx.clock.now().toEpochMilliseconds() }
         private val writer = Writer(env.db, env.ctx)
         val local = SyncLocalStore(env.db, writer)
-        val processor = OutboxProcessor(local, RemoteApplier(env.db, writer), remote, Random(0))
+        val applier = RemoteApplier(env.db, writer)
+        val processor = OutboxProcessor(local, applier, remote, Random(0))
 
         suspend fun push() = processor.processReady()
         suspend fun group(id: String) = env.groups.observeGroup(id).first()!!
@@ -122,6 +123,26 @@ class OutboxProcessorTest {
         assertEquals(1L, h.env.db.conflictQueries.countAll().executeAsOne())
         assertTrue(h.env.db.conflictQueries.selectByGroup(g).executeAsList().single().local_payload.contains("Mine"))
         assertTrue(h.env.changeLog.observe(g).first().any { it.action == ChangeAction.CONFLICT })
+    }
+
+    @Test
+    fun `a conflict already taken by the listener during the upload is recorded once`() = runTest {
+        val h = Harness(this)
+        val g = h.env.groups.create(trip, "Ana")
+        h.push()
+        val synced = h.remoteGroup(g)
+        val theirs = synced.copy(group = synced.group.copy(name = "Theirs", meta = synced.group.meta.copy(version = 2)))
+        h.env.groups.update(g, trip.copy(name = "Mine"))
+        // Someone else's v2 lands, and our listener applies it, while our v2 is on its way.
+        h.remote.beforePush = {
+            h.remote.beforePush = {}
+            h.remote.serverWrite(theirs)
+            h.applier.apply(theirs)
+        }
+        h.push()
+
+        assertEquals("Theirs", h.group(g).name)
+        assertEquals(1L, h.env.db.conflictQueries.countAll().executeAsOne())
     }
 
     @Test

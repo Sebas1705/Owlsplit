@@ -35,9 +35,11 @@ internal class RemoteApplier(private val db: AppDatabase, private val writer: Wr
         }
     }
 
-    /** The server kept someone else's version: store ours as a conflict and adopt theirs. */
+    /** The server kept someone else's version: store ours (latest edit) as a conflict and adopt theirs. */
     fun resolveConflict(entry: Outbox, remote: RemoteDoc) = db.transaction {
-        recordConflict(entry, remote)
+        // A listener may have taken this conflict already, while the upload was in flight.
+        val current = db.outboxQueries.selectById(entry.id).executeAsOneOrNull() ?: return@transaction
+        recordConflict(current, remote)
         write(remote)
     }
 
