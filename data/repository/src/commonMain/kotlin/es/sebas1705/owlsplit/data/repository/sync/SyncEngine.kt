@@ -45,6 +45,25 @@ class SyncEngine(
 
     suspend fun pushNow() = withContext(io) { pushLock.withLock { processor.processReady() } }
 
+    /**
+     * Uploads everything that can be uploaded now, retry delays ignored (sign out, account deletion).
+     * False when something is left, e.g. offline. Writes to groups I lost access to do not count.
+     */
+    suspend fun flush(): Boolean = withContext(io) {
+        pushLock.withLock {
+            var left = uploadable()
+            while (left > 0) {
+                processor.processReady(ignoreSchedule = true)
+                val now = uploadable()
+                if (now >= left) return@withLock false
+                left = now
+            }
+            true
+        }
+    }
+
+    private fun uploadable() = local.all().count { !local.isAccessLost(it.group_id) }
+
     fun start(scope: CoroutineScope, uid: String): Job = scope.launch(io) {
         launch { pushLoop() }
         launch { pullMyGroups(uid) }

@@ -52,6 +52,12 @@ interface GroupRepository {
     suspend fun create(input: GroupInput, creatorName: String): String
     suspend fun update(id: String, input: GroupInput)
     suspend fun setArchived(id: String, archived: Boolean)
+
+    /**
+     * Releases my member (it stays as a ghost) and removes me from the group. Queued like any write;
+     * afterwards the group can no longer be read or written by this user.
+     */
+    suspend fun leave(id: String)
 }
 
 interface MemberRepository {

@@ -75,6 +75,26 @@ class GroupRepositoryImpl(
         }
     }
 
+    override suspend fun leave(id: String) = withContext(io) {
+        db.transaction {
+            val me = writer.uid()
+            // First release my member (it stays as a ghost, the accounts do not change)...
+            db.memberEntityQueries.selectVisibleByGroup(id).executeAsList().map { it.toModel() }
+                .filter { it.userUid == me }
+                .forEach { old ->
+                    val new = old.copy(userUid = null, meta = writer.editedMeta(old.meta))
+                    MemberRepositoryImpl.save(db, writer, new, old, ChangeAction.UPDATED)
+                }
+            // ...then leave. No history entry: once out, the group can no longer be written.
+            val old = requireGroup(id)
+            if (me in old.memberUids) {
+                val new = old.copy(memberUids = old.memberUids - me, meta = writer.editedMeta(old.meta))
+                db.groupEntityQueries.upsert(new.toRow())
+                writer.enqueue(new.id, OutboxType.GROUP, new.id, old.meta.serverVersion, payload(new))
+            }
+        }
+    }
+
     private fun requireGroup(id: String): Group =
         requireNotNull(db.groupEntityQueries.selectById(id).executeAsOneOrNull()) { "Unknown group $id" }.toModel()
 

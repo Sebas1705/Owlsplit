@@ -13,14 +13,15 @@ internal class OutboxProcessor(
     private val random: Random,
     private val inFlight: InFlightUpload = InFlightUpload(),
 ) {
-    suspend fun processReady() {
+    /** [ignoreSchedule]: also retry entries still waiting for their backoff (the user is waiting). */
+    suspend fun processReady(ignoreSchedule: Boolean = false) {
         val now = local.now()
         val blocked = HashSet<String>()
         // FIFO per group: an entry still waiting for its retry holds back the later ones of its group.
         for (entry in local.all()) {
             when {
                 entry.group_id in blocked -> Unit
-                entry.next_attempt_at > now -> blocked += entry.group_id
+                !ignoreSchedule && entry.next_attempt_at > now -> blocked += entry.group_id
                 local.isAccessLost(entry.group_id) -> local.scheduleRetry(entry, now + RECHECK_MILLIS, "access lost")
                 !process(entry) -> blocked += entry.group_id
             }
