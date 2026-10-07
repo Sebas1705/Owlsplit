@@ -30,7 +30,7 @@ class SyncEngine(
     ctx: RepositoryContext,
     private val io: CoroutineDispatcher,
     random: Random = Random.Default,
-) {
+) : SyncControl {
     private val writer = Writer(db, ctx)
     private val local = SyncLocalStore(db, writer)
     private val applier = RemoteApplier(db, writer)
@@ -41,7 +41,7 @@ class SyncEngine(
     /** Number of writes waiting to be uploaded. */
     val pendingCount: Flow<Long> = db.outboxQueries.countAll().asFlow().mapToOne(io)
 
-    fun isAccessLost(groupId: String): Boolean = local.isAccessLost(groupId)
+    override fun isAccessLost(groupId: String): Boolean = local.isAccessLost(groupId)
 
     suspend fun pushNow() = withContext(io) { pushLock.withLock { processor.processReady() } }
 
@@ -49,7 +49,7 @@ class SyncEngine(
      * Uploads everything that can be uploaded now, retry delays ignored (sign out, account deletion).
      * False when something is left, e.g. offline. Writes to groups I lost access to do not count.
      */
-    suspend fun flush(): Boolean = withContext(io) {
+    override suspend fun flush(): Boolean = withContext(io) {
         pushLock.withLock {
             var left = uploadable()
             while (left > 0) {
