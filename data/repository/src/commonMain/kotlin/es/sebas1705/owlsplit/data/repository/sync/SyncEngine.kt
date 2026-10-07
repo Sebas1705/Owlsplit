@@ -34,7 +34,8 @@ class SyncEngine(
     private val writer = Writer(db, ctx)
     private val local = SyncLocalStore(db, writer)
     private val applier = RemoteApplier(db, writer)
-    private val processor = OutboxProcessor(local, applier, remote, random)
+    private val inFlight = InFlightUpload()
+    private val processor = OutboxProcessor(local, applier, remote, random, inFlight)
     private val pushLock = Mutex()
 
     /** Number of writes waiting to be uploaded. */
@@ -67,7 +68,7 @@ class SyncEngine(
         remote.observeMyGroups(uid).collect { docs ->
             // Before applying: once applied, a group that dropped me no longer lists me locally either.
             val known = local.syncedGroupIdsOf(uid)
-            docs.forEach { applier.apply(it) }
+            docs.forEach(::receive)
             val ids = docs.filterNot { it.group.meta.deleted }.mapTo(HashSet()) { it.id }
             (known - ids).forEach { local.markAccessLost(it) }
             (listeners.keys - ids).forEach { listeners.remove(it)?.cancel() }
@@ -80,11 +81,17 @@ class SyncEngine(
             launch {
                 val since = (local.cursor(groupId, collection) - CURSOR_MARGIN_MILLIS).coerceAtLeast(0)
                 remote.observe(groupId, collection, since).collect { docs ->
-                    docs.forEach { applier.apply(it) }
+                    docs.forEach(::receive)
                     docs.maxOfOrNull { it.updatedAt }?.let { local.advanceCursor(groupId, collection, it) }
                 }
             }
         }
+    }
+
+    /** Applies a listener document, unless it is the echo of the upload in flight: then it acknowledges it. */
+    private fun receive(doc: RemoteDoc) {
+        val echoed = inFlight.echoed(doc)
+        if (echoed != null) local.onPushed(echoed.first, echoed.second) else applier.apply(doc)
     }
 
     private companion object {

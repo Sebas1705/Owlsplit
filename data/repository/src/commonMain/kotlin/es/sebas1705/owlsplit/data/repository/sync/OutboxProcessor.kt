@@ -11,6 +11,7 @@ internal class OutboxProcessor(
     private val applier: RemoteApplier,
     private val remote: RemoteStore,
     private val random: Random,
+    private val inFlight: InFlightUpload = InFlightUpload(),
 ) {
     suspend fun processReady() {
         val now = local.now()
@@ -30,7 +31,11 @@ internal class OutboxProcessor(
     private suspend fun process(entry: Outbox): Boolean {
         val type = OutboxType.valueOf(entry.entity_type)
         val version = if (type == OutboxType.CHANGE_LOG) 1L else entry.base_version + 1
-        return when (remote.push(type, entry.group_id, entry.entity_id, version, entry.payload)) {
+        return inFlight.during(entry, version) { upload(entry, type, version) }
+    }
+
+    private suspend fun upload(entry: Outbox, type: OutboxType, version: Long): Boolean =
+        when (remote.push(type, entry.group_id, entry.entity_id, version, entry.payload)) {
             PushResult.Ok -> {
                 local.onPushed(entry, version)
                 true
@@ -41,7 +46,6 @@ internal class OutboxProcessor(
             }
             PushResult.Rejected -> onRejected(entry, type, version)
         }
-    }
 
     private suspend fun onRejected(entry: Outbox, type: OutboxType, version: Long): Boolean =
         when (val found = remote.fetch(type, entry.group_id, entry.entity_id)) {

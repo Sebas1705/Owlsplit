@@ -13,6 +13,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import kotlinx.datetime.LocalDate
 import kotlin.random.Random
 import kotlin.test.Test
@@ -104,6 +105,27 @@ class SyncEngineTest {
         assertEquals("Theirs", h.env.expenses.get(e)!!.title)
         assertEquals(1L, h.env.db.conflictQueries.countAll().executeAsOne())
         assertTrue(h.env.outbox().none { it.entity_type == "EXPENSE" })
+        job.cancel()
+    }
+
+    @Test
+    fun `the echo of an upload that arrives before its acknowledgement is not a conflict`() = runTest {
+        val h = Harness(this)
+        val g = h.env.groups.create(trip, "Ana")
+        val ana = h.env.members.observeMembersOnce(g).single().id
+        val job = h.engine.start(this, "uid-ana")
+        h.settle()
+
+        h.remote.beforeAck = { repeat(10) { yield() } }
+        val e = h.env.expenses.create(g, dinner(ana))
+        h.settle()
+        h.env.expenses.update(e, dinner(ana).copy(title = "Cena larga"))
+        h.settle()
+
+        assertEquals(0L, h.env.db.conflictQueries.countAll().executeAsOne())
+        assertEquals("Cena larga", h.env.expenses.get(e)!!.title)
+        assertEquals(2L, h.remote.doc(OutboxType.EXPENSE, e)!!.version)
+        assertEquals(0L, h.engine.pendingCount.first())
         job.cancel()
     }
 
