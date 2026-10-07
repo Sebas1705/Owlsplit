@@ -1,26 +1,21 @@
 package es.sebas1705.owlsplit
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import es.sebas1705.owlsplit.config.EnvironmentBadge
-import es.sebas1705.owlsplit.core.ui.theme.AppTheme
+import es.sebas1705.owlsplit.core.ui.catalog.DesignCatalog
+import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
+import es.sebas1705.owlsplit.core.ui.theme.OwlsplitTheme
 
-/** Root composable. Navigation and real screens arrive with P8–P9. */
+/** Root composable. Shows the design catalog until P9 builds the real navigation. */
 @Composable
 fun App(modifier: Modifier = Modifier) {
-    AppTheme(modifier) {
-        EnvironmentBadge {
-            Surface(Modifier.fillMaxSize()) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text("Owlsplit", style = MaterialTheme.typography.headlineMedium)
-                }
-            }
+    OwlsplitTheme {
+        // Background first, then insets: the colour reaches behind the system bars (edge to edge).
+        EnvironmentBadge(modifier.background(Owlsplit.colors.background)) {
+            DesignCatalog(Modifier.safeDrawingPadding())
         }
     }
 }

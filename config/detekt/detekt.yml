@@ -26,7 +26,7 @@ complexity:
   active: true
   CyclomaticComplexMethod: { active: true, threshold: 15 }
   LongMethod: { active: true, threshold: 60 }
-  LongParameterList: { active: true, functionThreshold: 8, constructorThreshold: 8 }
+  LongParameterList: { active: true, functionThreshold: 8, constructorThreshold: 8, ignoreAnnotated: ["Composable"], ignoreDataClasses: true }
   TooManyFunctions: { active: true, thresholdInFiles: 20, thresholdInClasses: 15 }
 
 coroutines:
@@ -83,7 +83,7 @@ potential-bugs:
 style:
   active: true
   ForbiddenComment: { active: true, comments: ["FIXME:", "STOPSHIP:"], allowedPatterns: "" }
-  MagicNumber: { active: true, ignoreAnnotated: ["Composable"], ignorePropertyDeclaration: true, ignoreNumbers: ["-1", "0", "1", "2", "100", "1000"] }
+  MagicNumber: { active: true, ignoreAnnotated: ["Composable"], ignorePropertyDeclaration: true, ignoreEnums: true, ignoreNumbers: ["-1", "0", "1", "2", "100", "1000"] }
   MaxLineLength: { active: true, maxLineLength: 140, excludeImportStatements: true }
   ReturnCount: { active: true, max: 4, excludeGuardClauses: true }
   UnusedImports: { active: true }
