@@ -44,9 +44,19 @@ invites/{code}
 
 Índices compuestos: `updatedAt` ascendente en cada subcolección (consultas incrementales de [SYNC](SYNC.md#bajada-firestore--local)).
 
+## Formato de los documentos
+
+Escritos por `FirestoreRemoteStore` (`data:remote/.../Dtos.kt`):
+
+- El id del documento es el del modelo; `groupId` sale de la ruta y no se guarda.
+- `version` (entero), `updatedAt` (`Timestamp` de servidor), `updatedBy` (uid) y `deleted` en grupos, miembros, gastos y transferencias. El historial lleva `updatedAt` de servidor además de `createdAt`.
+- `createdAt` (ms del cliente), importes y tipos de cambio: enteros. Fechas: texto `AAAA-MM-DD`. Enumerados: su nombre.
+- Los opcionales se escriben como `null` explícito (las reglas leen todas las claves).
+- `payers` y `splitValues`: mapas `idMiembro → entero`. `diff`: lista de `{field, before, after}`.
+
 ## Reglas
 
-Implementadas en `firebase/firestore.rules` y probadas con el emulador en `firebase/rules-test` (32 tests; job `Firestore rules (emulator)` en CI). En local:
+Implementadas en `firebase/firestore.rules` y probadas con el emulador en `firebase/rules-test` (33 tests; job `Firestore rules (emulator)` en CI). En local:
 
 ```bash
 cd firebase && npx firebase-tools emulators:exec --only firestore --project demo-owlsplit "npm --prefix rules-test test"
@@ -66,7 +76,7 @@ cd firebase && npx firebase-tools emulators:exec --only firestore --project demo
   - **Las sumas no se validan** (pagadores = importe, partes exactas = importe): las reglas no tienen bucles. Las garantiza el cliente (dominio de P3) y `ObserveGroupBalances` (P4) deja fuera y señala cualquier gasto inconsistente.
   - **Reclamar miembro**: `userUid` solo pasa de nulo al uid propio o del uid propio a nulo; nunca se toma ni se libera el de otro. Que un usuario no reclame dos miembros del mismo grupo lo comprueba el cliente.
   - En gastos y transferencias no cambian `createdBy` ni `createdAt`; en transferencias tampoco origen, destino ni importe (se borran y se crean de nuevo).
-- `changelog`: crear si eres miembro y `authorUid == uid`; **nunca** editar ni borrar.
+- `changelog`: crear si eres miembro, `authorUid == uid` y `updatedAt == request.time` (se baja por hora de servidor); **nunca** editar ni borrar.
 - `invites/{code}` (id = código): `get` para cualquier usuario autenticado, `list` prohibido. Crear solo miembros y solo con el código vigente del grupo; contiene `groupId`, `groupName`, `groupIcon` y `memberCount` para previsualizar antes de unirse.
 - `smoke/{uid}`: se mantiene para repetir la prueba de humo de P2 al actualizar GitLive.
 

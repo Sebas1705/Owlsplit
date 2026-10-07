@@ -88,3 +88,18 @@ Motor en `data:repository`, paquete `sync`: `RemoteStore` (puerto hacia el servi
 - **Aplicar remoto**: versión menor → se ignora; igual con edición local pendiente → se ignora (eco de nuestra subida); igual sin pendiente → se refresca (`updatedAt` del servidor); mayor con pendiente → conflicto; lo aplicado queda siempre `SYNCED` con `serverVersion = version`.
 - **Acceso perdido**: se guarda como `accessLost:<grupo>` en la tabla `meta`. Se detecta al subir (el servidor niega la lectura) y al escuchar (un grupo ya sincronizado deja de aparecer en "mis grupos").
 - Estado expuesto por ahora: `SyncEngine.pendingCount` e `isAccessLost(grupo)`; los conflictos están en la tabla `conflict` y en el historial (`CONFLICT`). La UI llega en P9.
+
+## Implementación (P6b): Firestore
+
+`FirestoreRemoteStore` (`data:remote`, GitLive) implementa `RemoteStore`; la app lo arranca en `composeApp/.../sync/SyncModule.kt`.
+
+- **Formato**: un DTO por tipo con exactamente las claves de las reglas (ver [FIREBASE](FIREBASE.md#formato-de-los-documentos)). Se escribe con `set(merge = true)` para no borrar `lastJoinCode`, que el cliente no conoce.
+- **Caché de Firestore en memoria**: la copia local es SQLDelight. Sin red, `set` no termina (el SDK la encola): a los 20 s se da por transitoria y la reintenta el outbox; si la escritura encolada llega antes, el reintento se rechaza, se lee el remoto y se reconoce como propia.
+- **Errores**: `PERMISSION_DENIED` → rechazo (al subir) o sin acceso (al leer); el resto → transitorio. Para resolver un rechazo se lee del **servidor** (la caché podría tener nuestra escritura sin confirmar).
+- **Escuchas**: solo documentos confirmados (sin `hasPendingWrites`) y solo los cambios de cada instantánea. *Mis grupos* se entrega completo y solo cuando no viene de caché ni tiene escrituras pendientes, porque el motor deduce el acceso perdido de lo que falta. Errores transitorios → reintento con espera creciente; `PERMISSION_DENIED` termina la escucha sin romper el motor.
+- **Historial con hora de servidor**: `changelog` también lleva `updatedAt` (las reglas exigen `request.time`) y se baja por él. Filtrar por `createdAt` (reloj del cliente) perdía las entradas creadas sin conexión hace más que el margen del cursor.
+- **Eco de la propia subida**: con Firestore real la escucha entrega nuestra escritura **antes** de que `set` vuelva. El motor recuerda la subida en vuelo (`InFlightUpload`) y, si llega ese documento con esa versión y el mismo contenido, lo trata como acuse. Sin esto cada subida acababa como conflicto (el test con emuladores falla siempre sin ello).
+- **Conflicto visto dos veces**: si la escucha ya registró el conflicto mientras la subida estaba en vuelo, el rechazo posterior no lo vuelve a registrar.
+- **Arranque**: sin `google-services.json` no se arranca nada. Con él, sesión anónima (reintentos con espera si no hay red; el onboarding real es P8) y `SyncEngine.start` con el uid de cada estado de sesión. En Android, WorkManager (`SyncWorker`, con red, trabajo único `KEEP`) sube lo pendiente aunque se cierre la app. En iOS el disparador en segundo plano llega en P11.
+- **Pendiente para P8**: crear datos antes de la primera sesión deja `createdBy` vacío y el servidor lo rechazaría; el onboarding debe garantizar sesión antes de crear grupos.
+- **Pruebas**: `FirestoreSyncEmulatorTest` (dos dispositivos con los emuladores de Firestore y Auth y las reglas reales: unión con código, cambios en ambos sentidos, edición concurrente → un único conflicto). Se lanza con `scripts/run-sync-emulator-test.sh` con un emulador Android conectado; no está en CI.

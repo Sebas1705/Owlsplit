@@ -13,7 +13,7 @@ Los planes se escriben en detalle (código completo, comandos exactos) **justo a
 | P3 | [Dinero y cálculo de saldos](2026-10-07-p03-money-ledger.md) | `core:money` y `domain` (`ledger`): divisas, reparto, conversión, saldos y simplificación, con tests de tablas y de propiedades | P1 | Hecho |
 | P4 | [Base de datos local y repositorios](2026-10-07-p04-local-db-repositories.md) | Esquema SQLDelight completo (entidades, outbox, cursores, conflictos), DAOs, repositorios con Flows, migraciones verificadas | P1, P3 | Hecho |
 | P5 | [Reglas de Firestore](2026-10-07-p05-firestore-rules.md) | `firebase/firestore.rules`, índices y `firebase/rules-test` con el emulador, en CI | P2 | Hecho |
-| P6 | Motor de sincronización: [P6a motor](2026-10-07-p06a-sync-engine.md) · P6b Firestore real | `data:remote` + `data:sync`: outbox, subida con backoff, listeners incrementales, conflictos, acceso perdido; tests con Firestore falso | P4, P5 | P6a hecho |
+| P6 | Motor de sincronización: [P6a motor](2026-10-07-p06a-sync-engine.md) · [P6b Firestore](2026-10-07-p06b-firestore-adapter.md) | `data:remote` + `data:sync`: outbox, subida con backoff, listeners incrementales, conflictos, acceso perdido; tests con Firestore falso | P4, P5 | Hecho |
 | P7 | [Sistema de diseño](2026-10-07-p07-design-system.md) | `OwlsplitTheme`, tokens, Inter, iconos Tabler, componentes de `core:ui` con previews y capturas claro/oscuro | P1 | Hecho |
 | P8 | Cuentas y onboarding | Auth anónima, onboarding, perfil, vincular Google/Apple, borrar cuenta | P6, P7 | Pendiente |
 | P9 | Grupos, gastos y saldos (pantallas) | Inicio, grupo (gastos, saldos, saldar), editor de gasto y de reparto, transferencias, historial, multidivisa con Frankfurter | P6, P7, P8 | Pendiente |
