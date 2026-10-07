@@ -15,7 +15,7 @@ class DetektConventionPlugin : Plugin<Project> {
             parallel    = true
         }
         dependencies {
-            "detektPlugins"("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.7")
+            "detektPlugins"("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.8")
         }
     }
 }
