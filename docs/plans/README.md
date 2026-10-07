@@ -14,7 +14,7 @@ Los planes se escriben en detalle (código completo, comandos exactos) **justo a
 | P4 | [Base de datos local y repositorios](2026-10-07-p04-local-db-repositories.md) | Esquema SQLDelight completo (entidades, outbox, cursores, conflictos), DAOs, repositorios con Flows, migraciones verificadas | P1, P3 | Hecho |
 | P5 | Reglas de Firestore | `firebase/firestore.rules`, índices y `firebase/rules-test` con el emulador, en CI | P2 | Pendiente |
 | P6 | Motor de sincronización | `data:remote` + `data:sync`: outbox, subida con backoff, listeners incrementales, conflictos, acceso perdido; tests con Firestore falso | P4, P5 | Pendiente |
-| P7 | Sistema de diseño | `OwlsplitTheme`, tokens, Inter, iconos Tabler, componentes de `core:ui` con previews y capturas claro/oscuro | P1 | Pendiente |
+| P7 | [Sistema de diseño](2026-10-07-p07-design-system.md) | `OwlsplitTheme`, tokens, Inter, iconos Tabler, componentes de `core:ui` con previews y capturas claro/oscuro | P1 | Escrito |
 | P8 | Cuentas y onboarding | Auth anónima, onboarding, perfil, vincular Google/Apple, borrar cuenta | P6, P7 | Pendiente |
 | P9 | Grupos, gastos y saldos (pantallas) | Inicio, grupo (gastos, saldos, saldar), editor de gasto y de reparto, transferencias, historial, multidivisa con Frankfurter | P6, P7, P8 | Pendiente |
 | P10 | Invitaciones | Códigos, QR, App Links / Universal Links con Firebase Hosting, unirse y reclamar miembro | P9 | Pendiente |
