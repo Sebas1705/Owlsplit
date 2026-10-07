@@ -27,6 +27,11 @@ detekt-kotlin           = "2.0.21"
 security-crypto         = "1.1.0-beta01"
 leakcanary              = "2.14"
 turbine                 = "1.2.1"
+compose-icons           = "1.1.1"
+roborazzi               = "1.76.0"
+robolectric             = "4.17"
+androidx-compose-test   = "1.11.3"
+junit4                  = "4.13.2"
 
 gitlive-firebase        = "2.7.0"
 google-services         = "4.5.0"
@@ -91,6 +96,13 @@ multiplatform-settings-coroutines  = { module = "com.russhwolf:multiplatform-set
 security-crypto = { module = "androidx.security:security-crypto",          version.ref = "security-crypto" }
 leakcanary      = { module = "com.squareup.leakcanary:leakcanary-android", version.ref = "leakcanary" }
 turbine         = { module = "app.cash.turbine:turbine",                   version.ref = "turbine" }
+compose-icons-tabler       = { module = "br.com.devsrsouza.compose.icons:tabler-icons", version.ref = "compose-icons" }
+roborazzi                  = { module = "io.github.takahirom.roborazzi:roborazzi",         version.ref = "roborazzi" }
+roborazzi-compose          = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
+robolectric                = { module = "org.robolectric:robolectric",                     version.ref = "robolectric" }
+androidx-compose-ui-test-junit4   = { module = "androidx.compose.ui:ui-test-junit4",   version.ref = "androidx-compose-test" }
+androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidx-compose-test" }
+junit4                     = { module = "junit:junit", version.ref = "junit4" }
 
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 
@@ -116,6 +128,7 @@ android-library       = { id = "com.android.library",                         ve
 sqldelight            = { id = "app.cash.sqldelight",                         version.ref = "sqldelight" }
 detekt                = { id = "io.gitlab.arturbosch.detekt",                 version.ref = "detekt" }
 google-services       = { id = "com.google.gms.google-services",              version.ref = "google-services" }
+roborazzi             = { id = "io.github.takahirom.roborazzi",               version.ref = "roborazzi" }
 
 kmp-library     = { id = "owlsplit.kmp.library" }
 kmp-feature     = { id = "owlsplit.kmp.feature" }
