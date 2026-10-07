@@ -40,7 +40,10 @@ fun SegmentedControl(
                 Modifier
                     .weight(1f)
                     .heightIn(min = Sizes.touchTarget - 8.dp)
-                    .background(if (selected) Owlsplit.colors.surface else Color.Transparent, OwlsplitShapes.control)
+                    .background(
+                        if (selected) Owlsplit.colors.segmentSelected else Color.Transparent,
+                        OwlsplitShapes.control
+                    )
                     .selectable(selected = selected, role = Role.Tab, onClick = { onSelect(index) }),
                 contentAlignment = Alignment.Center,
             ) {
