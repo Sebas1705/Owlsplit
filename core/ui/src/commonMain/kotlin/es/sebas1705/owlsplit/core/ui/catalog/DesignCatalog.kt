@@ -126,11 +126,12 @@ private fun GroupSection() {
 
 @Composable
 private fun EditorSection(onDigit: (Int) -> Unit) {
-    val included = remember {
-        mutableStateMapOf("Ana" to true, "Sebas" to true, "Marta" to true, "Luis" to true, "Jaime" to false)
-    }
+    // SnapshotStateMap does not keep insertion order: iterate a fixed list of names.
+    val names = listOf("Ana", "Sebas", "Marta", "Luis", "Jaime")
+    val included = remember { mutableStateMapOf<String, Boolean>().apply { names.forEach { put(it, it != "Jaime") } } }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        included.forEach { (name, on) ->
+        names.forEach { name ->
+            val on = included[name] == true
             AvatarToggle(name, on, if (on) "12,15" else "—", onToggle = { included[name] = it })
         }
     }

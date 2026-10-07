@@ -23,6 +23,12 @@ jobs:
         with: { distribution: temurin, java-version: 21 }
       - uses: gradle/actions/setup-gradle@v6
       - run: ./gradlew detekt testDebugUnitTest verifySqlDelightMigration :composeApp:assembleDebug --continue
+      - run: ./gradlew :core:ui:recordRoborazziDebug
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: ui-screenshots
+          path: core/ui/screenshots/
       - uses: actions/upload-artifact@v6
         if: always()
         with:
