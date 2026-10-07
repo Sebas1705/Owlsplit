@@ -77,3 +77,14 @@ Compactar: si hay varias ediciones offline del mismo documento, solo se sube el 
 ## Casos probados (`data:sync`)
 
 Creación, edición y borrado offline y online; compactación; orden; reintentos con backoff; conflicto (las dos ramas: reaplicar y descartar); acceso perdido; muerte del proceso a mitad de subida (idempotencia); bajada con margen y duplicados; unión a grupo grande con paginación; reloj del dispositivo desajustado (no afecta, porque `updatedAt` es del servidor).
+
+## Implementación (P6a)
+
+Motor en `data:repository`, paquete `sync`: `RemoteStore` (puerto hacia el servidor; P6b lo implementa con Firestore), `SyncLocalStore` (outbox, cursores, avisos de acceso), `RemoteApplier` (aplicar remoto y conflictos), `OutboxProcessor` (una pasada de subida) y `SyncEngine` (bucle de subida + escucha). Precisiones respecto a lo anterior:
+
+- **Versión de subida = `base_version + 1`**, no la del payload. Si el documento se edita mientras se sube, al confirmar no se borra la entrada: su base avanza a la versión escrita y la siguiente subida encadena.
+- **Rechazo del servidor → se lee el remoto**: sin acceso → acceso perdido (nuevo intento en 1 h); misma o mayor versión con **el mismo contenido** → era nuestra escritura cuyo acuse se perdió, se da por buena; mayor con otro contenido → conflicto; menor → rechazo por validación (bug), reintento en 1 h con `last_error`.
+- **FIFO por grupo estricto**: una entrada que espera su reintento retiene a las siguientes de su grupo, aunque estén listas. El bucle despierta en el primer reintento entre las **cabezas de grupo** (despertar en el mínimo global giraba en vacío).
+- **Aplicar remoto**: versión menor → se ignora; igual con edición local pendiente → se ignora (eco de nuestra subida); igual sin pendiente → se refresca (`updatedAt` del servidor); mayor con pendiente → conflicto; lo aplicado queda siempre `SYNCED` con `serverVersion = version`.
+- **Acceso perdido**: se guarda como `accessLost:<grupo>` en la tabla `meta`. Se detecta al subir (el servidor niega la lectura) y al escuchar (un grupo ya sincronizado deja de aparecer en "mis grupos").
+- Estado expuesto por ahora: `SyncEngine.pendingCount` e `isAccessLost(grupo)`; los conflictos están en la tabla `conflict` y en el historial (`CONFLICT`). La UI llega en P9.

@@ -17,3 +17,6 @@ SELECT * FROM conflict WHERE group_id = ? ORDER BY created_at, id;
 
 deleteById:
 DELETE FROM conflict WHERE id = ?;
+
+countAll:
+SELECT count(*) FROM conflict;

@@ -69,3 +69,9 @@ SELECT * FROM expense_payer WHERE expense_id = ?;
 
 splitsByExpense:
 SELECT * FROM expense_split WHERE expense_id = ?;
+
+markSynced:
+UPDATE expense_entity SET server_version = :version, sync_state = 'SYNCED' WHERE id = :id;
+
+setServerVersion:
+UPDATE expense_entity SET server_version = :version WHERE id = :id;

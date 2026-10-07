@@ -27,3 +27,9 @@ SELECT * FROM group_entity WHERE deleted = 0 ORDER BY name COLLATE NOCASE, id;
 
 selectById:
 SELECT * FROM group_entity WHERE id = ?;
+
+markSynced:
+UPDATE group_entity SET server_version = :version, sync_state = 'SYNCED' WHERE id = :id;
+
+setServerVersion:
+UPDATE group_entity SET server_version = :version WHERE id = :id;

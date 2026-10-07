@@ -37,3 +37,9 @@ SELECT
         WHERE s.member_id = :memberId AND s.split_value > 0 AND e.deleted = 0)
   + (SELECT count(*) FROM transfer_entity t
         WHERE (t.from_member_id = :memberId OR t.to_member_id = :memberId) AND t.deleted = 0);
+
+markSynced:
+UPDATE member_entity SET server_version = :version, sync_state = 'SYNCED' WHERE id = :id;
+
+setServerVersion:
+UPDATE member_entity SET server_version = :version WHERE id = :id;
