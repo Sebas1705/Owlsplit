@@ -9,6 +9,7 @@ import dev.gitlive.firebase.firestore.firestoreSettings
 import dev.gitlive.firebase.firestore.memoryCacheSettings
 import es.sebas1705.owlsplit.data.remote.FirestoreRemoteStore
 import es.sebas1705.owlsplit.data.repository.RepositoryContext
+import es.sebas1705.owlsplit.data.repository.account.ProfileRepository
 import es.sebas1705.owlsplit.data.repository.sync.RemoteStore
 import es.sebas1705.owlsplit.data.repository.sync.SyncEngine
 import kotlinx.coroutines.CoroutineScope
@@ -16,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -33,18 +35,30 @@ val syncModule = module {
     // P8 replaces the empty uid with the onboarding flow (first launch needs a session).
     single { RepositoryContext(uid = { get<FirebaseAuth>().currentUser?.uid.orEmpty() }) }
     single { SyncEngine(get(), get(), get(), Dispatchers.IO) }
-    single { SyncStarter(lazy { get<FirebaseAuth>() }, lazy { get<SyncEngine>() }) }
+    single { SyncStarter(lazy { get<FirebaseAuth>() }, lazy { get<SyncEngine>() }, lazy { get<ProfileRepository>() }) }
 }
 
 /** Keeps a session (anonymous until P8) and runs the sync engine for whoever is signed in. */
-class SyncStarter(private val auth: Lazy<FirebaseAuth>, private val engine: Lazy<SyncEngine>) {
+class SyncStarter(
+    private val auth: Lazy<FirebaseAuth>,
+    private val engine: Lazy<SyncEngine>,
+    private val profiles: Lazy<ProfileRepository>,
+) {
 
     /** Null when Firebase is not configured (no google-services.json / GoogleService-Info.plist). */
     fun start(scope: CoroutineScope, platformContext: Any? = null): Job? {
         if (Firebase.apps(platformContext).isEmpty()) return null
         return scope.launch {
             auth.value.authStateChanged.collectLatest { user ->
-                if (user == null) signInAnonymously() else engine.value.start(this, user.uid).join()
+                if (user == null) {
+                    signInAnonymously()
+                } else {
+                    // Scoped to this user: a new auth state cancels the engine of the previous one.
+                    coroutineScope {
+                        launch { profiles.value.uploadCurrent() }
+                        engine.value.start(this, user.uid)
+                    }
+                }
             }
         }
     }

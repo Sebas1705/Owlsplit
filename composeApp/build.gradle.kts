@@ -92,15 +92,27 @@ kotlin {
             implementation(project(":data:local"))
             implementation(project(":data:remote"))
             implementation(project(":domain:usecases"))
+            implementation(project(":data:repository"))
+            implementation(project(":feature:onboarding"))
+            implementation(project(":feature:profile"))
+            implementation(libs.compose.icons.tabler)
         }
         androidMain.dependencies {
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.koin.android)
             implementation(libs.androidx.work.runtime)
+            implementation(libs.androidx.credentials)
+            implementation(libs.androidx.credentials.play)
+            implementation(libs.google.identity.googleid)
         }
     }
 }
 
 dependencies {
     debugImplementation(libs.leakcanary)
+}
+
+compose.resources {
+    packageOfResClass = "es.sebas1705.owlsplit.resources"
+    publicResClass = false
 }

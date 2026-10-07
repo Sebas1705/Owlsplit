@@ -15,7 +15,13 @@ import es.sebas1705.owlsplit.core.ui.theme.Spacing
 
 /** An invitation, not an apology: logo, headline, one line and a verb. */
 @Composable
-fun EmptyState(title: String, body: String, actionLabel: String, onAction: () -> Unit, modifier: Modifier = Modifier) {
+fun EmptyState(
+    title: String,
+    body: String,
+    modifier: Modifier = Modifier,
+    actionLabel: String? = null,
+    onAction: () -> Unit = {},
+) {
     Column(
         modifier.fillMaxWidth().padding(Spacing.xl),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -24,6 +30,6 @@ fun EmptyState(title: String, body: String, actionLabel: String, onAction: () ->
         OwlsplitLogo(size = 56.dp)
         Text(title, style = Owlsplit.type.title, color = Owlsplit.colors.textPrimary, textAlign = TextAlign.Center)
         Text(body, style = Owlsplit.type.body, color = Owlsplit.colors.textSecondary, textAlign = TextAlign.Center)
-        PrimaryPillButton(actionLabel, onAction)
+        if (actionLabel != null) PrimaryPillButton(actionLabel, onAction)
     }
 }

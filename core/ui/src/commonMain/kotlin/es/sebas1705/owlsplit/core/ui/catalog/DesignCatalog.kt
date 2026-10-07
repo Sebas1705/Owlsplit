@@ -74,7 +74,11 @@ fun DesignCatalog(modifier: Modifier = Modifier) {
         HomeSection(balance, onBalanceChange = { balance = it })
         GroupSection()
         EditorSection(onDigit = { digit -> balance = balance * DECIMAL_SHIFT + digit })
-        EmptyState("Crea tu primer grupo", "Apunta gastos y Owlsplit calcula quién debe a quién.", "Crear grupo", {})
+        EmptyState(
+            "Crea tu primer grupo",
+            "Apunta gastos y Owlsplit calcula quién debe a quién.",
+            actionLabel = "Crear grupo",
+        )
     }
 }
 
