@@ -147,11 +147,12 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      // ── History (create-only) ──────────────────────────────────────────────
+      // ── History (create-only; updatedAt = server time, for incremental pulls) ─
       match /changelog/{entryId} {
         allow read: if isMemberOf(groupId);
         allow create: if isMemberOf(groupId)
-          && data().keys().hasOnly(['entityType', 'entityId', 'action', 'authorUid', 'diff', 'createdAt'])
+          && data().keys().hasOnly(['entityType', 'entityId', 'action', 'authorUid', 'diff', 'createdAt', 'updatedAt'])
+          && data().updatedAt == request.time
           && data().entityType in ['GROUP', 'MEMBER', 'EXPENSE', 'TRANSFER']
           && data().action in ['CREATED', 'UPDATED', 'DELETED', 'RESTORED', 'JOINED', 'CONFLICT']
           && data().authorUid == uid() && data().entityId is string

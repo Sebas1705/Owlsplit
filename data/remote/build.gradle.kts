@@ -14,10 +14,13 @@ kotlin {
         commonMain.dependencies {
             api(libs.gitlive.firebase.auth)
             api(libs.gitlive.firebase.firestore)
+            api(project(":data:repository"))
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
         }
         androidInstrumentedTest.dependencies {
+            implementation(project(":data:local"))
+            implementation(libs.sqldelight.android.driver)
             implementation(kotlin("test"))
             implementation(libs.androidx.test.runner)
             implementation(libs.androidx.test.core)

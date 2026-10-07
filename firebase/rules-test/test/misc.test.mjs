@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, test } from 'vitest';
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import { CODE, GROUP, as, createEnv, groupData, seed } from './helpers.mjs';
 
 let env;
@@ -18,6 +18,7 @@ beforeEach(async () => {
 
 const entry = (author) => ({
   entityType: 'EXPENSE', entityId: 'e1', action: 'CREATED', authorUid: author, diff: [], createdAt: 1,
+  updatedAt: serverTimestamp(),
 });
 
 describe('changelog', () => {
@@ -26,6 +27,12 @@ describe('changelog', () => {
     await assertSucceeds(setDoc(ref, entry('luis')));
     await assertFails(updateDoc(ref, { action: 'DELETED' }));
     await assertFails(deleteDoc(ref));
+  });
+  test('history carries the server time', async () => {
+    const ref = doc(as(env, 'luis'), `groups/${GROUP}/changelog/c3`);
+    await assertFails(setDoc(ref, { ...entry('luis'), updatedAt: 5 }));
+    const { updatedAt, ...withoutTime } = entry('luis');
+    await assertFails(setDoc(ref, withoutTime));
   });
   test('history cannot be written in someone else\'s name', async () => {
     await assertFails(setDoc(doc(as(env, 'luis'), `groups/${GROUP}/changelog/c2`), entry('ana')));

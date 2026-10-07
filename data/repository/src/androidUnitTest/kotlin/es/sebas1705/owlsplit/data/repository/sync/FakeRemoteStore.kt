@@ -16,6 +16,12 @@ class FakeRemoteStore(private val now: () -> Long) : RemoteStore {
     val scripted = ArrayDeque<PushResult>()
     val pushLog = mutableListOf<Pair<OutboxType, String>>()
 
+    /** Runs when `push` is called, before the write is judged. */
+    var beforePush: suspend () -> Unit = {}
+
+    /** Runs after an accepted write and before `push` returns, e.g. to let listeners see it first. */
+    var beforeAck: suspend () -> Unit = {}
+
     fun doc(type: OutboxType, id: String): RemoteDoc? = docs.value[key(type, id)]
 
     /** Another device wrote [doc] directly on the server. */
@@ -23,6 +29,7 @@ class FakeRemoteStore(private val now: () -> Long) : RemoteStore {
 
     override suspend fun push(type: OutboxType, groupId: String, entityId: String, version: Long, payload: String): PushResult {
         pushLog += type to entityId
+        beforePush()
         scripted.removeFirstOrNull()?.let { return it }
         val current = doc(type, entityId)
         val allowed = when {
@@ -32,6 +39,7 @@ class FakeRemoteStore(private val now: () -> Long) : RemoteStore {
         }
         if (!allowed) return PushResult.Rejected
         serverWrite(decodeRemoteDoc(type, payload, version, now(), callerUid))
+        beforeAck()
         return PushResult.Ok
     }
 
