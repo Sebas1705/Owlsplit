@@ -31,6 +31,6 @@ include(
     ":core:testing",
 )
 
-include(":data:local")
+include(":data:local", ":data:remote")
 
 include(":domain:usecases")
