@@ -1,0 +1,30 @@
+CREATE TABLE transfer_entity (
+    id TEXT NOT NULL PRIMARY KEY,
+    group_id TEXT NOT NULL,
+    from_member_id TEXT NOT NULL,
+    to_member_id TEXT NOT NULL,
+    amount_minor INTEGER NOT NULL,
+    currency TEXT NOT NULL,
+    fx_rate_scaled INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    note TEXT,
+    created_by TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    version INTEGER NOT NULL,
+    server_version INTEGER NOT NULL,
+    updated_at INTEGER,
+    updated_by TEXT NOT NULL,
+    deleted INTEGER NOT NULL,
+    sync_state TEXT NOT NULL
+);
+
+CREATE INDEX transfer_by_group ON transfer_entity(group_id, deleted, date);
+
+upsert:
+INSERT OR REPLACE INTO transfer_entity VALUES ?;
+
+selectVisibleByGroup:
+SELECT * FROM transfer_entity WHERE group_id = ? AND deleted = 0 ORDER BY date DESC, created_at DESC, id;
+
+selectById:
+SELECT * FROM transfer_entity WHERE id = ?;

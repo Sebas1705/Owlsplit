@@ -1,0 +1,19 @@
+CREATE TABLE conflict (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    group_id TEXT NOT NULL,
+    entity_type TEXT NOT NULL,
+    entity_id TEXT NOT NULL,
+    local_payload TEXT NOT NULL,
+    remote_version INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+);
+
+insert:
+INSERT INTO conflict(group_id, entity_type, entity_id, local_payload, remote_version, created_at)
+VALUES (?, ?, ?, ?, ?, ?);
+
+selectByGroup:
+SELECT * FROM conflict WHERE group_id = ? ORDER BY created_at, id;
+
+deleteById:
+DELETE FROM conflict WHERE id = ?;

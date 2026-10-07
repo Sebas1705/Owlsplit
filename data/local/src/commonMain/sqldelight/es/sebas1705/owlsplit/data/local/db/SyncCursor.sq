@@ -1,0 +1,12 @@
+CREATE TABLE sync_cursor (
+    group_id TEXT NOT NULL,
+    collection TEXT NOT NULL,
+    last_updated_at INTEGER NOT NULL,
+    PRIMARY KEY (group_id, collection)
+);
+
+get:
+SELECT last_updated_at FROM sync_cursor WHERE group_id = ? AND collection = ?;
+
+put:
+INSERT OR REPLACE INTO sync_cursor VALUES (?, ?, ?);

@@ -1,0 +1,19 @@
+CREATE TABLE change_log (
+    id TEXT NOT NULL PRIMARY KEY,
+    group_id TEXT NOT NULL,
+    entity_type TEXT NOT NULL,
+    entity_id TEXT NOT NULL,
+    action TEXT NOT NULL,
+    author_uid TEXT NOT NULL,
+    diff TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    sync_state TEXT NOT NULL
+);
+
+CREATE INDEX change_log_by_group ON change_log(group_id, created_at);
+
+insert:
+INSERT OR REPLACE INTO change_log VALUES ?;
+
+selectByGroup:
+SELECT * FROM change_log WHERE group_id = ? ORDER BY created_at DESC, id;
