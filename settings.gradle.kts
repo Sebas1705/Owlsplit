@@ -27,6 +27,7 @@ include(
     ":core:network",
     ":core:datastore",
     ":core:logging",
+    ":core:money",
     ":core:testing",
 )
 

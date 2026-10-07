@@ -85,6 +85,6 @@ style:
   ForbiddenComment: { active: true, comments: ["FIXME:", "STOPSHIP:"], allowedPatterns: "" }
   MagicNumber: { active: true, ignoreAnnotated: ["Composable"], ignorePropertyDeclaration: true, ignoreNumbers: ["-1", "0", "1", "2", "100", "1000"] }
   MaxLineLength: { active: true, maxLineLength: 140, excludeImportStatements: true }
-  ReturnCount: { active: true, max: 4 }
+  ReturnCount: { active: true, max: 4, excludeGuardClauses: true }
   UnusedImports: { active: true }
   WildcardImport: { active: false }
