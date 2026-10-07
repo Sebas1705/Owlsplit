@@ -4,7 +4,6 @@ import es.sebas1705.owlsplit.data.models.Expense
 import es.sebas1705.owlsplit.data.models.FieldChange
 import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.data.models.Member
-import es.sebas1705.owlsplit.data.models.Transfer
 
 /** Raw before/after values; the UI formats them (amounts with their currency, dates, names). */
 internal object Diffs {
@@ -45,14 +44,5 @@ internal object Diffs {
         field("name", old?.name, new.name)
         field("defaultWeight", old?.defaultWeight, new.defaultWeight)
         field("active", old?.active, new.active)
-    }
-
-    fun transfer(old: Transfer?, new: Transfer): List<FieldChange> = buildList {
-        field("fromMemberId", old?.fromMemberId, new.fromMemberId)
-        field("toMemberId", old?.toMemberId, new.toMemberId)
-        field("amountMinor", old?.amountMinor, new.amountMinor)
-        field("currency", old?.currency, new.currency)
-        field("date", old?.date, new.date)
-        field("note", old?.note, new.note)
     }
 }
