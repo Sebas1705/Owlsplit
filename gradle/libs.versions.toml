@@ -26,6 +26,7 @@ detekt-kotlin           = "2.0.21"
 
 security-crypto         = "1.1.0-beta01"
 leakcanary              = "2.14"
+turbine                 = "1.2.1"
 
 gitlive-firebase        = "2.7.0"
 google-services         = "4.5.0"
@@ -89,6 +90,7 @@ multiplatform-settings-coroutines  = { module = "com.russhwolf:multiplatform-set
 
 security-crypto = { module = "androidx.security:security-crypto",          version.ref = "security-crypto" }
 leakcanary      = { module = "com.squareup.leakcanary:leakcanary-android", version.ref = "leakcanary" }
+turbine         = { module = "app.cash.turbine:turbine",                   version.ref = "turbine" }
 
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 

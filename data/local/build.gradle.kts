@@ -6,7 +6,7 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation(libs.sqldelight.runtime)
+            api(libs.sqldelight.runtime)
             implementation(libs.sqldelight.coroutines)
         }
         androidMain.dependencies { implementation(libs.sqldelight.android.driver) }
