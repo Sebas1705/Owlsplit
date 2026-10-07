@@ -1636,3 +1636,11 @@ gh pr create --title "P7: design system" --body "Implements docs/plans/2026-10-0
 - La app muestra el catálogo en claro y oscuro con Inter y los colores del mockup.
 - `MoneyFormatTest` (5) en verde; capturas grabadas y verificadas en local.
 - Ningún color literal fuera de `theme/Tokens.kt` y `OwlsplitLogo` (`grep -rn "Color(0x" core/ui/src/commonMain | grep -v theme/Tokens.kt` vacío).
+
+## Desviaciones durante la ejecución (2026-10-07)
+
+- **Token nuevo `segmentSelected`** (`#FFFFFF` / `#2C303B`): en oscuro, `surface` es más oscuro que `surfaceVariant` y la opción activa del control segmentado quedaba hundida. Añadido también a DESIGN_SYSTEM.md.
+- **Fondo de borde a borde**: el fondo se aplica en `App` antes de `safeDrawingPadding()`, para que llegue por detrás de las barras del sistema (en claro la barra de estado salía gris).
+- **Detekt**: `MagicNumber.ignoreEnums` (colores de `GroupAccent`) y `LongParameterList.ignoreAnnotated: [Composable]` + `ignoreDataClasses`; `SyncStatus` y `KeypadKey` en archivos propios (`MatchingDeclarationName`); `DesignCatalog` partido en secciones (`LongMethod`).
+- **Catálogo**: `mutableStateMapOf` no conserva el orden de inserción; los avatares se recorren desde una lista fija. Lo detectaron las capturas de Roborazzi.
+- Las fuentes Inter cargan bien en Robolectric: no hizo falta `FontFamily.Default` en los tests.

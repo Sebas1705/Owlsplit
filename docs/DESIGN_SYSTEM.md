@@ -19,6 +19,7 @@ Se implementa sobre **Material 3** de Compose Multiplatform con un `OwlsplitThem
 | `background` | `#F2F3F7` | `#0B0C10` | Fondo de pantalla |
 | `surface` | `#FFFFFF` | `#16181F` | Contenedores, barra inferior |
 | `surfaceVariant` | `#E4E6EE` | `#1C1E26` | Campo de búsqueda, control segmentado, chips |
+| `segmentSelected` | `#FFFFFF` | `#2C303B` | Opción activa del control segmentado (más clara que su carril en ambos temas) |
 | `divider` | `#ECEEF3` | `#22252E` | Separadores y pistas de barras |
 | `textPrimary` | `#0B0C10` | `#F5F6FA` | Texto e importes; también deudas |
 | `textSecondary` | `#5B5F6B` | `#8A8E99` | Subtítulos, etiquetas |
@@ -76,7 +77,7 @@ Búho geométrico: cuadrado redondeado en `accent` con dos anillos blancos por o
 | `QuickActionButton` | Botón circular de 48 dp sobre `surface` con etiqueta debajo |
 | `OwlsplitContainer` | Contenedor `surface` de 16 dp con título opcional |
 | `GroupRow` | Icono de grupo, nombre, metadatos y saldo coloreado |
-| `SegmentedControl` | Píldora `surfaceVariant` con la opción activa en `surface` |
+| `SegmentedControl` | Píldora `surfaceVariant` con la opción activa en `segmentSelected` |
 | `MemberBalanceRow` | Avatar, nombre, barra fina de 4 dp proporcional y saldo |
 | `SettleSuggestionRow` | “X te debe Y” con botón píldora “Saldar” |
 | `AmountDisplay` | Importe con decimales reducidos y selector de divisa |
@@ -86,6 +87,11 @@ Búho geométrico: cuadrado redondeado en `accent` con dos anillos blancos por o
 | `PrimaryPillButton` | Botón principal ancho en píldora, `accent` |
 | `EmptyState` | Logotipo, titular, una línea y una acción |
 | `Avatar` | Foto o iniciales sobre tono neutro; 24, 30, 36 y 48 dp |
+| `OwlsplitLogo` | El búho geométrico dibujado en Canvas (sin imágenes) |
+| `AmountText` | Importe con los decimales al 60 % y número que rueda al cambiar (`animate = false` lo desactiva) |
+| `MoneyFormat` | Formato de importes sin APIs de plataforma: `Spanish` (1.284,60 €) e `English` (€1,284.60), signo menos U+2212 |
+
+Los componentes no llevan textos fijos: reciben las cadenas ya localizadas. Implementación en `core:ui` y catálogo vivo en `DesignCatalog` (capturas en `core/ui/screenshots/`).
 
 Cada componente tiene preview en claro y oscuro y test de captura.
 
@@ -94,7 +100,7 @@ Cada componente tiene preview en claro y oscuro y test de captura.
 - Saldos que cambian: el número **rueda** hasta el nuevo valor (300 ms, desaceleración).
 - Saldar: la fila se desliza y desaparece y el saldo de la cabecera rueda a su nuevo valor; confirmación háptica ligera.
 - Transiciones de pantalla estándar de la plataforma (gesto atrás nativo en iOS).
-- Con “reducir movimiento” activo: cambios instantáneos, sin rodar ni deslizar.
+- Con “reducir movimiento” activo: cambios instantáneos, sin rodar ni deslizar. Compose Multiplatform no expone esa preferencia en código común; se conecta en P11 por plataforma (`AmountText(animate = false)` ya lo admite).
 
 ## Tono del texto
 

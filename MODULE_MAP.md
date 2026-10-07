@@ -4,7 +4,7 @@
 |---|---|---|
 | `composeApp` | Entrada Android/iOS, DI raíz, `AppConfig` por entorno | P8–P9 |
 | `core:common` | MVI base, `AppResult`, utilidades | — |
-| `core:ui` | Tema y componentes compartidos | P7 |
+| `core:ui` | `OwlsplitTheme` (tokens, Inter, formas), `MoneyFormat`, componentes y `DesignCatalog`; capturas Roborazzi | P9 |
 | `core:security` | `SecureStorage` | — |
 | `core:network` | Cliente Ktor por plataforma | P9 (tipos de cambio) |
 | `core:datastore` | Preferencias (`AppPreferences`) | P8 |
