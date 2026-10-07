@@ -44,23 +44,31 @@ invites/{code}
 
 Índices compuestos: `updatedAt` ascendente en cada subcolección (consultas incrementales de [SYNC](SYNC.md#bajada-firestore--local)).
 
-## Reglas (resumen)
+## Reglas
 
-Se escriben en `firebase/firestore.rules` y se prueban en `firebase/rules-test` con el emulador.
+Implementadas en `firebase/firestore.rules` y probadas con el emulador en `firebase/rules-test` (32 tests; job `Firestore rules (emulator)` en CI). En local:
+
+```bash
+cd firebase && npx firebase-tools emulators:exec --only firestore --project demo-owlsplit "npm --prefix rules-test test"
+```
 
 - **Autenticación obligatoria** en todo (incluidos los usuarios anónimos).
+- **Toda escritura** lleva `version` = anterior + 1 (o 1 al crear), `updatedAt == request.time` (`serverTimestamp()`) y `updatedBy` = quien escribe. Las claves de cada documento están cerradas (`hasOnly`).
+- **Nada se borra** desde el cliente (borrado lógico con `deleted`), salvo `invites/{code}` al regenerar el código.
 - `users/{uid}`: solo su dueño lee y escribe.
 - `groups/{id}`:
-  - **Leer**: `request.auth.uid in resource.data.memberUids`.
-  - **Crear**: `memberUids == [request.auth.uid]`, `createdBy == request.auth.uid`, `version == 1`.
-  - **Editar (miembro)**: es miembro, `version` encadenada, `updatedAt == request.time`, no puede quitar a otros de `memberUids` (MVP: sin expulsiones).
-  - **Unirse (no miembro)**: el único cambio es añadir `request.auth.uid` a `memberUids` y fijar `lastJoinCode`, que debe ser igual a `resource.data.inviteCode`.
-  - **Salir**: el único cambio es quitar el uid propio de `memberUids`.
-- Subcolecciones `members`, `expenses`, `transfers`: leer y escribir solo miembros del grupo (`get()` del grupo padre); validación de forma y tipos, `version` encadenada, `updatedAt == request.time`, `updatedBy == request.auth.uid`. En gastos: suma de pagadores = `amountMinor`; en `EXACT`, suma de partes = `amountMinor`.
-  - **Reclamar miembro**: solo se puede poner `userUid` de nulo a `request.auth.uid`, y solo si el uid ya está en `memberUids` y no tiene otro miembro en el grupo (el cliente lo comprueba; las reglas garantizan al menos lo primero).
-- `changelog`: crear si eres miembro y `authorUid == request.auth.uid`; **nunca** editar ni borrar.
-- `invites/{code}`: leer cualquier usuario autenticado (solo contiene `groupId`); crear y borrar solo miembros del grupo.
-- **Previsualizar un grupo antes de unirse**: el no miembro solo puede leer `invites/{code}`; la vista previa muestra el nombre, que se copia en el documento de invitación (`groupName`, `memberCount`) al generarlo.
+  - **Leer**: miembros (`uid in memberUids`); la lista de mis grupos se consulta con `array-contains`.
+  - **Crear**: `memberUids == [uid]`, `createdBy == uid`, `archivedBy == []`.
+  - **Editar (miembro)**: no cambia `memberUids`, `createdBy`, `createdAt` ni `lastJoinCode`; en `archivedBy` solo añade o quita su propio uid.
+  - **Unirse (no miembro)**: como no puede leer el grupo, escribe con transformaciones: `memberUids: arrayUnion(uid)`, `version: increment(1)`, `updatedAt: serverTimestamp()`, `lastJoinCode` = código. Las reglas exigen que el código sea el vigente y que solo se añada su uid (máx. 50 miembros).
+  - **Salir**: solo quita su propio uid (`arrayRemove`).
+- `members`, `expenses`, `transfers`: leer y escribir solo miembros del grupo (`get()` del grupo). Se validan tipos, rangos y tamaños: textos con longitud máxima, divisa ISO, fecha `AAAA-MM-DD`, importe entero en (0, 10¹²], tipo de cambio entero, categoría y tipo de reparto de la lista, mapas de pagadores y reparto con 1–50 entradas, peso 1–100.
+  - **Las sumas no se validan** (pagadores = importe, partes exactas = importe): las reglas no tienen bucles. Las garantiza el cliente (dominio de P3) y `ObserveGroupBalances` (P4) deja fuera y señala cualquier gasto inconsistente.
+  - **Reclamar miembro**: `userUid` solo pasa de nulo al uid propio o del uid propio a nulo; nunca se toma ni se libera el de otro. Que un usuario no reclame dos miembros del mismo grupo lo comprueba el cliente.
+  - En gastos y transferencias no cambian `createdBy` ni `createdAt`; en transferencias tampoco origen, destino ni importe (se borran y se crean de nuevo).
+- `changelog`: crear si eres miembro y `authorUid == uid`; **nunca** editar ni borrar.
+- `invites/{code}` (id = código): `get` para cualquier usuario autenticado, `list` prohibido. Crear solo miembros y solo con el código vigente del grupo; contiene `groupId`, `groupName`, `groupIcon` y `memberCount` para previsualizar antes de unirse.
+- `smoke/{uid}`: se mantiene para repetir la prueba de humo de P2 al actualizar GitLive.
 
 ## Autenticación
 

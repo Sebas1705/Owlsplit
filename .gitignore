@@ -62,3 +62,6 @@ secrets.properties
 
 # Detekt
 **/build/reports/detekt/
+
+node_modules/
+firebase/*-debug.log
