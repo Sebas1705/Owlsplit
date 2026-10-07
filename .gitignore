@@ -13,3 +13,52 @@ GoogleService-Info.plist
 *.jks
 *.keystore
 .env
+# Gradle
+**/.gradle/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# IDE
+*.ipr
+*.iws
+*.swp
+Thumbs.db
+
+# Android
+/local.properties
+*.apk
+*.ap_
+*.aab
+
+# iOS / Xcode
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+DerivedData/
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+Pods/
+
+# KMP
+iosApp/Pods/
+iosApp/.build/
+
+# Secrets / env
+secrets.properties
+
+# SQLDelight generated
+**/build/sqldelight/
+
+# Detekt
+**/build/reports/detekt/
