@@ -96,6 +96,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.koin.android)
+            implementation(libs.androidx.work.runtime)
         }
     }
 }
