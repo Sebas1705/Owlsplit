@@ -21,6 +21,24 @@ require(appEnvironment in templetryProfiles) {
     "Unknown appEnv \"$appEnvironment\" — want one of ${templetryProfiles.keys}"
 }
 
+// One Firebase app per environment: development and staging install side by side
+// with production thanks to the applicationId suffix.
+val applicationIdSuffixByEnv = mapOf("development" to ".dev", "staging" to ".stg", "production" to "")
+
+android {
+    defaultConfig {
+        applicationIdSuffix = applicationIdSuffixByEnv.getValue(appEnvironment).ifEmpty { null }
+    }
+}
+
+// The Firebase config comes from Doppler (scripts/doppler-sync-local.sh) and is git-ignored.
+// Without it the app still builds (CI, fresh clones) but Firebase is not initialised.
+if (file("google-services.json").exists()) {
+    apply(plugin = libs.plugins.google.services.get().pluginId)
+} else {
+    logger.warn("composeApp/google-services.json missing: building without Firebase config")
+}
+
 val generateAppConfig = tasks.register("generateAppConfig") {
     val environment = appEnvironment
     val profile = templetryProfiles.getValue(environment)
