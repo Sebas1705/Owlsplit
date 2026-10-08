@@ -17,7 +17,7 @@ Los planes se escriben en detalle (código completo, comandos exactos) **justo a
 | P7 | [Sistema de diseño](2026-10-07-p07-design-system.md) | `OwlsplitTheme`, tokens, Inter, iconos Tabler, componentes de `core:ui` con previews y capturas claro/oscuro | P1 | Hecho |
 | P8 | [Cuentas y onboarding](2026-10-07-p08-accounts-onboarding.md) | Auth anónima, onboarding, perfil, vincular Google/Apple, borrar cuenta | P6, P7 | Hecho (Google pendiente de activar en consola; Apple en P11) |
 | P9 | Grupos, gastos y saldos (pantallas): [P9a](2026-10-08-p09a-groups-expenses.md) · [P9b](2026-10-08-p09b-currencies-payers.md) · [P9c](2026-10-08-p09c-history-filters.md) | Inicio, grupo (gastos, saldos, saldar), editor de gasto y de reparto, transferencias, historial, multidivisa con Frankfurter | P6, P7, P8 | Hecho |
-| P10 | Invitaciones | Códigos, QR, App Links / Universal Links con Firebase Hosting, unirse y reclamar miembro | P9 | Pendiente |
+| P10 | Invitaciones: [P10a](2026-10-08-p10a-invites.md) · P10b | Códigos, QR, App Links / Universal Links con Firebase Hosting, unirse y reclamar miembro | P9 | En curso (P10a hecho; P10b: QR, Hosting y enlaces) |
 | P11 | Pulido y entrega | i18n es/en, accesibilidad, Crashlytics, proyectos stg/prd, firma, pipeline de release a App Distribution, checklist de criterios de aceptación | P10 | Pendiente |
 
 ## Dependencias y paralelismo

@@ -3,6 +3,7 @@ package es.sebas1705.owlsplit
 import androidx.compose.ui.window.ComposeUIViewController
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.apps
+import es.sebas1705.owlsplit.core.ui.components.TextSharer
 import es.sebas1705.owlsplit.data.local.DatabaseDriverFactory
 import es.sebas1705.owlsplit.data.models.GoogleTokenResult
 import es.sebas1705.owlsplit.di.FirebaseStatus
@@ -10,6 +11,7 @@ import es.sebas1705.owlsplit.di.accountModule
 import es.sebas1705.owlsplit.di.appModule
 import es.sebas1705.owlsplit.di.dataModule
 import es.sebas1705.owlsplit.di.groupsModule
+import es.sebas1705.owlsplit.di.inviteModule
 import es.sebas1705.owlsplit.domain.usecases.account.GoogleCredentials
 import es.sebas1705.owlsplit.sync.SyncStarter
 import es.sebas1705.owlsplit.sync.syncModule
@@ -33,10 +35,13 @@ fun MainViewController() = ComposeUIViewController(
                 syncModule,
                 accountModule,
                 groupsModule,
+                inviteModule,
                 module {
                     single { DatabaseDriverFactory() }
                     single { firebase }
                     single<GoogleCredentials> { UnavailableGoogleCredentials }
+                    // The iOS share sheet arrives with P11; until then the screen copies the text.
+                    single<TextSharer> { TextSharer { false } }
                 },
             )
         }.koin

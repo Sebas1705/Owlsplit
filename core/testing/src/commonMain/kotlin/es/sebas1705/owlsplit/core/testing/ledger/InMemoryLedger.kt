@@ -49,7 +49,7 @@ class InMemoryLedger(var uid: String = "uid-ana") {
         override suspend fun create(input: GroupInput, creatorName: String): String {
             val group = Group(
                 id("g"), input.name, input.icon, input.accent, input.baseCurrency, input.startDate, input.endDate,
-                "CODE", listOf(uid), emptyList(), uid, now(), meta(),
+                "ABCDEFGH", listOf(uid), emptyList(), uid, now(), meta(),
             )
             groupList.update { it + group }
             memberList.update { it + Member(id("m"), group.id, creatorName, null, 1, uid, true, 0, meta()) }
@@ -69,6 +69,10 @@ class InMemoryLedger(var uid: String = "uid-ana") {
 
         override suspend fun setArchived(id: String, archived: Boolean) = editGroup(id) {
             it.copy(archivedBy = if (archived) it.archivedBy + uid else it.archivedBy - uid)
+        }
+
+        override suspend fun regenerateInviteCode(id: String) = editGroup(id) {
+            it.copy(inviteCode = "ZXCVBNM" + "23456789"[++next % 8])
         }
 
         override suspend fun leave(id: String) {
@@ -94,6 +98,15 @@ class InMemoryLedger(var uid: String = "uid-ana") {
             editMember(id) { it.copy(name = input.name, avatar = input.avatar, defaultWeight = input.defaultWeight) }
 
         override suspend fun setActive(id: String, active: Boolean) = editMember(id) { it.copy(active = active) }
+
+        override suspend fun claim(id: String) = editMember(id) { it.copy(userUid = uid, active = true) }
+
+        override suspend fun addMe(groupId: String, name: String, avatar: String?): String {
+            val sortKey = memberList.value.count { it.groupId == groupId }.toLong()
+            val member = Member(id("m"), groupId, name, avatar, 1, uid, true, sortKey, meta())
+            memberList.update { it + member }
+            return member.id
+        }
 
         override suspend fun deleteIfUnused(id: String): Boolean {
             val used = expenseList.value.any { id in it.payers || id in it.splitValues } ||

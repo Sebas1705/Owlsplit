@@ -25,6 +25,13 @@ require(appEnvironment in templetryProfiles) {
 // with production thanks to the applicationId suffix.
 val applicationIdSuffixByEnv = mapOf("development" to ".dev", "staging" to ".stg", "production" to "")
 
+// Firebase Hosting site that serves the invite links (`/j/<code>`, P10b). Production's project comes with P11.
+val inviteBaseUrlByEnv = mapOf(
+    "development" to "https://owlsplit-dev.web.app",
+    "staging" to "https://owlsplit-dev.web.app",
+    "production" to "https://owlsplit.web.app",
+)
+
 android {
     defaultConfig {
         applicationIdSuffix = applicationIdSuffixByEnv.getValue(appEnvironment).ifEmpty { null }
@@ -42,9 +49,11 @@ if (file("google-services.json").exists()) {
 val generateAppConfig = tasks.register("generateAppConfig") {
     val environment = appEnvironment
     val profile = templetryProfiles.getValue(environment)
+    val inviteBaseUrl = inviteBaseUrlByEnv.getValue(environment)
     val outputDir = layout.buildDirectory.dir("generated/templetry/commonMain/kotlin")
 
     inputs.property("environment", environment)
+    inputs.property("inviteBaseUrl", inviteBaseUrl)
     outputs.dir(outputDir)
 
     doLast {
@@ -60,6 +69,7 @@ val generateAppConfig = tasks.register("generateAppConfig") {
             |    const val FX_API_BASE_URL: String = "${profile.first}"
             |    const val VERBOSE_LOGGING: Boolean = ${profile.second}
             |    const val FX_CACHE_SECONDS: Int = ${profile.third}
+            |    const val INVITE_BASE_URL: String = "$inviteBaseUrl"
             |}
             |
             """.trimMargin()
@@ -100,6 +110,7 @@ kotlin {
             implementation(project(":feature:groups"))
             implementation(project(":feature:expense"))
             implementation(project(":feature:history"))
+            implementation(project(":feature:invite"))
             implementation(libs.compose.icons.tabler)
         }
         androidMain.dependencies {

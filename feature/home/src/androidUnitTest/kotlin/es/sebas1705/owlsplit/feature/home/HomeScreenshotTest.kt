@@ -23,7 +23,7 @@ class HomeScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private val navigation = HomeNavigation({}, {}, {}, {}, {})
+    private val navigation = HomeNavigation({}, {}, {}, {}, {}, {})
 
     private fun group(id: String, name: String, icon: String, accent: String, currency: String = "EUR") = Group(
         id, name, icon, accent, currency, null, null, "CODE", listOf("uid"), emptyList(), "uid", 0,

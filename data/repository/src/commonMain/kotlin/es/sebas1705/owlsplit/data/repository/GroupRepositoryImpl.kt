@@ -76,6 +76,16 @@ class GroupRepositoryImpl(
         }
     }
 
+    override suspend fun regenerateInviteCode(id: String) = withContext(io) {
+        db.transaction {
+            val old = requireGroup(id)
+            // Like archiving, not part of the group history.
+            val new = old.copy(inviteCode = writer.newInviteCode(), meta = writer.editedMeta(old.meta))
+            db.groupEntityQueries.upsert(new.toRow())
+            writer.enqueue(new.id, OutboxType.GROUP, new.id, old.meta.serverVersion, payload(new))
+        }
+    }
+
     override suspend fun leave(id: String) = withContext(io) {
         db.transaction {
             val me = writer.uid()

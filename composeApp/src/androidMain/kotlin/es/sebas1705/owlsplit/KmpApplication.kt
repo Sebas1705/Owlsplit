@@ -6,13 +6,16 @@ import dev.gitlive.firebase.apps
 import es.sebas1705.owlsplit.account.AndroidGoogleCredentials
 import es.sebas1705.owlsplit.account.ResumedActivity
 import es.sebas1705.owlsplit.core.security.appContext
+import es.sebas1705.owlsplit.core.ui.components.TextSharer
 import es.sebas1705.owlsplit.data.local.DatabaseDriverFactory
 import es.sebas1705.owlsplit.di.FirebaseStatus
 import es.sebas1705.owlsplit.di.accountModule
 import es.sebas1705.owlsplit.di.appModule
 import es.sebas1705.owlsplit.di.dataModule
 import es.sebas1705.owlsplit.di.groupsModule
+import es.sebas1705.owlsplit.di.inviteModule
 import es.sebas1705.owlsplit.domain.usecases.account.GoogleCredentials
+import es.sebas1705.owlsplit.share.AndroidTextSharer
 import es.sebas1705.owlsplit.sync.SyncStarter
 import es.sebas1705.owlsplit.sync.SyncWorker
 import es.sebas1705.owlsplit.sync.syncModule
@@ -36,10 +39,12 @@ class KmpApplication : Application() {
                 syncModule,
                 accountModule,
                 groupsModule,
+                inviteModule,
                 module {
                     single { DatabaseDriverFactory(this@KmpApplication) }
                     single { firebase }
                     single<GoogleCredentials> { AndroidGoogleCredentials(this@KmpApplication, activities) }
+                    single<TextSharer> { AndroidTextSharer(activities) }
                 },
             )
         }.koin

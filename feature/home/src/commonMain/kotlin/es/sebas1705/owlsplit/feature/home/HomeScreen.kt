@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import compose.icons.TablerIcons
 import compose.icons.tablericons.ArrowsLeftRight
+import compose.icons.tablericons.Link
 import compose.icons.tablericons.Plus
 import compose.icons.tablericons.UserPlus
 import es.sebas1705.owlsplit.core.money.Currency
@@ -46,6 +47,7 @@ import es.sebas1705.owlsplit.domain.usecases.groups.HomeGroup
 import es.sebas1705.owlsplit.feature.home.resources.Res
 import es.sebas1705.owlsplit.feature.home.resources.action_expense
 import es.sebas1705.owlsplit.feature.home.resources.action_group
+import es.sebas1705.owlsplit.feature.home.resources.action_join
 import es.sebas1705.owlsplit.feature.home.resources.action_settle
 import es.sebas1705.owlsplit.feature.home.resources.approximate
 import es.sebas1705.owlsplit.feature.home.resources.balance_spoken_even
@@ -53,6 +55,7 @@ import es.sebas1705.owlsplit.feature.home.resources.balance_spoken_owe
 import es.sebas1705.owlsplit.feature.home.resources.balance_spoken_owed
 import es.sebas1705.owlsplit.feature.home.resources.cancel
 import es.sebas1705.owlsplit.feature.home.resources.create_group
+import es.sebas1705.owlsplit.feature.home.resources.join_with_code
 import es.sebas1705.owlsplit.feature.home.resources.empty_body
 import es.sebas1705.owlsplit.feature.home.resources.empty_title
 import es.sebas1705.owlsplit.feature.home.resources.groups
@@ -109,6 +112,11 @@ fun HomeScreen(
                 actionLabel = stringResource(Res.string.create_group),
                 onAction = navigation.createGroup,
             )
+            TextActionButton(
+                stringResource(Res.string.join_with_code),
+                navigation.joinGroup,
+                Modifier.align(Alignment.CenterHorizontally),
+            )
             return@Column
         }
         Balance(state, format)
@@ -124,6 +132,7 @@ fun HomeScreen(
                 { quick(QuickAction.SETTLE) }
             )
             QuickActionButton(TablerIcons.UserPlus, stringResource(Res.string.action_group), navigation.createGroup)
+            QuickActionButton(TablerIcons.Link, stringResource(Res.string.action_join), navigation.joinGroup)
         }
         if (state.suggestLinking) Nudge(onEvent, navigation.link)
         OwlsplitContainer(title = stringResource(Res.string.groups)) {

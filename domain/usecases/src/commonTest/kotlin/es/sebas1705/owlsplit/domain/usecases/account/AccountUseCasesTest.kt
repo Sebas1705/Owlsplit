@@ -34,6 +34,7 @@ class AccountUseCasesTest {
         override suspend fun create(input: GroupInput, creatorName: String): String = error("unused")
         override suspend fun update(id: String, input: GroupInput) = error("unused")
         override suspend fun setArchived(id: String, archived: Boolean) = error("unused")
+        override suspend fun regenerateInviteCode(id: String) = error("unused")
         override suspend fun leave(id: String) {
             log += "leave $id"
         }

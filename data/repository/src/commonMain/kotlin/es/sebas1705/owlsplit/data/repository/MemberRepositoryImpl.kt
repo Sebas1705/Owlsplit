@@ -53,6 +53,27 @@ class MemberRepositoryImpl(
         }
     }
 
+    override suspend fun claim(id: String) = withContext(io) {
+        db.transaction {
+            val old = requireMember(id)
+            require(old.userUid == null) { "Member $id already has an account" }
+            val new = old.copy(userUid = writer.uid(), active = true, meta = writer.editedMeta(old.meta))
+            save(db, writer, new, old, ChangeAction.JOINED)
+        }
+    }
+
+    override suspend fun addMe(groupId: String, name: String, avatar: String?): String = withContext(io) {
+        db.transactionWithResult {
+            val member = Member(
+                id = writer.newId(), groupId = groupId, name = name, avatar = avatar, defaultWeight = 1,
+                userUid = writer.uid(), active = true,
+                sortKey = db.memberEntityQueries.nextSortKey(groupId).executeAsOne(), meta = writer.createdMeta(),
+            )
+            save(db, writer, member, old = null, action = ChangeAction.JOINED)
+            member.id
+        }
+    }
+
     private suspend fun edit(id: String, change: (Member) -> Member) = withContext(io) {
         db.transaction {
             val old = requireMember(id)

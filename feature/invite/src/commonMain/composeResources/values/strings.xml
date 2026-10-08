@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="back">Atrás</string>
+    <!-- Invite -->
+    <string name="invite_title">Invitar al grupo</string>
+    <string name="invite_body">Comparte el enlace o di el código: quien lo abra podrá unirse y elegir quién es en el grupo.</string>
+    <string name="code_label">Código</string>
+    <string name="share_link">Compartir enlace</string>
+    <string name="copy_code">Copiar código</string>
+    <string name="copied">Copiado</string>
+    <string name="share_text">Únete a «%1$s» en Owlsplit: %2$s (código %3$s)</string>
+    <string name="regenerate">Generar código nuevo</string>
+    <string name="regenerate_title">¿Generar un código nuevo?</string>
+    <string name="regenerate_body">El enlace y el código actuales dejarán de funcionar.</string>
+    <string name="regenerate_confirm">Generar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="preparing">Preparando la invitación…</string>
+    <string name="offline">Para invitar hace falta conexión. Inténtalo cuando tengas red.</string>
+    <string name="retry">Reintentar</string>
+    <string name="failed">No se pudo preparar la invitación.</string>
+    <!-- Join -->
+    <string name="join_title">Unirse a un grupo</string>
+    <string name="join_body">Escribe el código de 8 letras o pega el enlace que te han pasado.</string>
+    <string name="code_placeholder">ABCD EFGH</string>
+    <string name="search">Buscar grupo</string>
+    <string name="searching">Buscando…</string>
+    <string name="not_found">Código no válido o caducado. Pide un enlace nuevo.</string>
+    <string name="join">Unirme</string>
+    <string name="join_offline">Para unirte hace falta conexión. Inténtalo cuando tengas red.</string>
+    <string name="joining">Uniéndote…</string>
+    <string name="rejected">Ese código ya no sirve (o el grupo está lleno). Pide un enlace nuevo.</string>
+    <plurals name="people">
+        <item quantity="one">%1$d persona</item>
+        <item quantity="other">%1$d personas</item>
+    </plurals>
+    <string name="who_are_you">¿Quién eres en el grupo?</string>
+    <string name="who_are_you_body">Si ya te habían apuntado, elige tu nombre: tus gastos y tu saldo serán tuyos.</string>
+    <string name="waiting_members">Descargando el grupo…</string>
+    <string name="new_member">Soy nuevo: añadirme como %1$s</string>
+    <string name="me_default">Yo</string>
+</resources>

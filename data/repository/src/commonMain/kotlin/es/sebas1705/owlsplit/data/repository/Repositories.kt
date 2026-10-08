@@ -26,6 +26,9 @@ interface GroupRepository {
      * afterwards the group can no longer be read or written by this user.
      */
     suspend fun leave(id: String)
+
+    /** A new invite code: links with the old one stop working once it is withdrawn. */
+    suspend fun regenerateInviteCode(id: String)
 }
 
 interface MemberRepository {
@@ -36,6 +39,12 @@ interface MemberRepository {
 
     /** Deletes a member without movements; returns false (and changes nothing) otherwise. */
     suspend fun deleteIfUnused(id: String): Boolean
+
+    /** Links a ghost member to me (after joining). */
+    suspend fun claim(id: String)
+
+    /** A new member for me, when none of the ghosts is me. */
+    suspend fun addMe(groupId: String, name: String, avatar: String?): String
 }
 
 interface ExpenseRepository {
