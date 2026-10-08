@@ -95,6 +95,9 @@ kotlin {
             implementation(project(":data:repository"))
             implementation(project(":feature:onboarding"))
             implementation(project(":feature:profile"))
+            implementation(project(":feature:home"))
+            implementation(project(":feature:groups"))
+            implementation(project(":feature:expense"))
             implementation(libs.compose.icons.tabler)
         }
         androidMain.dependencies {

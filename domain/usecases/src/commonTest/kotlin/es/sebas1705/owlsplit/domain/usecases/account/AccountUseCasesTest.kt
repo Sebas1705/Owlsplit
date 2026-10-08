@@ -1,11 +1,11 @@
 package es.sebas1705.owlsplit.domain.usecases.account
 
+import es.sebas1705.owlsplit.data.models.GroupInput
 import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.data.models.Session
 import es.sebas1705.owlsplit.data.models.SyncMeta
 import es.sebas1705.owlsplit.data.models.SyncState
 import es.sebas1705.owlsplit.data.models.UserProfile
-import es.sebas1705.owlsplit.data.repository.GroupInput
 import es.sebas1705.owlsplit.data.repository.GroupRepository
 import es.sebas1705.owlsplit.data.models.AccountResult
 import es.sebas1705.owlsplit.data.repository.account.AccountService
@@ -40,6 +40,7 @@ class AccountUseCasesTest {
     }
 
     private inner class Sync(var online: Boolean = true, val lost: Set<String> = emptySet()) : SyncControl {
+        override val pendingCount = MutableStateFlow(0L)
         override suspend fun flush(): Boolean = online.also { log += "flush" }
         override fun isAccessLost(groupId: String) = groupId in lost
     }

@@ -2,47 +2,14 @@ package es.sebas1705.owlsplit.data.repository
 
 import es.sebas1705.owlsplit.data.models.ChangeLogEntry
 import es.sebas1705.owlsplit.data.models.Expense
-import es.sebas1705.owlsplit.data.models.ExpenseCategory
+import es.sebas1705.owlsplit.data.models.ExpenseInput
+import es.sebas1705.owlsplit.data.models.GroupInput
+import es.sebas1705.owlsplit.data.models.MemberInput
+import es.sebas1705.owlsplit.data.models.TransferInput
 import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.data.models.Member
-import es.sebas1705.owlsplit.data.models.SplitType
 import es.sebas1705.owlsplit.data.models.Transfer
 import kotlinx.coroutines.flow.Flow
-import kotlinx.datetime.LocalDate
-
-data class GroupInput(
-    val name: String,
-    val icon: String,
-    val accent: String,
-    val baseCurrency: String,
-    val startDate: LocalDate? = null,
-    val endDate: LocalDate? = null,
-)
-
-data class MemberInput(val name: String, val avatar: String? = null, val defaultWeight: Long = 1)
-
-data class ExpenseInput(
-    val title: String,
-    val category: ExpenseCategory,
-    val note: String?,
-    val date: LocalDate,
-    val currency: String,
-    val amountMinor: Long,
-    val fxRateScaled: Long,
-    val payers: Map<String, Long>,
-    val splitType: SplitType,
-    val splitValues: Map<String, Long>,
-)
-
-data class TransferInput(
-    val fromMemberId: String,
-    val toMemberId: String,
-    val amountMinor: Long,
-    val currency: String,
-    val fxRateScaled: Long,
-    val date: LocalDate,
-    val note: String? = null,
-)
 
 interface GroupRepository {
     fun observeGroups(): Flow<List<Group>>

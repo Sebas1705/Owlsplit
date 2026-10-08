@@ -8,4 +8,15 @@
     <string name="accent_amber">Ámbar</string>
     <string name="accent_cyan">Cian</string>
     <string name="accent_graphite">Grafito</string>
+    <string name="category_food">Comida</string>
+    <string name="category_groceries">Compra</string>
+    <string name="category_transport">Transporte</string>
+    <string name="category_accommodation">Alojamiento</string>
+    <string name="category_leisure">Ocio</string>
+    <string name="category_shopping">Compras</string>
+    <string name="category_home">Casa</string>
+    <string name="category_utilities">Suministros</string>
+    <string name="category_health">Salud</string>
+    <string name="category_gifts">Regalos</string>
+    <string name="category_other">Otros</string>
 </resources>

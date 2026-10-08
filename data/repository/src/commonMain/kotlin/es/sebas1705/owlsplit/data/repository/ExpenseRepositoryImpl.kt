@@ -1,5 +1,6 @@
 package es.sebas1705.owlsplit.data.repository
 
+import es.sebas1705.owlsplit.data.models.ExpenseInput
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import es.sebas1705.owlsplit.data.local.db.AppDatabase

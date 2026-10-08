@@ -39,7 +39,7 @@ class SyncEngine(
     private val pushLock = Mutex()
 
     /** Number of writes waiting to be uploaded. */
-    val pendingCount: Flow<Long> = db.outboxQueries.countAll().asFlow().mapToOne(io)
+    override val pendingCount: Flow<Long> = db.outboxQueries.countAll().asFlow().mapToOne(io)
 
     override fun isAccessLost(groupId: String): Boolean = local.isAccessLost(groupId)
 

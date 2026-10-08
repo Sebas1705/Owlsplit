@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="new_expense">Nuevo gasto</string>
+    <string name="edit_expense">Editar gasto</string>
+    <string name="close">Cerrar</string>
+    <string name="delete">Borrar</string>
+    <string name="amount_hint">Toca para cambiar el importe</string>
+    <string name="done">Hecho</string>
+    <string name="backspace">Borrar dígito</string>
+    <string name="title_label">Concepto</string>
+    <string name="title_placeholder">Cena, taxi, súper…</string>
+    <string name="category_label">Categoría</string>
+    <string name="paid_by">Pagó</string>
+    <string name="split_between">Entre</string>
+    <string name="type_equal">Iguales</string>
+    <string name="type_weights">Pesos</string>
+    <string name="type_exact">Importes</string>
+    <string name="type_percent">%</string>
+    <string name="you">%1$s (tú)</string>
+    <string name="not_included">Fuera</string>
+    <string name="save">Guardar</string>
+    <string name="missing_amount">Escribe el importe.</string>
+    <string name="missing_title">Escribe un concepto.</string>
+    <string name="no_payer">Elige quién pagó.</string>
+    <string name="no_beneficiary">Elige al menos una persona.</string>
+    <string name="exact_missing">Faltan %1$s por repartir.</string>
+    <string name="exact_extra">Sobran %1$s.</string>
+    <string name="percent_missing">Falta repartir un %1$s %.</string>
+    <string name="percent_extra">Sobra un %1$s %.</string>
+    <string name="invalid_split">El reparto no cuadra.</string>
+    <string name="delete_title">¿Borrar este gasto?</string>
+    <string name="delete_body">Los saldos se recalculan sin él.</string>
+    <string name="cancel">Cancelar</string>
+</resources>

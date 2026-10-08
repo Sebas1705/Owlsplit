@@ -1,5 +1,6 @@
 package es.sebas1705.owlsplit.core.testing.account
 
+import es.sebas1705.owlsplit.data.models.GroupInput
 import es.sebas1705.owlsplit.data.models.Session
 import es.sebas1705.owlsplit.data.models.UserProfile
 import es.sebas1705.owlsplit.data.models.AccountResult
@@ -9,7 +10,6 @@ import es.sebas1705.owlsplit.data.models.GoogleTokenResult
 import es.sebas1705.owlsplit.data.repository.account.ProfileRepository
 import es.sebas1705.owlsplit.data.repository.sync.SyncControl
 import es.sebas1705.owlsplit.data.models.Group
-import es.sebas1705.owlsplit.data.repository.GroupInput
 import es.sebas1705.owlsplit.data.repository.GroupRepository
 import es.sebas1705.owlsplit.data.repository.account.ProfileRemote
 import kotlinx.coroutines.flow.Flow
@@ -87,6 +87,8 @@ class FakeGoogle(
 }
 
 class FakeSync(var online: Boolean = true) : SyncControl {
+    override val pendingCount = MutableStateFlow(0L)
+
     override suspend fun flush() = online
 
     override fun isAccessLost(groupId: String) = false

@@ -9,6 +9,7 @@ import es.sebas1705.owlsplit.di.FirebaseStatus
 import es.sebas1705.owlsplit.di.accountModule
 import es.sebas1705.owlsplit.di.appModule
 import es.sebas1705.owlsplit.di.dataModule
+import es.sebas1705.owlsplit.di.groupsModule
 import es.sebas1705.owlsplit.domain.usecases.account.GoogleCredentials
 import es.sebas1705.owlsplit.sync.SyncStarter
 import es.sebas1705.owlsplit.sync.syncModule
@@ -31,6 +32,7 @@ fun MainViewController() = ComposeUIViewController(
                 dataModule,
                 syncModule,
                 accountModule,
+                groupsModule,
                 module {
                     single { DatabaseDriverFactory() }
                     single { firebase }

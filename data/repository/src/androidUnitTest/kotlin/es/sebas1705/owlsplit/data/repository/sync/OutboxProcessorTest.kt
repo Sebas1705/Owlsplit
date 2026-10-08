@@ -1,9 +1,9 @@
 package es.sebas1705.owlsplit.data.repository.sync
 
+import es.sebas1705.owlsplit.data.models.GroupInput
 import es.sebas1705.owlsplit.data.models.ChangeAction
 import es.sebas1705.owlsplit.data.models.OutboxType
 import es.sebas1705.owlsplit.data.models.SyncState
-import es.sebas1705.owlsplit.data.repository.GroupInput
 import es.sebas1705.owlsplit.data.repository.TestEnv
 import es.sebas1705.owlsplit.data.repository.Writer
 import kotlinx.coroutines.flow.first
