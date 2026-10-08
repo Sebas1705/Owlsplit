@@ -82,7 +82,12 @@ class ProfileViewModel(
 
     init {
         viewModelScope.launch {
-            combine(observeAccount(), display.themeMode, display.language, ::Triple).collect { (account, theme, language) ->
+            combine(
+                observeAccount(),
+                display.themeMode,
+                display.language,
+                ::Triple
+            ).collect { (account, theme, language) ->
                 val profile = account.profile
                 val session = account.session
                 updateState { state ->

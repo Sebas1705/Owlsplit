@@ -18,7 +18,7 @@ import org.robolectric.annotation.GraphicsMode
 /** Record with `recordRoborazziDebug`. */
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [35], qualifiers = "w411dp-h1200dp-xxhdpi")
+@Config(sdk = [35], qualifiers = "es-w411dp-h1200dp-xxhdpi")
 class InviteScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
@@ -72,4 +72,8 @@ class InviteScreenshotTest {
 
     @Test
     fun joinPickDark() = capture("join_pick_dark", dark = true) { JoinScreen(picking, {}, {}) }
+
+    @Test
+    @Config(qualifiers = "en-w411dp-h1200dp-xxhdpi")
+    fun joinPickEnglish() = capture("join_pick_en") { JoinScreen(picking, {}, {}) }
 }

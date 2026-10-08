@@ -7,19 +7,17 @@ import androidx.compose.ui.platform.LocalConfiguration
 import java.util.Locale
 
 actual object LocalAppLocale {
-    /** The device language, captured before the app overrides it. */
-    private var device: Locale? = null
-
     actual val current: String
-        @Composable get() = Locale.getDefault().toLanguageTag()
+        @Composable get() = LocalConfiguration.current.locales[0].toLanguageTag()
 
     @Composable
     actual infix fun provides(tag: String?): ProvidedValue<*> {
-        val base = device ?: Locale.getDefault().also { device = it }
-        val locale = tag?.let(Locale::forLanguageTag) ?: base
+        // The activity's configuration keeps the device language: the override is a copy of it.
+        val device = LocalConfiguration.current
+        val locale = tag?.let(Locale::forLanguageTag) ?: device.locales[0]
+        // Platform formatters (the date picker) read the default locale.
         Locale.setDefault(locale)
-        // A copy: the activity's own configuration stays untouched.
-        val configuration = Configuration(LocalConfiguration.current).apply { setLocale(locale) }
+        val configuration = Configuration(device).apply { setLocale(locale) }
         return LocalConfiguration.provides(configuration)
     }
 }

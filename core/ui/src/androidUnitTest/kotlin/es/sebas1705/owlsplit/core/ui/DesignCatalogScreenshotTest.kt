@@ -15,7 +15,7 @@ import org.robolectric.annotation.GraphicsMode
 /** Record with `recordRoborazziDebug`, compare locally with `verifyRoborazziDebug`. */
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [35], qualifiers = "w411dp-h2200dp-xxhdpi")
+@Config(sdk = [35], qualifiers = "es-w411dp-h2200dp-xxhdpi")
 class DesignCatalogScreenshotTest {
     @get:Rule
     val compose = createComposeRule()

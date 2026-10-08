@@ -279,7 +279,11 @@ private fun Preferences(state: ProfileState, onEvent: (ProfileIntent) -> Unit) {
                 selectedIndex = modes.indexOf(state.theme),
                 onSelect = { onEvent(ProfileIntent.ThemeChanged(modes[it])) },
             )
-            Text(stringResource(Res.string.language), style = Owlsplit.type.label, color = Owlsplit.colors.textSecondary)
+            Text(
+                stringResource(Res.string.language),
+                style = Owlsplit.type.label,
+                color = Owlsplit.colors.textSecondary
+            )
             val languages = AppLanguage.entries
             SegmentedControl(
                 // Each language in its own name, so it can be found whatever the app is in.

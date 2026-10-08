@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="welcome_title">Gastos compartidos, cuentas claras</string>
+    <string name="welcome_body">Apunta lo que paga cada uno y Owlsplit te dice quién debe a quién. Sin registrarte.</string>
+    <string name="start">Empezar</string>
+    <string name="existing_account">Ya tengo cuenta</string>
+    <string name="skip">Saltar</string>
+    <string name="back">Atrás</string>
+    <string name="profile_title">¿Cómo te llamas?</string>
+    <string name="profile_body">Así te verán en tus grupos. Puedes cambiarlo cuando quieras.</string>
+    <string name="name_label">Nombre</string>
+    <string name="name_placeholder">Tu nombre</string>
+    <string name="colour_label">Color</string>
+    <string name="continue_">Continuar</string>
+    <string name="start_title">Empieza con un grupo</string>
+    <string name="start_body">Un viaje, el piso, una cena… Crea uno o únete al de tus amigos.</string>
+    <string name="create_group">Crear un grupo</string>
+    <string name="create_group_hint">Invitas después con un enlace</string>
+    <string name="join_group">Unirme con un código</string>
+    <string name="join_group_hint">Te lo pasa quien creó el grupo</string>
+    <string name="later">Ahora no</string>
+    <string name="default_name">Yo</string>
+    <string name="waiting_network">La primera vez necesitas conexión. Esperando a la red…</string>
+    <string name="google_failed">No se pudo entrar con Google. Inténtalo de nuevo.</string>
+    <string name="offline">Sin conexión. Inténtalo de nuevo cuando tengas red.</string>
+    <string name="step_of">Paso %1$d de %2$d</string>
+</resources>

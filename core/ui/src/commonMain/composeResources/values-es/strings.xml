@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="accent_blue">Azul</string>
+    <string name="accent_orange">Naranja</string>
+    <string name="accent_violet">Violeta</string>
+    <string name="accent_green">Verde</string>
+    <string name="accent_pink">Rosa</string>
+    <string name="accent_amber">Ámbar</string>
+    <string name="accent_cyan">Cian</string>
+    <string name="accent_graphite">Grafito</string>
+    <string name="category_food">Comida</string>
+    <string name="category_groceries">Compra</string>
+    <string name="category_transport">Transporte</string>
+    <string name="category_accommodation">Alojamiento</string>
+    <string name="category_leisure">Ocio</string>
+    <string name="category_shopping">Compras</string>
+    <string name="category_home">Casa</string>
+    <string name="category_utilities">Suministros</string>
+    <string name="category_health">Salud</string>
+    <string name="category_gifts">Regalos</string>
+    <string name="category_other">Otros</string>
+    <string name="today">Hoy</string>
+    <string name="yesterday">Ayer</string>
+    <string name="months_short">ene feb mar abr may jun jul ago sep oct nov dic</string>
+    <!-- %1$d day, %2$s short month, %3$d year -->
+    <string name="day_month">%1$d %2$s</string>
+    <string name="day_month_year">%1$d %2$s %3$d</string>
+</resources>

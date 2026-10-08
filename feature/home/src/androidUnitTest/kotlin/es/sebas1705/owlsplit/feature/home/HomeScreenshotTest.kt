@@ -1,9 +1,12 @@
 package es.sebas1705.owlsplit.feature.home
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import es.sebas1705.owlsplit.core.ui.format.LocalMoneyFormat
+import es.sebas1705.owlsplit.core.ui.format.MoneyFormat
 import es.sebas1705.owlsplit.core.ui.theme.OwlsplitTheme
 import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.data.models.SyncMeta
@@ -18,7 +21,7 @@ import org.robolectric.annotation.GraphicsMode
 /** Record with `recordRoborazziDebug`. */
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [35], qualifiers = "w411dp-h891dp-xxhdpi")
+@Config(sdk = [35], qualifiers = "es-w411dp-h891dp-xxhdpi")
 class HomeScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
@@ -43,8 +46,12 @@ class HomeScreenshotTest {
         suggestLinking = true,
     )
 
-    private fun capture(name: String, state: HomeState, dark: Boolean = false) {
-        compose.setContent { OwlsplitTheme(darkTheme = dark) { HomeScreen(state, {}, navigation) } }
+    private fun capture(name: String, state: HomeState, dark: Boolean = false, format: MoneyFormat = MoneyFormat.Spanish) {
+        compose.setContent {
+            OwlsplitTheme(darkTheme = dark) {
+                CompositionLocalProvider(LocalMoneyFormat provides format) { HomeScreen(state, {}, navigation) }
+            }
+        }
         compose.onRoot().captureRoboImage("screenshots/home_$name.png")
     }
 
@@ -56,4 +63,8 @@ class HomeScreenshotTest {
 
     @Test
     fun groupsDark() = capture("groups_dark", withGroups.copy(suggestLinking = false, pending = 0), dark = true)
+
+    @Test
+    @Config(qualifiers = "en-w411dp-h891dp-xxhdpi")
+    fun groupsEnglish() = capture("groups_en", withGroups, format = MoneyFormat.English)
 }
