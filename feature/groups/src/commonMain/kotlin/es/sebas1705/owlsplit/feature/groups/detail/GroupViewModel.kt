@@ -4,7 +4,10 @@ import androidx.lifecycle.viewModelScope
 import es.sebas1705.owlsplit.core.common.mvi.MVIBaseIntent
 import es.sebas1705.owlsplit.core.common.mvi.MVIBaseState
 import es.sebas1705.owlsplit.core.common.mvi.MVIBaseViewModel
+import es.sebas1705.owlsplit.data.models.Expense
+import es.sebas1705.owlsplit.data.models.ExpenseCategory
 import es.sebas1705.owlsplit.domain.ledger.SuggestedPayment
+import es.sebas1705.owlsplit.domain.usecases.history.ExpenseFilter
 import es.sebas1705.owlsplit.domain.usecases.expenses.ExpenseDrafts
 import es.sebas1705.owlsplit.domain.usecases.groups.GroupActions
 import es.sebas1705.owlsplit.domain.usecases.groups.GroupDetail
@@ -21,14 +24,22 @@ data class GroupState(
     val tab: GroupTab = GroupTab.EXPENSES,
     /** My part of each expense (expense id → minor units), for the list. */
     val myShares: Map<String, Long> = emptyMap(),
+    val filter: ExpenseFilter = ExpenseFilter(),
     val confirmSettle: SuggestedPayment? = null,
     val confirmLeave: Boolean = false,
     /** The group is no longer here (left, or gone): the screen closes. */
     val closed: Boolean = false,
-) : MVIBaseState
+) : MVIBaseState {
+    /** The expenses list after search and filters. */
+    val visibleExpenses: List<Expense> get() = detail?.expenses?.let(filter::apply).orEmpty()
+}
 
 sealed interface GroupIntent : MVIBaseIntent {
     data class SelectTab(val tab: GroupTab) : GroupIntent
+    data class Search(val query: String) : GroupIntent
+    data class FilterMember(val memberId: String?) : GroupIntent
+    data class FilterCategory(val category: ExpenseCategory?) : GroupIntent
+    data object ClearFilters : GroupIntent
     data class AskSettle(val payment: SuggestedPayment) : GroupIntent
     data object ConfirmSettle : GroupIntent
     data object ToggleArchive : GroupIntent
@@ -74,6 +85,18 @@ class GroupViewModel(
     override fun intentHandler(intent: GroupIntent): Job = execute {
         when (intent) {
             is GroupIntent.SelectTab -> updateState { it.copy(tab = intent.tab) }
+            is GroupIntent.Search -> updateState {
+                it.copy(
+                    filter = it.filter.copy(query = intent.query.take(MAX_QUERY))
+                )
+            }
+            is GroupIntent.FilterMember -> updateState { it.copy(filter = it.filter.copy(memberId = intent.memberId)) }
+            is GroupIntent.FilterCategory -> updateState {
+                it.copy(
+                    filter = it.filter.copy(category = intent.category)
+                )
+            }
+            GroupIntent.ClearFilters -> updateState { it.copy(filter = ExpenseFilter()) }
             is GroupIntent.AskSettle -> updateState { it.copy(confirmSettle = intent.payment) }
             GroupIntent.ConfirmSettle -> settle()
             GroupIntent.ToggleArchive -> currentState.detail?.let { actions.setArchived(groupId, !it.archivedByMe) }
@@ -93,3 +116,5 @@ class GroupViewModel(
         settleUp(groupId, payment, currency)
     }
 }
+
+private const val MAX_QUERY = 80

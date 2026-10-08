@@ -5,6 +5,7 @@ import es.sebas1705.owlsplit.core.testing.account.FakeAccounts
 import es.sebas1705.owlsplit.core.testing.account.FakeProfiles
 import es.sebas1705.owlsplit.core.testing.ledger.InMemoryLedger
 import es.sebas1705.owlsplit.core.ui.theme.GroupAccent
+import es.sebas1705.owlsplit.data.models.ExpenseCategory
 import es.sebas1705.owlsplit.data.models.GroupInput
 import es.sebas1705.owlsplit.data.models.UserProfile
 import es.sebas1705.owlsplit.domain.usecases.account.ObserveAccount
@@ -180,5 +181,21 @@ class GroupsViewModelsTest {
         vm.onEvent(TransferIntent.Save)
         assertTrue(vm.uiState.value.done)
         assertEquals(1_250L, ledger.transferList.value.single().amountMinor)
+    }
+
+    @Test
+    fun searchAndFiltersNarrowTheList() = runTest {
+        val g = dinnerGroup()
+        val vm = GroupViewModel(g, GroupTab.EXPENSES, detail, SettleUp(ledger.transfers), actions)
+        vm.onEvent(GroupIntent.Search("cena"))
+        assertEquals(1, vm.uiState.value.visibleExpenses.size)
+        vm.onEvent(GroupIntent.Search("taxi"))
+        assertTrue(vm.uiState.value.visibleExpenses.isEmpty())
+        vm.onEvent(GroupIntent.ClearFilters)
+        vm.onEvent(GroupIntent.FilterCategory(ExpenseCategory.FOOD))
+        assertTrue(vm.uiState.value.visibleExpenses.isEmpty()) // the dinner was saved as OTHER
+        vm.onEvent(GroupIntent.ClearFilters)
+        assertFalse(vm.uiState.value.filter.active)
+        assertEquals(1, vm.uiState.value.visibleExpenses.size)
     }
 }
