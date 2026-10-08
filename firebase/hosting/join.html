@@ -47,7 +47,11 @@
     document.title = 'Únete con el código ' + shown + ' · Owlsplit';
 
     // Each Hosting site belongs to one environment; its app has its own package.
-    var packages = { 'owlsplit-dev.web.app': 'es.sebas1705.owlsplit.dev', 'owlsplit.web.app': 'es.sebas1705.owlsplit' };
+    var packages = {
+      'owlsplit-dev.web.app': 'es.sebas1705.owlsplit.dev',
+      'owlsplit-stg.web.app': 'es.sebas1705.owlsplit.stg',
+      'owlsplit.web.app': 'es.sebas1705.owlsplit'
+    };
     var pkg = packages[location.hostname];
     var open = document.getElementById('open');
     if (/Android/i.test(navigator.userAgent) && pkg) {

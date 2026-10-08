@@ -1,5 +1,7 @@
 {
   "projects": {
-    "dev": "owlsplit-dev"
+    "dev": "owlsplit-dev",
+    "stg": "owlsplit-stg",
+    "prd": "owlsplit"
   }
 }
