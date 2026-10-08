@@ -27,7 +27,8 @@ jobs:
       - name: Deploy rules, indexes and Hosting to owlsplit
         working-directory: firebase
         run: |
-          [ -n "$DOPPLER_TOKEN" ] || { echo "::error::Missing the DOPPLER_TOKEN secret in GitHub"; exit 1; }
+          # Until scripts/setup-ci-access.mjs has run there is nothing to deploy with: skip, do not fail.
+          [ -n "$DOPPLER_TOKEN" ] || { echo "::warning::No DOPPLER_TOKEN secret yet: production deploy skipped"; exit 0; }
           doppler run -- bash -c '
             umask 077
             printf "%s" "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-sa.json"
