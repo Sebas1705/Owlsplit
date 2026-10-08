@@ -1,5 +1,8 @@
 package es.sebas1705.owlsplit.feature.groups.members
 
+import es.sebas1705.owlsplit.core.ui.components.BottomActionBar
+import es.sebas1705.owlsplit.core.ui.components.ProfileAvatar
+import es.sebas1705.owlsplit.core.ui.theme.memberAccent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,7 +29,6 @@ import compose.icons.TablerIcons
 import compose.icons.tablericons.Minus
 import compose.icons.tablericons.Plus
 import es.sebas1705.owlsplit.core.ui.components.SwitchRow
-import es.sebas1705.owlsplit.core.ui.components.Avatar
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitContainer
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitTextField
 import es.sebas1705.owlsplit.core.ui.components.PrimaryPillButton
@@ -75,18 +77,17 @@ fun MembersScreen(
 ) {
     Column(modifier.fillMaxSize().background(Owlsplit.colors.background)) {
         TopBar(stringResource(Res.string.members), onBack)
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(Spacing.l)) {
+        val scroll = rememberScrollState()
+        Column(Modifier.weight(1f).verticalScroll(scroll).padding(Spacing.l)) {
             OwlsplitContainer {
                 state.members.forEach { member ->
                     MemberRow(member, isMe = member.id == state.myMemberId) { onEvent(MembersIntent.Edit(member)) }
                 }
             }
         }
-        PrimaryPillButton(
-            stringResource(Res.string.add_member),
-            { onEvent(MembersIntent.Add) },
-            Modifier.padding(Spacing.l)
-        )
+        BottomActionBar(contentBelow = scroll.canScrollForward) {
+            PrimaryPillButton(stringResource(Res.string.add_member), { onEvent(MembersIntent.Add) })
+        }
     }
     state.form?.let { MemberDialog(it, onEvent) }
 }
@@ -108,7 +109,7 @@ private fun MemberRow(member: Member, isMe: Boolean, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.m),
     ) {
-        Avatar(member.name)
+        ProfileAvatar(member.name, memberAccent(member.id, member.avatar))
         Column(Modifier.weight(1f)) {
             Text(
                 if (isMe) stringResource(Res.string.you_suffix, member.name) else member.name,

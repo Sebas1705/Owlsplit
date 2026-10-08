@@ -1,5 +1,6 @@
 package es.sebas1705.owlsplit.core.ui.components
 
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -56,21 +57,27 @@ fun OwlsplitTextField(
     maxLength: Int = Int.MAX_VALUE,
     capitalization: KeyboardCapitalization = KeyboardCapitalization.Sentences,
     keyboardType: KeyboardType = KeyboardType.Text,
+    leadingIcon: ImageVector? = null,
+    /** False hides the label above (search fields): it stays the field's name for screen readers. */
+    showLabel: Boolean = true,
 ) {
     val colors = Owlsplit.colors
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        Text(
-            label,
-            style = Owlsplit.type.label,
-            color = colors.textSecondary,
-            modifier = Modifier.clearAndSetSemantics {}
-        )
+        if (showLabel) {
+            Text(
+                label,
+                style = Owlsplit.type.label,
+                color = colors.textSecondary,
+                modifier = Modifier.clearAndSetSemantics {}
+            )
+        }
         OutlinedTextField(
             value = value,
             onValueChange = { if (it.length <= maxLength) onValueChange(it) },
             singleLine = true,
             isError = error != null,
             placeholder = placeholder?.let { { Text(it, style = Owlsplit.type.body, color = colors.textMuted) } },
+            leadingIcon = leadingIcon?.let { { Icon(it, null, Modifier.size(20.dp), tint = colors.textMuted) } },
             textStyle = Owlsplit.type.body.copy(color = colors.textPrimary),
             shape = OwlsplitShapes.control,
             keyboardOptions = KeyboardOptions(

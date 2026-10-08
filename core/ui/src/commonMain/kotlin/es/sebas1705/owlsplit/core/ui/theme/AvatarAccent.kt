@@ -9,3 +9,10 @@ fun GroupAccent.toAvatar(): String = AVATAR_PREFIX + name
 fun avatarAccent(avatar: String?): GroupAccent =
     avatar?.removePrefix(AVATAR_PREFIX)?.let { name -> GroupAccent.entries.firstOrNull { it.name == name } }
         ?: GroupAccent.BLUE
+
+/**
+ * A member's colour: their profile colour when they have one, otherwise a stable one from [id],
+ * so members are told apart at a glance and keep their colour on every screen.
+ */
+fun memberAccent(id: String, avatar: String?): GroupAccent =
+    avatar?.let(::avatarAccent) ?: GroupAccent.entries[(id.hashCode() and Int.MAX_VALUE) % GroupAccent.entries.size]

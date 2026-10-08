@@ -1,5 +1,8 @@
 package es.sebas1705.owlsplit.feature.profile
 
+import androidx.compose.foundation.layout.height
+import es.sebas1705.owlsplit.core.ui.components.OwlsplitMenuItem
+import es.sebas1705.owlsplit.core.ui.components.OwlsplitDropdownMenu
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,8 +19,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -279,6 +280,7 @@ private fun Preferences(state: ProfileState, onEvent: (ProfileIntent) -> Unit) {
                 selectedIndex = modes.indexOf(state.theme),
                 onSelect = { onEvent(ProfileIntent.ThemeChanged(modes[it])) },
             )
+            Spacer(Modifier.height(Spacing.s))
             Text(
                 stringResource(Res.string.language),
                 style = Owlsplit.type.label,
@@ -321,12 +323,16 @@ private fun CurrencyRow(selected: String, onSelect: (String) -> Unit) {
                 modifier = Modifier.padding(start = Spacing.xs).size(18.dp)
             )
         }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+        OwlsplitDropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             PREFERRED_CURRENCIES.forEach { code ->
-                DropdownMenuItem(text = { Text(code, style = Owlsplit.type.body) }, onClick = {
-                    open = false
-                    onSelect(code)
-                })
+                OwlsplitMenuItem(
+                    code,
+                    onClick = {
+                        open = false
+                        onSelect(code)
+                    },
+                    selected = code == selected,
+                )
             }
         }
     }

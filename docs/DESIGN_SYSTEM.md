@@ -60,6 +60,14 @@ En los importes grandes la parte decimal se muestra al 60 % del tamaño (y en `t
 - Filas de lista: 56 dp de alto mínimo; avatar o icono de 36 dp.
 - Áreas táctiles ≥ 48 dp aunque el elemento visible sea menor.
 - Sin sombras: la profundidad viene del contraste entre `background` y `surface`.
+  - Menús desplegables (`OwlsplitDropdownMenu`): sin sombra, borde de 1 dp en `divider` y esquinas de control (12 dp); la opción elegida lleva ✓ (`OwlsplitMenuItem(selected = …)`).
+  - Diálogos: esquinas de 24 dp (`OwlsplitShapes.dialog`, `extraLarge` de Material). Los botones nunca se elevan, tampoco al pasar el puntero o con foco.
+  - El tema completa todos los contenedores de Material con `surface` y quita el tinte tonal (`surfaceTint = surface`): ningún componente de Material introduce un color propio.
+- Acción principal fija abajo (`BottomActionBar`): fondo `background` y una línea `divider` encima solo cuando la lista sigue por debajo, para que nada parezca cortado.
+- Listas horizontales dentro de una columna con margen (`Modifier.bleedHorizontally`): llegan al borde de la pantalla y conservan el margen como relleno; abren en el elemento elegido.
+- Interruptores (`SwitchRow`): toda la fila conmuta; apagado con pista `surfaceVariant` y borde `textMuted`, encendido en `accent`.
+- Colores de miembro (`memberAccent`): el de su perfil o uno estable derivado del id; el mismo en Miembros, Saldos y "¿Quién eres?".
+- Botones de texto en línea con contenido: se desplazan su relleno interno (12 dp) para que la etiqueta quede alineada con el texto o las tarjetas.
 
 ## Iconografía
 

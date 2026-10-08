@@ -33,7 +33,8 @@ import compose.icons.TablerIcons
 import compose.icons.tablericons.ArrowLeft
 import compose.icons.tablericons.Qrcode
 import compose.icons.tablericons.UserPlus
-import es.sebas1705.owlsplit.core.ui.components.Avatar
+import es.sebas1705.owlsplit.core.ui.theme.memberAccent
+import es.sebas1705.owlsplit.core.ui.components.ProfileAvatar
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitContainer
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitTextField
 import es.sebas1705.owlsplit.core.ui.components.PrimaryPillButton
@@ -183,7 +184,9 @@ private fun ColumnScope.PickMember(state: JoinState, onEvent: (JoinIntent) -> Un
     val enabled = state.step == JoinStep.PICK
     OwlsplitContainer {
         ghosts.forEach { ghost ->
-            ChoiceRow(ghost.name, enabled, { Avatar(ghost.name) }) { onEvent(JoinIntent.Pick(ghost.id)) }
+            ChoiceRow(ghost.name, enabled, {
+                ProfileAvatar(ghost.name, memberAccent(ghost.id, null))
+            }) { onEvent(JoinIntent.Pick(ghost.id)) }
         }
         val me = state.myName.ifBlank { stringResource(Res.string.me_default) }
         ChoiceRow(stringResource(Res.string.new_member, me), enabled, {
