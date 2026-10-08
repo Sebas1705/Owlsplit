@@ -36,6 +36,7 @@ import compose.icons.TablerIcons
 import compose.icons.tablericons.ArrowLeft
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitContainer
 import es.sebas1705.owlsplit.core.ui.components.PrimaryPillButton
+import es.sebas1705.owlsplit.core.ui.components.QrCode
 import es.sebas1705.owlsplit.core.ui.components.TextActionButton
 import es.sebas1705.owlsplit.core.ui.components.TextSharer
 import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
@@ -54,6 +55,7 @@ import es.sebas1705.owlsplit.feature.invite.resources.invite_body
 import es.sebas1705.owlsplit.feature.invite.resources.invite_title
 import es.sebas1705.owlsplit.feature.invite.resources.offline
 import es.sebas1705.owlsplit.feature.invite.resources.preparing
+import es.sebas1705.owlsplit.feature.invite.resources.qr_description
 import es.sebas1705.owlsplit.feature.invite.resources.regenerate
 import es.sebas1705.owlsplit.feature.invite.resources.regenerate_body
 import es.sebas1705.owlsplit.feature.invite.resources.regenerate_confirm
@@ -69,6 +71,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
 private const val COPIED_MILLIS = 2_000L
+private const val QR_WIDTH = 0.62f
 
 @Composable
 fun InviteRoute(groupId: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
@@ -150,6 +153,11 @@ private fun ColumnScope.Ready(
         }
     }
     val code = InviteCodes.display(link.code)
+    QrCode(
+        link.url,
+        stringResource(Res.string.qr_description, groupName),
+        Modifier.fillMaxWidth(QR_WIDTH).align(Alignment.CenterHorizontally),
+    )
     OwlsplitContainer(title = stringResource(Res.string.code_label)) {
         Text(
             code,

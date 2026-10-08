@@ -18,7 +18,7 @@ import org.robolectric.annotation.GraphicsMode
 /** Record with `recordRoborazziDebug`. */
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [35], qualifiers = "w411dp-h1000dp-xxhdpi")
+@Config(sdk = [35], qualifiers = "w411dp-h1200dp-xxhdpi")
 class InviteScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
@@ -55,6 +55,9 @@ class InviteScreenshotTest {
     fun inviteOffline() = capture("offline") {
         InviteScreen(InviteState(status = InviteStatus.OFFLINE), {}, {}, sharer)
     }
+
+    @Test
+    fun joinEnterWithScanner() = capture("join_enter") { JoinScreen(JoinState(), {}, {}, onScan = {}) }
 
     @Test
     fun joinNotFound() = capture("join_not_found") {

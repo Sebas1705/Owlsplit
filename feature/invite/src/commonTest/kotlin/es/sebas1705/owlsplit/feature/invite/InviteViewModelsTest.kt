@@ -132,6 +132,17 @@ class InviteViewModelsTest {
     }
 
     @Test
+    fun aScannedLinkSearchesAndAForeignQrIsNotFound() = runTest {
+        sharedGroupAsLuis()
+        val vm = joinVm()
+        vm.onEvent(JoinIntent.Scanned("https://example.com/menu"))
+        assertEquals(JoinError.NOT_FOUND, vm.uiState.value.error)
+        vm.onEvent(JoinIntent.Scanned("https://owlsplit-dev.web.app/j/ABCDEFGH"))
+        assertEquals("ABCD EFGH", vm.uiState.value.code)
+        assertEquals(JoinStep.PREVIEW, vm.uiState.value.step)
+    }
+
+    @Test
     fun unknownCodesStaleCodesAndNoConnectionAreExplained() = runTest {
         sharedGroupAsLuis()
         val vm = joinVm()

@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -30,11 +31,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import compose.icons.TablerIcons
 import compose.icons.tablericons.ArrowLeft
+import compose.icons.tablericons.Qrcode
 import compose.icons.tablericons.UserPlus
 import es.sebas1705.owlsplit.core.ui.components.Avatar
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitContainer
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitTextField
 import es.sebas1705.owlsplit.core.ui.components.PrimaryPillButton
+import es.sebas1705.owlsplit.core.ui.components.QrScanner
 import es.sebas1705.owlsplit.core.ui.theme.GroupIcons
 import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
 import es.sebas1705.owlsplit.core.ui.theme.Sizes
@@ -53,13 +56,16 @@ import es.sebas1705.owlsplit.feature.invite.resources.not_found
 import es.sebas1705.owlsplit.feature.invite.resources.join_offline
 import es.sebas1705.owlsplit.feature.invite.resources.people
 import es.sebas1705.owlsplit.feature.invite.resources.rejected
+import es.sebas1705.owlsplit.feature.invite.resources.scan_qr
 import es.sebas1705.owlsplit.feature.invite.resources.search
 import es.sebas1705.owlsplit.feature.invite.resources.searching
 import es.sebas1705.owlsplit.feature.invite.resources.waiting_members
 import es.sebas1705.owlsplit.feature.invite.resources.who_are_you
 import es.sebas1705.owlsplit.feature.invite.resources.who_are_you_body
 import org.jetbrains.compose.resources.pluralStringResource
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -70,11 +76,21 @@ fun JoinRoute(initialCode: String?, onBack: () -> Unit, onJoined: (String) -> Un
     val viewModel = koinViewModel<JoinViewModel>(key = "join-$initialCode") { parametersOf(initialCode) }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(state.joinedGroupId) { state.joinedGroupId?.let(onJoined) }
-    JoinScreen(state, viewModel::onEvent, onBack, modifier)
+    val scanner = koinInject<QrScanner>()
+    val scope = rememberCoroutineScope()
+    val onScan: () -> Unit = { scope.launch { scanner.scan()?.let { viewModel.onEvent(JoinIntent.Scanned(it)) } } }
+    JoinScreen(state, viewModel::onEvent, onBack, modifier, onScan.takeIf { scanner.isAvailable })
 }
 
+/** [onScan] null hides the QR option (no camera scanner on this platform). */
 @Composable
-fun JoinScreen(state: JoinState, onEvent: (JoinIntent) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun JoinScreen(
+    state: JoinState,
+    onEvent: (JoinIntent) -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    onScan: (() -> Unit)? = null,
+) {
     val backFromPreview = state.step == JoinStep.PREVIEW
     Column(modifier.fillMaxSize().background(Owlsplit.colors.background)) {
         Row(Modifier.fillMaxWidth().heightIn(min = Sizes.touchTarget), verticalAlignment = Alignment.CenterVertically) {
@@ -87,7 +103,7 @@ fun JoinScreen(state: JoinState, onEvent: (JoinIntent) -> Unit, onBack: () -> Un
             verticalArrangement = Arrangement.spacedBy(Spacing.l),
         ) {
             when (state.step) {
-                JoinStep.ENTER, JoinStep.SEARCHING -> EnterCode(state, onEvent)
+                JoinStep.ENTER, JoinStep.SEARCHING -> EnterCode(state, onEvent, onScan)
                 JoinStep.PREVIEW, JoinStep.JOINING -> Preview(state, onEvent)
                 JoinStep.PICK, JoinStep.DONE -> PickMember(state, onEvent)
             }
@@ -96,9 +112,21 @@ fun JoinScreen(state: JoinState, onEvent: (JoinIntent) -> Unit, onBack: () -> Un
 }
 
 @Composable
-private fun ColumnScope.EnterCode(state: JoinState, onEvent: (JoinIntent) -> Unit) {
+private fun ColumnScope.EnterCode(state: JoinState, onEvent: (JoinIntent) -> Unit, onScan: (() -> Unit)?) {
     Heading(stringResource(Res.string.join_title))
     Text(stringResource(Res.string.join_body), style = Owlsplit.type.body, color = Owlsplit.colors.textSecondary)
+    if (onScan != null) {
+        OwlsplitContainer {
+            ChoiceRow(stringResource(Res.string.scan_qr), state.step == JoinStep.ENTER, {
+                Icon(
+                    TablerIcons.Qrcode,
+                    null,
+                    Modifier.size(36.dp).padding(Spacing.s),
+                    tint = Owlsplit.colors.accentText
+                )
+            }, onScan)
+        }
+    }
     OwlsplitTextField(
         value = state.code,
         onValueChange = { onEvent(JoinIntent.CodeChanged(it)) },
