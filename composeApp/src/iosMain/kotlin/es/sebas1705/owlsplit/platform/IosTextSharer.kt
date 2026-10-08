@@ -2,6 +2,7 @@ package es.sebas1705.owlsplit.platform
 
 import es.sebas1705.owlsplit.core.ui.components.TextSharer
 import platform.UIKit.UIActivityViewController
+import platform.UIKit.popoverPresentationController
 
 /** The iOS share sheet. */
 class IosTextSharer : TextSharer {
