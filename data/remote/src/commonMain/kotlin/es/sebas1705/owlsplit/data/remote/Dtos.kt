@@ -11,6 +11,7 @@ import es.sebas1705.owlsplit.data.models.ExpenseCategory
 import es.sebas1705.owlsplit.data.models.FieldChange
 import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.data.models.Member
+import es.sebas1705.owlsplit.data.models.PayMethods
 import es.sebas1705.owlsplit.data.models.SplitType
 import es.sebas1705.owlsplit.data.models.SyncMeta
 import es.sebas1705.owlsplit.data.models.SyncState
@@ -54,6 +55,8 @@ internal data class MemberDto(
     val updatedAt: BaseTimestamp?,
     val updatedBy: String,
     val deleted: Boolean,
+    /** Missing in documents written before P12a. */
+    val payMethods: PayMethods? = null,
 )
 
 @Serializable
@@ -116,6 +119,7 @@ internal fun Group.toDto(s: Stamp) = GroupDto(
 
 internal fun Member.toDto(s: Stamp) = MemberDto(
     name, avatar, defaultWeight, userUid, active, sortKey, s.version, Timestamp.ServerTimestamp, s.uid, meta.deleted,
+    payMethods,
 )
 
 internal fun Expense.toDto(s: Stamp) = ExpenseDto(
@@ -146,7 +150,7 @@ internal fun GroupDto.toModel(id: String): Group? = meta(version, updatedAt, upd
 
 internal fun MemberDto.toModel(groupId: String, id: String): Member? =
     meta(version, updatedAt, updatedBy, deleted)?.let {
-        Member(id, groupId, name, avatar, defaultWeight, userUid, active, sortKey, it)
+        Member(id, groupId, name, avatar, defaultWeight, userUid, active, sortKey, it, payMethods)
     }
 
 internal fun ExpenseDto.toModel(groupId: String, id: String): Expense? =

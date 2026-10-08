@@ -7,6 +7,7 @@ import es.sebas1705.owlsplit.data.models.GroupInput
 import es.sebas1705.owlsplit.data.models.Expense
 import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.data.models.Member
+import es.sebas1705.owlsplit.data.models.PayMethods
 import es.sebas1705.owlsplit.data.models.Transfer
 import es.sebas1705.owlsplit.data.repository.ExpenseRepository
 import es.sebas1705.owlsplit.data.repository.GroupRepository
@@ -35,6 +36,7 @@ class FakeMembers(val members: MutableStateFlow<List<Member>>) : MemberRepositor
     override suspend fun deleteIfUnused(id: String): Boolean = error("unused")
     override suspend fun claim(id: String) = error("unused")
     override suspend fun addMe(groupId: String, name: String, avatar: String?): String = error("unused")
+    override suspend fun publishMyPayMethods(methods: PayMethods?) = error("unused")
 }
 
 class FakeExpenses(val expenses: MutableStateFlow<List<Expense>>) : ExpenseRepository {

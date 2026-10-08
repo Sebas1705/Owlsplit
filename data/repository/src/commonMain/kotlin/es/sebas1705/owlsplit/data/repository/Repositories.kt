@@ -9,6 +9,7 @@ import es.sebas1705.owlsplit.data.models.MemberInput
 import es.sebas1705.owlsplit.data.models.TransferInput
 import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.data.models.Member
+import es.sebas1705.owlsplit.data.models.PayMethods
 import es.sebas1705.owlsplit.data.models.Transfer
 import kotlinx.coroutines.flow.Flow
 
@@ -45,6 +46,12 @@ interface MemberRepository {
 
     /** A new member for me, when none of the ghosts is me. */
     suspend fun addMe(groupId: String, name: String, avatar: String?): String
+
+    /**
+     * Copies how I want to be paid to my member in every group (only those that differ). Not part
+     * of the history: it is personal data, not a change to the group.
+     */
+    suspend fun publishMyPayMethods(methods: PayMethods?)
 }
 
 interface ExpenseRepository {

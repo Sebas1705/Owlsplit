@@ -36,4 +36,12 @@
     <string name="msg_offline">No connection. Try again when you’re online; nothing was deleted.</string>
     <string name="msg_failed">Something went wrong. Please try again.</string>
     <string name="msg_saved">Profile saved.</string>
+    <string name="pay_title">How to pay you</string>
+    <string name="pay_body">Optional. Whoever owes you money in your groups sees these to pay you with a tap.</string>
+    <string name="pay_bizum">Bizum (phone)</string>
+    <string name="pay_paypal">PayPal.me</string>
+    <string name="pay_revolut">Revolut (Revtag)</string>
+    <string name="pay_bizum_invalid">Type a phone number of 9 to 15 digits</string>
+    <string name="pay_paypal_invalid">Type your PayPal.me name: letters and numbers, no spaces</string>
+    <string name="pay_revolut_invalid">Type your Revtag: at least 3 letters or numbers</string>
 </resources>

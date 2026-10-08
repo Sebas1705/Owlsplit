@@ -1,6 +1,7 @@
 package es.sebas1705.owlsplit.core.datastore
 
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -14,8 +15,15 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 /** The app's language; [tag] null follows the device. */
 enum class AppLanguage(val tag: String?) { SYSTEM(null), SPANISH("es"), ENGLISH("en") }
 
-/** The user's profile as stored on this device. */
-data class StoredProfile(val name: String, val avatar: String, val currency: String)
+/** The user's profile as stored on this device; the pay handles are null when not set. */
+data class StoredProfile(
+    val name: String,
+    val avatar: String,
+    val currency: String,
+    val bizum: String? = null,
+    val paypal: String? = null,
+    val revolut: String? = null,
+)
 
 /** How the app looks and reads (theme, language); an interface so screens can be tested without a DataStore. */
 interface DisplaySettings {
@@ -55,13 +63,23 @@ class AppPreferences(private val dataStore: DataStore<Preferences>) : DisplaySet
     // ── Profile: null until onboarding is finished ────────────────────────────
     val profile: Flow<StoredProfile?> = dataStore.data.map { prefs ->
         val name = prefs[Keys.NAME] ?: return@map null
-        StoredProfile(name, prefs[Keys.AVATAR].orEmpty(), prefs[Keys.CURRENCY] ?: DEFAULT_CURRENCY)
+        StoredProfile(
+            name,
+            prefs[Keys.AVATAR].orEmpty(),
+            prefs[Keys.CURRENCY] ?: DEFAULT_CURRENCY,
+            prefs[Keys.BIZUM],
+            prefs[Keys.PAYPAL],
+            prefs[Keys.REVOLUT],
+        )
     }
     suspend fun setProfile(profile: StoredProfile) {
         dataStore.edit {
             it[Keys.NAME] = profile.name
             it[Keys.AVATAR] = profile.avatar
             it[Keys.CURRENCY] = profile.currency
+            it.setOrRemove(Keys.BIZUM, profile.bizum)
+            it.setOrRemove(Keys.PAYPAL, profile.paypal)
+            it.setOrRemove(Keys.REVOLUT, profile.revolut)
         }
     }
 
@@ -85,7 +103,14 @@ class AppPreferences(private val dataStore: DataStore<Preferences>) : DisplaySet
         val NAME = stringPreferencesKey("profile_name")
         val AVATAR = stringPreferencesKey("profile_avatar")
         val CURRENCY = stringPreferencesKey("profile_currency")
+        val BIZUM = stringPreferencesKey("profile_bizum")
+        val PAYPAL = stringPreferencesKey("profile_paypal")
+        val REVOLUT = stringPreferencesKey("profile_revolut")
         val LINK_NUDGE_DISMISSED = booleanPreferencesKey("link_nudge_dismissed")
+    }
+
+    private fun MutablePreferences.setOrRemove(key: Preferences.Key<String>, value: String?) {
+        if (value.isNullOrBlank()) remove(key) else this[key] = value
     }
 
     companion object {

@@ -35,6 +35,21 @@ describe('members', () => {
     await assertFails(updateDoc(doc(as(env, 'luis'), path('members/m1')), { userUid: 'luis', ...bump('luis') }));
     await assertFails(updateDoc(doc(as(env, 'luis'), path('members/m1')), { userUid: null, ...bump('luis') }));
   });
+  test('only the person behind a member publishes how to pay them', async () => {
+    const pay = { bizum: '600111222', paypal: 'ana', revolut: null };
+    await assertSucceeds(updateDoc(doc(as(env, 'ana'), path('members/m1')), { payMethods: pay, ...bump('ana') }));
+    await assertFails(updateDoc(doc(as(env, 'luis'), path('members/m1')), { payMethods: { bizum: '699000000' }, ...bump('luis') }));
+    await assertFails(updateDoc(doc(as(env, 'luis'), path('members/ghost')), { payMethods: pay, ...bump('luis') }));
+    // Anyone may still edit the rest of the member, and releasing clears them.
+    await assertSucceeds(updateDoc(doc(as(env, 'luis'), path('members/m1')), { name: 'Ana G.', ...bump('luis') }));
+    await assertSucceeds(updateDoc(doc(as(env, 'ana'), path('members/m1')), { userUid: null, payMethods: null, ...bump('ana') }));
+  });
+  test('pay methods have a fixed shape', async () => {
+    const db = as(env, 'ana');
+    await assertFails(updateDoc(doc(db, path('members/m1')), { payMethods: { iban: 'ES00' }, ...bump('ana') }));
+    await assertFails(updateDoc(doc(db, path('members/m1')), { payMethods: { bizum: '0'.repeat(21) }, ...bump('ana') }));
+    await assertFails(updateDoc(doc(db, path('members/m1')), { payMethods: 'bizum', ...bump('ana') }));
+  });
   test('weights stay within 1..100', async () => {
     await assertFails(updateDoc(doc(as(env, 'ana'), path('members/m1')), { defaultWeight: 0, ...bump('ana') }));
   });

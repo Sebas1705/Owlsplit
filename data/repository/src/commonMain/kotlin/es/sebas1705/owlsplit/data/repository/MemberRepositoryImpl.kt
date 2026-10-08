@@ -8,6 +8,7 @@ import es.sebas1705.owlsplit.data.models.ChangeAction
 import es.sebas1705.owlsplit.data.models.EntityType
 import es.sebas1705.owlsplit.data.models.Member
 import es.sebas1705.owlsplit.data.models.OutboxType
+import es.sebas1705.owlsplit.data.models.PayMethods
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -74,6 +75,17 @@ class MemberRepositoryImpl(
         }
     }
 
+    override suspend fun publishMyPayMethods(methods: PayMethods?) = withContext(io) {
+        db.transaction {
+            db.memberEntityQueries.selectByUser(writer.uid()).executeAsList().map { it.toModel() }
+                .filter { it.payMethods != methods }
+                .forEach { old ->
+                    val new = old.copy(payMethods = methods, meta = writer.editedMeta(old.meta))
+                    save(db, writer, new, old, action = null)
+                }
+        }
+    }
+
     private suspend fun edit(id: String, change: (Member) -> Member) = withContext(io) {
         db.transaction {
             val old = requireMember(id)
@@ -86,7 +98,8 @@ class MemberRepositoryImpl(
         requireNotNull(db.memberEntityQueries.selectById(id).executeAsOneOrNull()) { "Unknown member $id" }.toModel()
 
     internal companion object {
-        fun save(db: AppDatabase, writer: Writer, member: Member, old: Member?, action: ChangeAction) {
+        /** [action] null: synced but left out of the history. */
+        fun save(db: AppDatabase, writer: Writer, member: Member, old: Member?, action: ChangeAction?) {
             db.memberEntityQueries.upsert(member.toRow())
             writer.enqueue(
                 member.groupId,
@@ -95,7 +108,9 @@ class MemberRepositoryImpl(
                 old?.meta?.serverVersion ?: 0,
                 json.encodeToString(Member.serializer(), member),
             )
-            writer.log(member.groupId, EntityType.MEMBER, member.id, action, Diffs.member(old, member))
+            if (action != null) {
+                writer.log(member.groupId, EntityType.MEMBER, member.id, action, Diffs.member(old, member))
+            }
         }
     }
 }

@@ -129,12 +129,13 @@ class ClaimMember(
     suspend operator fun invoke(groupId: String, memberId: String?) {
         val uid = accounts.currentSession()?.uid
         if (members.observeMembers(groupId).first().mine(uid) != null) return
+        val profile = profiles.profile.first()
         if (memberId != null) {
             members.claim(memberId)
         } else {
-            val profile = profiles.profile.first()
             members.addMe(groupId, profile?.name ?: DEFAULT_NAME, profile?.avatar)
         }
+        profile?.payMethods?.orNull()?.let { members.publishMyPayMethods(it) }
     }
 
     private companion object {

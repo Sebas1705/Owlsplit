@@ -46,6 +46,7 @@ import es.sebas1705.owlsplit.core.ui.components.PrimaryPillButton
 import es.sebas1705.owlsplit.core.ui.components.SegmentedControl
 import es.sebas1705.owlsplit.core.ui.components.SettleSuggestionRow
 import es.sebas1705.owlsplit.core.ui.components.TextActionButton
+import es.sebas1705.owlsplit.core.ui.components.TextSharer
 import es.sebas1705.owlsplit.core.ui.format.MoneyFormat
 import es.sebas1705.owlsplit.core.ui.format.LocalMoneyFormat
 import es.sebas1705.owlsplit.core.ui.format.dayLabel
@@ -83,9 +84,6 @@ import es.sebas1705.owlsplit.feature.groups.resources.no_match
 import es.sebas1705.owlsplit.feature.groups.resources.paid_by
 import es.sebas1705.owlsplit.feature.groups.resources.record_payment
 import es.sebas1705.owlsplit.feature.groups.resources.settle
-import es.sebas1705.owlsplit.feature.groups.resources.settle_body
-import es.sebas1705.owlsplit.feature.groups.resources.settle_confirm
-import es.sebas1705.owlsplit.feature.groups.resources.settle_title
 import es.sebas1705.owlsplit.feature.groups.resources.suggestion_pays
 import es.sebas1705.owlsplit.feature.groups.resources.suggestion_pays_you
 import es.sebas1705.owlsplit.feature.groups.resources.suggestion_step
@@ -101,6 +99,7 @@ import es.sebas1705.owlsplit.feature.groups.resources.your_balance
 import es.sebas1705.owlsplit.feature.groups.resources.your_share
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import kotlin.math.abs
@@ -110,7 +109,7 @@ fun GroupRoute(groupId: String, initialTab: GroupTab, navigation: GroupNavigatio
     val viewModel = koinViewModel<GroupViewModel>(key = "group-$groupId") { parametersOf(groupId, initialTab) }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(state.closed) { if (state.closed && state.loaded) navigation.back() }
-    GroupScreen(state, viewModel::onEvent, navigation, modifier)
+    GroupScreen(state, viewModel::onEvent, navigation, koinInject(), modifier)
 }
 
 @Composable
@@ -118,6 +117,7 @@ fun GroupScreen(
     state: GroupState,
     onEvent: (GroupIntent) -> Unit,
     navigation: GroupNavigation,
+    sharer: TextSharer,
     modifier: Modifier = Modifier,
     format: MoneyFormat = LocalMoneyFormat.current,
     today: LocalDate = Today.System(),
@@ -157,7 +157,7 @@ fun GroupScreen(
             }
         }
     }
-    Dialogs(state, detail, currency, format, onEvent)
+    Dialogs(state, detail, currency, format, sharer, onEvent)
 }
 
 @Composable
@@ -410,14 +410,18 @@ private fun Dialogs(
     detail: GroupDetail,
     currency: Currency,
     format: MoneyFormat,
+    sharer: TextSharer,
     onEvent: (GroupIntent) -> Unit,
 ) {
     val dismiss = { onEvent(GroupIntent.DismissDialog) }
     state.confirmSettle?.let { payment ->
-        ConfirmDialog(
-            stringResource(Res.string.settle_title),
-            stringResource(Res.string.settle_body, paymentText(payment, detail, currency, format)),
-            stringResource(Res.string.settle_confirm),
+        SettleDialog(
+            payment,
+            paymentText(payment, detail, currency, format),
+            detail,
+            currency,
+            format,
+            sharer,
             onConfirm = { onEvent(GroupIntent.ConfirmSettle) },
             onDismiss = dismiss,
         )

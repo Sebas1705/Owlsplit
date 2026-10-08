@@ -92,7 +92,9 @@ class GroupsScreenshotTest {
 
     private fun group(name: String, tab: GroupTab, dark: Boolean = false) {
         compose.setContent {
-            OwlsplitTheme(darkTheme = dark) { GroupScreen(state.copy(tab = tab), {}, navigation, today = today) }
+            OwlsplitTheme(
+                darkTheme = dark
+            ) { GroupScreen(state.copy(tab = tab), {}, navigation, { true }, today = today) }
         }
         compose.assertAccessible()
         compose.onRoot().captureRoboImage("screenshots/group_$name.png")

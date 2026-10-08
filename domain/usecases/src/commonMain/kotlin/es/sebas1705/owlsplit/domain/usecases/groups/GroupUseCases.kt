@@ -143,10 +143,18 @@ class ObserveGroupDetail(
     }
 }
 
-/** Creating and editing groups. The creator joins with the name of their profile. */
-class GroupActions(private val groups: GroupRepository, private val profiles: ProfileRepository) {
-    suspend fun create(input: GroupInput): String =
-        groups.create(input.normalised(), profiles.profile.first()?.name ?: DEFAULT_NAME)
+/** Creating and editing groups. The creator joins with the name (and pay handles) of their profile. */
+class GroupActions(
+    private val groups: GroupRepository,
+    private val profiles: ProfileRepository,
+    private val members: MemberRepository,
+) {
+    suspend fun create(input: GroupInput): String {
+        val profile = profiles.profile.first()
+        val id = groups.create(input.normalised(), profile?.name ?: DEFAULT_NAME)
+        profile?.payMethods?.orNull()?.let { members.publishMyPayMethods(it) }
+        return id
+    }
 
     suspend fun update(id: String, input: GroupInput) = groups.update(id, input.normalised())
 

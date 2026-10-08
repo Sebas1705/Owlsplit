@@ -19,7 +19,7 @@ class SchemaTest {
     private fun member(id: String, group: String = "g1", sortKey: Long = 0) = Member_entity(
         id = id, group_id = group, name = id, avatar = null, default_weight = 1, user_uid = null,
         active = 1, sort_key = sortKey, version = 1, server_version = 0, updated_at = null,
-        updated_by = "u1", deleted = 0, sync_state = "PENDING",
+        updated_by = "u1", deleted = 0, sync_state = "PENDING", pay_methods = null,
     )
 
     private fun expense(id: String, deleted: Boolean = false) = Expense_entity(

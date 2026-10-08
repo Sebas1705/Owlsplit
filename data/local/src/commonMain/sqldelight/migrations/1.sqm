@@ -1,0 +1,2 @@
+-- 1 → 2 (P12a): how the person behind a member wants to be paid.
+ALTER TABLE member_entity ADD COLUMN pay_methods TEXT;

@@ -10,8 +10,11 @@ import es.sebas1705.owlsplit.core.testing.account.FakeProfileRemote
 import es.sebas1705.owlsplit.core.testing.account.FakeProfiles
 import es.sebas1705.owlsplit.core.testing.account.FakeSync
 import es.sebas1705.owlsplit.core.testing.account.NoGroups
+import es.sebas1705.owlsplit.core.testing.ledger.InMemoryLedger
 import es.sebas1705.owlsplit.core.ui.theme.GroupAccent
 import es.sebas1705.owlsplit.data.models.AccountResult
+import es.sebas1705.owlsplit.data.models.GroupInput
+import es.sebas1705.owlsplit.data.models.PayMethods
 import es.sebas1705.owlsplit.data.models.Session
 import es.sebas1705.owlsplit.data.models.UserProfile
 import es.sebas1705.owlsplit.domain.usecases.account.DeleteAccount
@@ -21,7 +24,9 @@ import es.sebas1705.owlsplit.domain.usecases.account.ObserveAccount
 import es.sebas1705.owlsplit.domain.usecases.account.ReauthenticateGoogle
 import es.sebas1705.owlsplit.domain.usecases.account.SaveProfile
 import es.sebas1705.owlsplit.domain.usecases.account.SignOut
+import es.sebas1705.owlsplit.domain.usecases.pay.PayMethod
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -57,6 +62,7 @@ class ProfileViewModelTest {
     private inner class Env(session: Session? = FakeAccounts.ANONYMOUS, online: Boolean = true) {
         val accounts = FakeAccounts(session)
         val profiles = FakeProfiles(ana)
+        val ledger = InMemoryLedger()
         val google = FakeGoogle()
         val display = Display()
         val remote = FakeProfileRemote()
@@ -65,7 +71,7 @@ class ProfileViewModelTest {
         val vm = ProfileViewModel(
             ObserveAccount(accounts, profiles),
             display,
-            SaveProfile(profiles),
+            SaveProfile(profiles, ledger.members),
             LinkGoogle(google, accounts, profiles),
             SignOut(sync, accounts, reset),
             DeleteAccount(NoGroups(), sync, accounts, remote, reset),
@@ -88,6 +94,27 @@ class ProfileViewModelTest {
         assertEquals("Ana María", env.profiles.profile.value?.name)
         assertFalse(env.vm.uiState.value.dirty)
         assertEquals(ProfileMessage.SAVED, env.vm.uiState.value.message)
+    }
+
+    @Test
+    fun payHandlesAreCheckedCleanedUpAndPublishedToMyMembers() = runTest {
+        val env = Env()
+        val group = env.ledger.groups.create(GroupInput("Piso", "home", "GREEN", "EUR"), "Ana")
+
+        env.vm.onEvent(ProfileIntent.PayChanged(PayMethod.BIZUM, "600 11"))
+        assertEquals(setOf(PayMethod.BIZUM), env.vm.uiState.value.invalidPay)
+        assertFalse(env.vm.uiState.value.canSave)
+
+        env.vm.onEvent(ProfileIntent.PayChanged(PayMethod.BIZUM, "600 11 12 22"))
+        env.vm.onEvent(ProfileIntent.PayChanged(PayMethod.PAYPAL, "paypal.me/AnaG"))
+        assertTrue(env.vm.uiState.value.dirty)
+        env.vm.onEvent(ProfileIntent.Save)
+
+        val saved = PayMethods(bizum = "600111222", paypal = "AnaG")
+        assertEquals(saved, env.profiles.profile.value?.payMethods)
+        assertEquals(saved, env.vm.uiState.value.pay)
+        assertFalse(env.vm.uiState.value.dirty)
+        assertEquals(saved, env.ledger.members.observeMembers(group).first().single().payMethods)
     }
 
     @Test

@@ -7,6 +7,7 @@ import es.sebas1705.owlsplit.data.models.ExpenseInput
 import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.data.models.GroupInput
 import es.sebas1705.owlsplit.data.models.Member
+import es.sebas1705.owlsplit.data.models.PayMethods
 import es.sebas1705.owlsplit.data.models.MemberInput
 import es.sebas1705.owlsplit.data.models.SyncMeta
 import es.sebas1705.owlsplit.data.models.SyncState
@@ -77,7 +78,7 @@ class InMemoryLedger(var uid: String = "uid-ana") {
 
         override suspend fun leave(id: String) {
             val mine = { m: Member -> m.groupId == id && m.userUid == uid }
-            memberList.update { list -> list.map { if (mine(it)) it.copy(userUid = null) else it } }
+            memberList.update { list -> list.map { if (mine(it)) it.copy(userUid = null, payMethods = null) else it } }
             editGroup(id) { it.copy(memberUids = it.memberUids - uid) }
         }
     }
@@ -106,6 +107,10 @@ class InMemoryLedger(var uid: String = "uid-ana") {
             val member = Member(id("m"), groupId, name, avatar, 1, uid, true, sortKey, meta())
             memberList.update { it + member }
             return member.id
+        }
+
+        override suspend fun publishMyPayMethods(methods: PayMethods?) {
+            memberList.update { list -> list.map { if (it.userUid == uid) it.copy(payMethods = methods) else it } }
         }
 
         override suspend fun deleteIfUnused(id: String): Boolean {
