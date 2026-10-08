@@ -1,12 +1,14 @@
 package es.sebas1705.owlsplit.sync
 
 import dev.gitlive.firebase.Firebase
+import dev.gitlive.firebase.FirebaseNetworkException
 import dev.gitlive.firebase.apps
 import dev.gitlive.firebase.auth.FirebaseAuth
 import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.firestore.firestore
 import dev.gitlive.firebase.firestore.firestoreSettings
 import dev.gitlive.firebase.firestore.memoryCacheSettings
+import es.sebas1705.owlsplit.core.common.UnexpectedErrors
 import es.sebas1705.owlsplit.data.remote.FirestoreRemoteStore
 import es.sebas1705.owlsplit.data.repository.RepositoryContext
 import es.sebas1705.owlsplit.data.repository.account.ProfileRepository
@@ -65,9 +67,15 @@ class SyncStarter(
 
     private suspend fun signInAnonymously() {
         var attempt = 0
+        var reported = false
         while (true) {
             // Offline on first launch: keep trying; the next auth state restarts the engine.
-            if (runCatching { auth.value.signInAnonymously() }.isSuccess) return
+            val failure = runCatching { auth.value.signInAnonymously() }.exceptionOrNull() ?: return
+            // Anything but the network (Authentication off, a broken config) is a bug to see, once.
+            if (failure !is FirebaseNetworkException && !reported) {
+                reported = true
+                UnexpectedErrors.report(failure)
+            }
             delay(min(RETRY_BASE_MILLIS shl min(attempt++, MAX_SHIFT), RETRY_MAX_MILLIS))
         }
     }
