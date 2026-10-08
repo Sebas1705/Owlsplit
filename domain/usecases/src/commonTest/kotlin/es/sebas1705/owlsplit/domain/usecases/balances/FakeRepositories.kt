@@ -35,7 +35,7 @@ class FakeMembers(val members: MutableStateFlow<List<Member>>) : MemberRepositor
 }
 
 class FakeExpenses(val expenses: MutableStateFlow<List<Expense>>) : ExpenseRepository {
-    override fun observeExpenses(groupId: String): Flow<List<Expense>> = expenses
+    override fun observeExpenses(groupId: String, includeDeleted: Boolean): Flow<List<Expense>> = expenses
     override suspend fun get(id: String): Expense? = expenses.value.firstOrNull { it.id == id }
     override suspend fun create(groupId: String, input: ExpenseInput): String = error("unused")
     override suspend fun update(id: String, input: ExpenseInput) = error("unused")

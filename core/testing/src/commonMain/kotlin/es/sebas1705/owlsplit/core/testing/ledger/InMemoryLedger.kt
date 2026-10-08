@@ -37,6 +37,9 @@ class InMemoryLedger(var uid: String = "uid-ana") {
     val expenseList = MutableStateFlow<List<Expense>>(emptyList())
     val transferList = MutableStateFlow<List<Transfer>>(emptyList())
 
+    /** History entries, newest first; tests add them directly (this fake writes none). */
+    val log = MutableStateFlow<List<ChangeLogEntry>>(emptyList())
+
     val groups: GroupRepository = object : GroupRepository {
         override fun observeGroups(): Flow<List<Group>> = groupList.map { list -> list.filter { !it.meta.deleted } }
         override fun observeGroup(id: String): Flow<Group?> = groupList.map { list -> list.firstOrNull { it.id == id } }
@@ -99,8 +102,8 @@ class InMemoryLedger(var uid: String = "uid-ana") {
     }
 
     val expenses: ExpenseRepository = object : ExpenseRepository {
-        override fun observeExpenses(groupId: String): Flow<List<Expense>> =
-            expenseList.map { list -> list.filter { it.groupId == groupId && !it.meta.deleted } }
+        override fun observeExpenses(groupId: String, includeDeleted: Boolean): Flow<List<Expense>> =
+            expenseList.map { list -> list.filter { it.groupId == groupId && (includeDeleted || !it.meta.deleted) } }
 
         override suspend fun get(id: String): Expense? = expenseList.value.firstOrNull { it.id == id }
 
@@ -144,7 +147,10 @@ class InMemoryLedger(var uid: String = "uid-ana") {
     }
 
     val changeLog: ChangeLogRepository = object : ChangeLogRepository {
-        override fun observe(groupId: String): Flow<List<ChangeLogEntry>> = MutableStateFlow(emptyList())
+        override fun observe(
+            groupId: String
+        ): Flow<List<ChangeLogEntry>> = log.map { list -> list.filter { it.groupId == groupId } }
+        override fun observeRecent(limit: Long): Flow<List<ChangeLogEntry>> = log.map { it.take(limit.toInt()) }
     }
 
     private fun editGroup(id: String, change: (Group) -> Group) =

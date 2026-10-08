@@ -27,14 +27,16 @@ class ExpenseRepositoryImpl(
 
     // Every write rewrites the expense row, so observing expense_entity is enough to
     // re-read the child tables when payers or splits change.
-    override fun observeExpenses(groupId: String): Flow<List<Expense>> =
-        q.selectVisibleByGroup(groupId).asFlow().mapToList(io).map { rows ->
+    override fun observeExpenses(groupId: String, includeDeleted: Boolean): Flow<List<Expense>> {
+        val query = if (includeDeleted) q.selectAllByGroup(groupId) else q.selectVisibleByGroup(groupId)
+        return query.asFlow().mapToList(io).map { rows ->
             val payers = q.payersByGroup(groupId).executeAsList()
                 .groupBy({ it.expense_id }, { it.member_id to it.amount_minor })
             val splits = q.splitsByGroup(groupId).executeAsList()
                 .groupBy({ it.expense_id }, { it.member_id to it.split_value })
             rows.map { it.toModel(payers[it.id].orEmpty().toMap(), splits[it.id].orEmpty().toMap()) }
         }.flowOn(io)
+    }
 
     override suspend fun get(id: String): Expense? = withContext(io) { load(id) }
 

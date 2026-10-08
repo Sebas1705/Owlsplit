@@ -14,4 +14,7 @@ class ChangeLogRepositoryImpl(
 ) : ChangeLogRepository {
     override fun observe(groupId: String): Flow<List<ChangeLogEntry>> =
         db.changeLogQueries.selectByGroup(groupId).asFlow().mapToList(io).map { rows -> rows.map { it.toModel() } }
+
+    override fun observeRecent(limit: Long): Flow<List<ChangeLogEntry>> =
+        db.changeLogQueries.selectRecent(limit).asFlow().mapToList(io).map { rows -> rows.map { it.toModel() } }
 }

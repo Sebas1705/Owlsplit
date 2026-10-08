@@ -115,3 +115,12 @@ data class ChangeLogEntry(
 
 /** What an outbox entry uploads. CHANGE_LOG entries are create-only. */
 enum class OutboxType { GROUP, MEMBER, EXPENSE, TRANSFER, CHANGE_LOG }
+
+/** A local edit that lost against someone else's: [entityType] and [entityId] say what it was about. */
+data class Conflict(
+    val id: Long,
+    val groupId: String,
+    val entityType: EntityType,
+    val entityId: String,
+    val createdAt: Long,
+)

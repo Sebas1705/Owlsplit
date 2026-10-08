@@ -20,3 +20,9 @@ DELETE FROM conflict WHERE id = ?;
 
 countAll:
 SELECT count(*) FROM conflict;
+
+selectAll:
+SELECT * FROM conflict ORDER BY created_at, id;
+
+selectById:
+SELECT * FROM conflict WHERE id = ?;
