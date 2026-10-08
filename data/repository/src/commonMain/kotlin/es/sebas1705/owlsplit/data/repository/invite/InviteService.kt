@@ -2,21 +2,8 @@ package es.sebas1705.owlsplit.data.repository.invite
 
 import es.sebas1705.owlsplit.data.models.AccountResult
 import es.sebas1705.owlsplit.data.models.Group
-
-/** What someone sees before joining: `invites/{code}` (docs/FIREBASE.md). */
-data class InvitePreview(
-    val code: String,
-    val groupId: String,
-    val groupName: String,
-    val groupIcon: String,
-    val memberCount: Int,
-)
-
-sealed interface PreviewResult {
-    data class Found(val preview: InvitePreview) : PreviewResult
-    data object NotFound : PreviewResult
-    data object Offline : PreviewResult
-}
+import es.sebas1705.owlsplit.data.models.InvitePreview
+import es.sebas1705.owlsplit.data.models.PreviewResult
 
 /** Invitations on the server. Implemented in `data:remote`. */
 interface InviteService {

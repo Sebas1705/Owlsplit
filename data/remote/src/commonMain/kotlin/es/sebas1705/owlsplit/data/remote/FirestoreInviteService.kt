@@ -9,9 +9,9 @@ import dev.gitlive.firebase.firestore.Source
 import dev.gitlive.firebase.firestore.code
 import es.sebas1705.owlsplit.data.models.AccountResult
 import es.sebas1705.owlsplit.data.models.Group
-import es.sebas1705.owlsplit.data.repository.invite.InvitePreview
+import es.sebas1705.owlsplit.data.models.InvitePreview
 import es.sebas1705.owlsplit.data.repository.invite.InviteService
-import es.sebas1705.owlsplit.data.repository.invite.PreviewResult
+import es.sebas1705.owlsplit.data.models.PreviewResult
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
 import kotlin.time.Clock

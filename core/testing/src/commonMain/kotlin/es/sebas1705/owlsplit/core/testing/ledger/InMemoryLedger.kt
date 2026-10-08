@@ -49,7 +49,7 @@ class InMemoryLedger(var uid: String = "uid-ana") {
         override suspend fun create(input: GroupInput, creatorName: String): String {
             val group = Group(
                 id("g"), input.name, input.icon, input.accent, input.baseCurrency, input.startDate, input.endDate,
-                "CODE", listOf(uid), emptyList(), uid, now(), meta(),
+                "ABCDEFGH", listOf(uid), emptyList(), uid, now(), meta(),
             )
             groupList.update { it + group }
             memberList.update { it + Member(id("m"), group.id, creatorName, null, 1, uid, true, 0, meta()) }
@@ -71,7 +71,9 @@ class InMemoryLedger(var uid: String = "uid-ana") {
             it.copy(archivedBy = if (archived) it.archivedBy + uid else it.archivedBy - uid)
         }
 
-        override suspend fun regenerateInviteCode(id: String) = editGroup(id) { it.copy(inviteCode = "CODE${++next}") }
+        override suspend fun regenerateInviteCode(id: String) = editGroup(id) {
+            it.copy(inviteCode = "ZXCVBNM" + "23456789"[++next % 8])
+        }
 
         override suspend fun leave(id: String) {
             val mine = { m: Member -> m.groupId == id && m.userUid == uid }
