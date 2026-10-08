@@ -52,7 +52,14 @@ class InMemoryLedger(var uid: String = "uid-ana") {
         }
 
         override suspend fun update(id: String, input: GroupInput) = editGroup(id) {
-            it.copy(name = input.name, icon = input.icon, accent = input.accent, baseCurrency = input.baseCurrency)
+            it.copy(
+                name = input.name,
+                icon = input.icon,
+                accent = input.accent,
+                baseCurrency = input.baseCurrency,
+                startDate = input.startDate,
+                endDate = input.endDate,
+            )
         }
 
         override suspend fun setArchived(id: String, archived: Boolean) = editGroup(id) {

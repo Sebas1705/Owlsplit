@@ -25,6 +25,8 @@ import es.sebas1705.owlsplit.feature.groups.editor.GroupEditorScreen
 import es.sebas1705.owlsplit.feature.groups.editor.GroupEditorState
 import es.sebas1705.owlsplit.feature.groups.members.MembersScreen
 import es.sebas1705.owlsplit.feature.groups.members.MembersState
+import es.sebas1705.owlsplit.feature.groups.transfer.TransferScreen
+import es.sebas1705.owlsplit.feature.groups.transfer.TransferState
 import kotlinx.datetime.LocalDate
 import org.junit.Rule
 import org.junit.Test
@@ -84,7 +86,7 @@ class GroupsScreenshotTest {
     )
     private val state =
         GroupState(loaded = true, detail = detail, myShares = mapOf("e1" to 3_120L, "e2" to 1_200L, "e3" to 14_000L))
-    private val navigation = GroupNavigation({}, {}, {}, {}, {})
+    private val navigation = GroupNavigation({}, {}, {}, {}, {}, {})
 
     private fun group(name: String, tab: GroupTab, dark: Boolean = false) {
         compose.setContent {
@@ -129,5 +131,38 @@ class GroupsScreenshotTest {
     fun members() {
         compose.setContent { OwlsplitTheme { MembersScreen(MembersState(true, members, "ana"), {}, {}) } }
         compose.onRoot().captureRoboImage("screenshots/group_members.png")
+    }
+
+    @Test
+    fun editorWithDates() {
+        compose.setContent {
+            OwlsplitTheme {
+                GroupEditorScreen(
+                    GroupEditorState(
+                        loaded = true,
+                        name = "Ibiza 2026",
+                        startDate = LocalDate(2026, 7, 20),
+                        endDate = LocalDate(2026, 7, 27),
+                    ),
+                    {},
+                    {},
+                )
+            }
+        }
+        compose.onRoot().captureRoboImage("screenshots/group_editor_dates.png")
+    }
+
+    @Test
+    fun recordPayment() {
+        compose.setContent {
+            OwlsplitTheme {
+                TransferScreen(
+                    TransferState(true, "EUR", members.take(3), "ana", "luis", "ana", "23,5", 2_350, "Bizum"),
+                    {},
+                    {},
+                )
+            }
+        }
+        compose.onRoot().captureRoboImage("screenshots/group_record_payment.png")
     }
 }

@@ -1,12 +1,20 @@
 package es.sebas1705.owlsplit.feature.home
 
 import es.sebas1705.owlsplit.core.datastore.LinkNudgeSettings
+import es.sebas1705.owlsplit.core.money.FxRate
 import es.sebas1705.owlsplit.core.testing.CoroutineTestRule
+import es.sebas1705.owlsplit.data.repository.fx.FxQuote
+import es.sebas1705.owlsplit.data.repository.fx.FxRates
+import es.sebas1705.owlsplit.domain.usecases.fx.ConvertTotal
 import es.sebas1705.owlsplit.core.testing.account.FakeAccounts
 import es.sebas1705.owlsplit.core.testing.account.FakeProfiles
 import es.sebas1705.owlsplit.core.testing.account.FakeSync
 import es.sebas1705.owlsplit.core.testing.ledger.InMemoryLedger
+import es.sebas1705.owlsplit.data.models.ExpenseCategory
+import es.sebas1705.owlsplit.data.models.ExpenseInput
 import es.sebas1705.owlsplit.data.models.GroupInput
+import es.sebas1705.owlsplit.data.models.MemberInput
+import es.sebas1705.owlsplit.data.models.SplitType
 import es.sebas1705.owlsplit.data.models.UserProfile
 import es.sebas1705.owlsplit.domain.usecases.account.ObserveAccount
 import es.sebas1705.owlsplit.domain.usecases.account.ObservePendingChanges
@@ -14,6 +22,7 @@ import es.sebas1705.owlsplit.domain.usecases.balances.ObserveGroupBalances
 import es.sebas1705.owlsplit.domain.usecases.groups.ObserveHome
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -55,6 +64,11 @@ class HomeViewModelTest {
         ),
         ObserveAccount(accounts, profiles),
         ObservePendingChanges(sync),
+        ConvertTotal(
+            object : FxRates {
+                override suspend fun latest(from: String, to: String) = FxQuote(FxRate.parse("0.9"), "2026-10-07")
+            },
+        ),
         nudge,
     )
 
@@ -82,5 +96,24 @@ class HomeViewModelTest {
         assertEquals(QuickAction.SETTLE, vm.uiState.value.picking)
         vm.onEvent(HomeIntent.DismissPicker)
         assertEquals(null, vm.uiState.value.picking)
+    }
+
+    @Test
+    fun groupsInOtherCurrenciesAreAddedAtTodaysRate() = runTest {
+        val vm = viewModel()
+        val usd = ledger.groups.create(GroupInput("NYC", "plane", "BLUE", "USD"), "Ana")
+        val luis = ledger.members.add(usd, MemberInput("Luis"))
+        val ana = ledger.memberList.value.first { it.groupId == usd && it.userUid == "uid-ana" }.id
+        ledger.expenses.create(
+            usd,
+            ExpenseInput(
+                "Taxi", ExpenseCategory.TRANSPORT, null,
+                LocalDate(2026, 10, 8), "USD", 2_000, FxRate.SCALE, mapOf(ana to 2_000L),
+                SplitType.EQUAL, mapOf(ana to 1L, luis to 1L),
+            ),
+        )
+        assertEquals(900L, vm.uiState.value.total) // +10,00 USD × 0,9
+        assertTrue(vm.uiState.value.approximate)
+        assertTrue(vm.uiState.value.otherCurrencies.isEmpty())
     }
 }

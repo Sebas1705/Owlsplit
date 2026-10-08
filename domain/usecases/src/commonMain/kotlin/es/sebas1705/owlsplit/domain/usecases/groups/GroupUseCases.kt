@@ -205,5 +205,38 @@ class SettleUp(private val transfers: TransferRepository, private val today: Tod
         )
 }
 
+/** A payment typed by hand ("Ana pagó 23,50 € a Luis"), in the group currency, dated today. */
+class RecordTransfer(private val transfers: TransferRepository, private val today: Today = Today.System) {
+    /** False (and nothing saved) for the same member on both ends or a non-positive amount. */
+    suspend operator fun invoke(
+        groupId: String,
+        fromMemberId: String,
+        toMemberId: String,
+        amountMinor: Long,
+        currency: String,
+        note: String?,
+    ): Boolean {
+        if (fromMemberId == toMemberId || amountMinor !in 1..MAX_AMOUNT) return false
+        transfers.create(
+            groupId,
+            TransferInput(
+                fromMemberId,
+                toMemberId,
+                amountMinor,
+                currency,
+                FxRate.SCALE,
+                today(),
+                note?.trim()?.take(MAX_NOTE)?.ifEmpty { null },
+            ),
+        )
+        return true
+    }
+
+    companion object {
+        const val MAX_AMOUNT = 1_000_000_000_000L
+        const val MAX_NOTE = 500
+    }
+}
+
 /** Payers' names for display, from member ids. */
 fun List<Member>.nameOf(id: String): String = firstOrNull { it.id == id }?.name.orEmpty()

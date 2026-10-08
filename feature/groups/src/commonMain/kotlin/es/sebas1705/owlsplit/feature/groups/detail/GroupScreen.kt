@@ -74,6 +74,7 @@ import es.sebas1705.owlsplit.feature.groups.resources.more
 import es.sebas1705.owlsplit.feature.groups.resources.no_expenses_body
 import es.sebas1705.owlsplit.feature.groups.resources.no_expenses_title
 import es.sebas1705.owlsplit.feature.groups.resources.paid_by
+import es.sebas1705.owlsplit.feature.groups.resources.record_payment
 import es.sebas1705.owlsplit.feature.groups.resources.settle
 import es.sebas1705.owlsplit.feature.groups.resources.settle_body
 import es.sebas1705.owlsplit.feature.groups.resources.settle_confirm
@@ -138,7 +139,7 @@ fun GroupScreen(
             when (state.tab) {
                 GroupTab.EXPENSES -> expenses(state, detail, currency, format, today, navigation.openExpense)
                 GroupTab.BALANCES -> item { Balances(detail, currency, format) }
-                GroupTab.SETTLE -> settle(detail, currency, format, today, onEvent)
+                GroupTab.SETTLE -> settle(detail, currency, format, today, onEvent, navigation.recordPayment)
             }
         }
         if (state.tab == GroupTab.EXPENSES) {
@@ -290,6 +291,7 @@ private fun LazyListScope.settle(
     format: MoneyFormat,
     today: LocalDate,
     onEvent: (GroupIntent) -> Unit,
+    onRecordPayment: () -> Unit,
 ) {
     val payments = detail.balances?.suggestedPayments.orEmpty()
     if (payments.isEmpty()) {
@@ -309,6 +311,7 @@ private fun LazyListScope.settle(
             }
         }
     }
+    item { TextActionButton(stringResource(Res.string.record_payment), onRecordPayment) }
     if (detail.transfers.isNotEmpty()) {
         item {
             Text(
