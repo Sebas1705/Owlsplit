@@ -113,3 +113,12 @@ compose.resources {
     packageOfResClass = "es.sebas1705.owlsplit.resources"
     publicResClass = false
 }
+
+// The Swift app imports the shared code as `ComposeApp` (iosApp/iosApp/*.swift).
+kotlin {
+    targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>().configureEach {
+        binaries.withType<org.jetbrains.kotlin.gradle.plugin.mpp.Framework>().configureEach {
+            baseName = "ComposeApp"
+        }
+    }
+}

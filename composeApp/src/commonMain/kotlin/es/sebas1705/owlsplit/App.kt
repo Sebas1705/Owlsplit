@@ -24,11 +24,13 @@ import es.sebas1705.owlsplit.core.datastore.ThemeMode
 import es.sebas1705.owlsplit.core.ui.components.ErrorScreen
 import es.sebas1705.owlsplit.core.ui.format.LocalMoneyFormat
 import es.sebas1705.owlsplit.core.ui.format.moneyFormatFor
+import es.sebas1705.owlsplit.core.ui.theme.LocalReduceMotion
 import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
 import es.sebas1705.owlsplit.core.ui.theme.OwlsplitTheme
 import es.sebas1705.owlsplit.di.FirebaseStatus
 import es.sebas1705.owlsplit.locale.LocalAppLocale
 import es.sebas1705.owlsplit.navigation.AppRoot
+import es.sebas1705.owlsplit.platform.systemReduceMotion
 import es.sebas1705.owlsplit.resources.Res
 import es.sebas1705.owlsplit.resources.firebase_missing
 import es.sebas1705.owlsplit.resources.unexpected_error
@@ -55,7 +57,10 @@ fun App(modifier: Modifier = Modifier) {
             return@OwlsplitTheme
         }
         CompositionLocalProvider(LocalAppLocale provides chosen.tag) {
-            CompositionLocalProvider(LocalMoneyFormat provides moneyFormatFor(LocalAppLocale.current)) {
+            CompositionLocalProvider(
+                LocalMoneyFormat provides moneyFormatFor(LocalAppLocale.current),
+                LocalReduceMotion provides systemReduceMotion(),
+            ) {
                 // Background first, then insets: the colour reaches behind the system bars (edge to edge).
                 DebugBadge(modifier.background(Owlsplit.colors.background)) {
                     if (koinInject<FirebaseStatus>().configured) {

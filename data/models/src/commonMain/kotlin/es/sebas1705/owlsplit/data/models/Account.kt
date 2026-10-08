@@ -27,7 +27,8 @@ sealed interface AccountResult {
 
 /** Asking the platform for a Google ID token. */
 sealed interface GoogleTokenResult {
-    data class Token(val idToken: String) : GoogleTokenResult
+    /** [accessToken]: required by Firebase on iOS (Google Sign-In SDK); Android works with the ID token only. */
+    data class Token(val idToken: String, val accessToken: String? = null) : GoogleTokenResult
     data object Cancelled : GoogleTokenResult
     data class Failed(val reason: String) : GoogleTokenResult
 }

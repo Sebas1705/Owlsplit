@@ -22,18 +22,18 @@ class FirebaseAccountService(private val auth: FirebaseAuth) : AccountService {
 
     override suspend fun signInAnonymously() = call { auth.signInAnonymously() }
 
-    override suspend fun linkGoogle(idToken: String) = call {
+    override suspend fun linkGoogle(idToken: String, accessToken: String?) = call {
         val user = requireNotNull(auth.currentUser) { "No session to link" }
-        user.linkWithCredential(GoogleAuthProvider.credential(idToken, null))
+        user.linkWithCredential(GoogleAuthProvider.credential(idToken, accessToken))
         // The listener only fires on sign-in/out: reload so currentSession() shows the provider.
         user.reload()
     }
 
-    override suspend fun signInWithGoogle(idToken: String) =
-        call { auth.signInWithCredential(GoogleAuthProvider.credential(idToken, null)) }
+    override suspend fun signInWithGoogle(idToken: String, accessToken: String?) =
+        call { auth.signInWithCredential(GoogleAuthProvider.credential(idToken, accessToken)) }
 
-    override suspend fun reauthenticateGoogle(idToken: String) =
-        call { requireNotNull(auth.currentUser).reauthenticate(GoogleAuthProvider.credential(idToken, null)) }
+    override suspend fun reauthenticateGoogle(idToken: String, accessToken: String?) =
+        call { requireNotNull(auth.currentUser).reauthenticate(GoogleAuthProvider.credential(idToken, accessToken)) }
 
     override suspend fun signOut() = auth.signOut()
 

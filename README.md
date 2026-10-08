@@ -35,7 +35,9 @@ scripts/doppler-sync-local.sh                   # configuración de Firebase (Do
 ./gradlew build                            # tests, detekt, lint y builds
 ```
 
-Estructura de módulos en [MODULE_MAP.md](MODULE_MAP.md); planes de implementación en [docs/plans](docs/plans/README.md).
+Estructura de módulos en [MODULE_MAP.md](MODULE_MAP.md); planes de implementación en [docs/plans](docs/plans/README.md); Firebase en [docs/FIREBASE.md](docs/FIREBASE.md); distribución a testers (Firebase App Distribution) y versiones en [docs/RELEASE.md](docs/RELEASE.md); criterios de aceptación del MVP en [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md).
+
+iOS: el proyecto de Xcode se genera con XcodeGen (`cd iosApp && xcodegen generate`, en un Mac); CI compila la app para el simulador en cada PR.
 
 ## Licencia
 

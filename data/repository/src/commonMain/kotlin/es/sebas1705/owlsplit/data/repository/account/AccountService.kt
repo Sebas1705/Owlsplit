@@ -15,12 +15,12 @@ interface AccountService {
     suspend fun signInAnonymously(): AccountResult
 
     /** Links Google to the current (anonymous) user: same uid, same data. */
-    suspend fun linkGoogle(idToken: String): AccountResult
+    suspend fun linkGoogle(idToken: String, accessToken: String? = null): AccountResult
 
     /** Replaces the current session with an existing Google account (fresh install). */
-    suspend fun signInWithGoogle(idToken: String): AccountResult
+    suspend fun signInWithGoogle(idToken: String, accessToken: String? = null): AccountResult
 
-    suspend fun reauthenticateGoogle(idToken: String): AccountResult
+    suspend fun reauthenticateGoogle(idToken: String, accessToken: String? = null): AccountResult
 
     suspend fun signOut()
 

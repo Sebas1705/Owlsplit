@@ -20,6 +20,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import es.sebas1705.owlsplit.core.money.Currency
 import es.sebas1705.owlsplit.core.ui.format.MoneyFormat
+import es.sebas1705.owlsplit.core.ui.theme.LocalReduceMotion
 import kotlin.math.roundToLong
 
 private const val FRACTION_SCALE = 0.6f
@@ -67,9 +68,15 @@ fun AmountText(
 private fun rememberRollingAmount(target: Long): Long {
     var shown by remember { mutableLongStateOf(target) }
     val progress = remember { Animatable(1f) }
+    val reduceMotion = LocalReduceMotion.current
     LaunchedEffect(target) {
         val from = shown
         if (from == target) return@LaunchedEffect
+        // "Reduce motion" (spec, accessibility): the new amount, without rolling to it.
+        if (reduceMotion) {
+            shown = target
+            return@LaunchedEffect
+        }
         progress.snapTo(0f)
         progress.animateTo(1f, tween(ROLL_MILLIS, easing = FastOutSlowInEasing)) {
             shown = from + ((target - from) * value.toDouble()).roundToLong()

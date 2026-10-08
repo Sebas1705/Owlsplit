@@ -32,11 +32,11 @@ sealed interface GoogleOutcome {
     data class Failed(val result: AccountResult) : GoogleOutcome
 }
 
-private suspend fun GoogleCredentials.withToken(block: suspend (String) -> AccountResult): GoogleOutcome =
+private suspend fun GoogleCredentials.withToken(block: suspend (String, String?) -> AccountResult): GoogleOutcome =
     when (val token = requestIdToken()) {
         GoogleTokenResult.Cancelled -> GoogleOutcome.Cancelled
         is GoogleTokenResult.Failed -> GoogleOutcome.Failed(AccountResult.Failed(token.reason))
-        is GoogleTokenResult.Token -> block(token.idToken).let {
+        is GoogleTokenResult.Token -> block(token.idToken, token.accessToken).let {
             if (it == AccountResult.Done) GoogleOutcome.Done() else GoogleOutcome.Failed(it)
         }
     }
