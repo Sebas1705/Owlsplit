@@ -6,7 +6,8 @@ import es.sebas1705.owlsplit.core.common.mvi.MVIBaseState
 import es.sebas1705.owlsplit.core.common.mvi.MVIBaseViewModel
 import es.sebas1705.owlsplit.core.datastore.AppPreferences
 import es.sebas1705.owlsplit.core.datastore.ThemeMode
-import es.sebas1705.owlsplit.core.datastore.ThemeSettings
+import es.sebas1705.owlsplit.core.datastore.AppLanguage
+import es.sebas1705.owlsplit.core.datastore.DisplaySettings
 import es.sebas1705.owlsplit.core.ui.theme.GroupAccent
 import es.sebas1705.owlsplit.core.ui.theme.avatarAccent
 import es.sebas1705.owlsplit.core.ui.theme.toAvatar
@@ -39,6 +40,7 @@ data class ProfileState(
     val accent: GroupAccent = GroupAccent.BLUE,
     val currency: String = AppPreferences.DEFAULT_CURRENCY,
     val theme: ThemeMode = ThemeMode.SYSTEM,
+    val language: AppLanguage = AppLanguage.SYSTEM,
     val busy: Boolean = false,
     val dialog: ProfileDialog? = null,
     val message: ProfileMessage? = null,
@@ -54,6 +56,7 @@ sealed interface ProfileIntent : MVIBaseIntent {
     data object Save : ProfileIntent
     data class CurrencyChanged(val code: String) : ProfileIntent
     data class ThemeChanged(val mode: ThemeMode) : ProfileIntent
+    data class LanguageChanged(val language: AppLanguage) : ProfileIntent
     data object Link : ProfileIntent
     data object SignOut : ProfileIntent
     data object AskDelete : ProfileIntent
@@ -67,7 +70,7 @@ sealed interface ProfileIntent : MVIBaseIntent {
 @Suppress("LongParameterList") // One use case per action keeps each one testable on its own.
 class ProfileViewModel(
     observeAccount: ObserveAccount,
-    private val themes: ThemeSettings,
+    private val display: DisplaySettings,
     private val saveProfile: SaveProfile,
     private val linkGoogle: LinkGoogle,
     private val signOut: SignOut,
@@ -79,7 +82,7 @@ class ProfileViewModel(
 
     init {
         viewModelScope.launch {
-            combine(observeAccount(), themes.themeMode, ::Pair).collect { (account, theme) ->
+            combine(observeAccount(), display.themeMode, display.language, ::Triple).collect { (account, theme, language) ->
                 val profile = account.profile
                 val session = account.session
                 updateState { state ->
@@ -95,6 +98,7 @@ class ProfileViewModel(
                         accent = if (untouched) avatarAccent(profile?.avatar) else state.accent,
                         currency = profile?.currency ?: state.currency,
                         theme = theme,
+                        language = language,
                     )
                 }
             }
@@ -107,7 +111,8 @@ class ProfileViewModel(
             is ProfileIntent.AccentChanged -> updateState { it.copy(accent = intent.accent) }
             ProfileIntent.Save -> save()
             is ProfileIntent.CurrencyChanged -> currentState.saved?.let { saveProfile(it.copy(currency = intent.code)) }
-            is ProfileIntent.ThemeChanged -> themes.setThemeMode(intent.mode)
+            is ProfileIntent.ThemeChanged -> display.setThemeMode(intent.mode)
+            is ProfileIntent.LanguageChanged -> display.setLanguage(intent.language)
             ProfileIntent.Link -> link()
             ProfileIntent.SignOut -> busy { report(signOut()) }
             ProfileIntent.AskDelete -> updateState { it.copy(dialog = ProfileDialog.CONFIRM_DELETE) }

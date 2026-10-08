@@ -11,13 +11,19 @@ import kotlinx.coroutines.flow.map
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
+/** The app's language; [tag] null follows the device. */
+enum class AppLanguage(val tag: String?) { SYSTEM(null), SPANISH("es"), ENGLISH("en") }
+
 /** The user's profile as stored on this device. */
 data class StoredProfile(val name: String, val avatar: String, val currency: String)
 
-/** Light/dark preference, separate so screens can be tested without a DataStore. */
-interface ThemeSettings {
+/** How the app looks and reads (theme, language); an interface so screens can be tested without a DataStore. */
+interface DisplaySettings {
     val themeMode: Flow<ThemeMode>
     suspend fun setThemeMode(mode: ThemeMode)
+
+    val language: Flow<AppLanguage>
+    suspend fun setLanguage(language: AppLanguage)
 }
 
 /** Whether the "protect your groups" suggestion was dismissed. */
@@ -32,7 +38,7 @@ interface KeyValueCache {
     suspend fun put(key: String, value: String)
 }
 
-class AppPreferences(private val dataStore: DataStore<Preferences>) : ThemeSettings, LinkNudgeSettings, KeyValueCache {
+class AppPreferences(private val dataStore: DataStore<Preferences>) : DisplaySettings, LinkNudgeSettings, KeyValueCache {
 
     // ── Theme ─────────────────────────────────────────────────────────────────
     override val themeMode: Flow<ThemeMode> = dataStore.data.map { prefs ->
@@ -40,9 +46,11 @@ class AppPreferences(private val dataStore: DataStore<Preferences>) : ThemeSetti
     }
     override suspend fun setThemeMode(mode: ThemeMode) { dataStore.edit { it[Keys.THEME] = mode.name } }
 
-    // ── Locale (P11) ──────────────────────────────────────────────────────────
-    val language: Flow<String?> = dataStore.data.map { it[Keys.LANGUAGE] }
-    suspend fun setLanguage(code: String) { dataStore.edit { it[Keys.LANGUAGE] = code } }
+    // ── Language ──────────────────────────────────────────────────────────────
+    override val language: Flow<AppLanguage> = dataStore.data.map { prefs ->
+        prefs[Keys.LANGUAGE]?.let { name -> AppLanguage.entries.firstOrNull { it.name == name } } ?: AppLanguage.SYSTEM
+    }
+    override suspend fun setLanguage(language: AppLanguage) { dataStore.edit { it[Keys.LANGUAGE] = language.name } }
 
     // ── Profile: null until onboarding is finished ────────────────────────────
     val profile: Flow<StoredProfile?> = dataStore.data.map { prefs ->

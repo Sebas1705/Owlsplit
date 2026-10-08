@@ -38,6 +38,7 @@ import es.sebas1705.owlsplit.core.ui.components.SyncStatus
 import es.sebas1705.owlsplit.core.ui.components.SyncStatusChip
 import es.sebas1705.owlsplit.core.ui.components.TextActionButton
 import es.sebas1705.owlsplit.core.ui.format.MoneyFormat
+import es.sebas1705.owlsplit.core.ui.format.LocalMoneyFormat
 import es.sebas1705.owlsplit.core.ui.theme.GroupAccent
 import es.sebas1705.owlsplit.core.ui.theme.GroupIcons
 import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
@@ -86,7 +87,7 @@ fun HomeScreen(
     onEvent: (HomeIntent) -> Unit,
     navigation: HomeNavigation,
     modifier: Modifier = Modifier,
-    format: MoneyFormat = MoneyFormat.Spanish,
+    format: MoneyFormat = LocalMoneyFormat.current,
 ) {
     val quick = { action: QuickAction ->
         val single = state.groups.singleOrNull()?.group?.id

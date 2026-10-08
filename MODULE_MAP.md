@@ -7,7 +7,7 @@
 | `core:ui` | `OwlsplitTheme` (tokens, Inter, formas), `MoneyFormat`, componentes (incluido `QrCode`) y `DesignCatalog`; capturas Roborazzi | P9 |
 | `core:security` | `SecureStorage` | — |
 | `core:network` | Cliente Ktor por plataforma | P9 (tipos de cambio) |
-| `core:datastore` | Preferencias (`AppPreferences`: tema, perfil local, aviso para vincular; `ThemeSettings`) | P11 (idioma) |
+| `core:datastore` | Preferencias (`AppPreferences`: tema, idioma, perfil local, aviso para vincular; `DisplaySettings`) | — |
 | `core:logging` | Kermit | — |
 | `core:testing` | `CoroutineTestRule`, falsos de cuenta/sincronización, `InMemoryLedger` (los cuatro repositorios en memoria) y `FakeInvites` para tests de dominio y ViewModels | — |
 | `core:money` | Dinero, divisas, multiplicación-división exacta, reparto por restos mayores, tipos de cambio | — |

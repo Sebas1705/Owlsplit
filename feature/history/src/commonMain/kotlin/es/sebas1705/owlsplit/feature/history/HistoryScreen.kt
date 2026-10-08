@@ -39,6 +39,7 @@ import es.sebas1705.owlsplit.core.ui.components.EmptyState
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitContainer
 import es.sebas1705.owlsplit.core.ui.components.TextActionButton
 import es.sebas1705.owlsplit.core.ui.format.MoneyFormat
+import es.sebas1705.owlsplit.core.ui.format.LocalMoneyFormat
 import es.sebas1705.owlsplit.core.ui.format.dayLabel
 import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
 import es.sebas1705.owlsplit.core.ui.theme.Sizes
@@ -82,7 +83,7 @@ fun HistoryScreen(
     onEvent: (HistoryIntent) -> Unit,
     onBack: (() -> Unit)?,
     modifier: Modifier = Modifier,
-    format: MoneyFormat = MoneyFormat.Spanish,
+    format: MoneyFormat = LocalMoneyFormat.current,
     today: LocalDate = Today.System(),
 ) {
     LaunchedEffect(state.reapplyFailed) {

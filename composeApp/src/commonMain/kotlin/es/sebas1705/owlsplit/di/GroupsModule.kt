@@ -61,7 +61,7 @@ val groupsModule = module {
     viewModel { (groupId: String) -> MembersViewModel(groupId, get(), get()) }
     viewModel { (groupId: String) -> TransferViewModel(groupId, get(), get()) }
     viewModel { (groupId: String?) -> HistoryViewModel(groupId, get(), get(), get(), get()) }
-    viewModel { (groupId: String, expenseId: String?) ->
-        ExpenseEditorViewModel(groupId, expenseId, get(), get(), get(), get())
+    viewModel { (groupId: String, expenseId: String?, separator: Char) ->
+        ExpenseEditorViewModel(groupId, expenseId, get(), get(), get(), get(), separator)
     }
 }

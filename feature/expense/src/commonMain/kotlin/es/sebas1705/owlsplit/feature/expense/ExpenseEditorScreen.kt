@@ -59,6 +59,7 @@ import es.sebas1705.owlsplit.core.ui.components.PrimaryPillButton
 import es.sebas1705.owlsplit.core.ui.components.SegmentedControl
 import es.sebas1705.owlsplit.core.ui.components.TextActionButton
 import es.sebas1705.owlsplit.core.ui.format.MoneyFormat
+import es.sebas1705.owlsplit.core.ui.format.LocalMoneyFormat
 import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
 import es.sebas1705.owlsplit.core.ui.theme.OwlsplitShapes
 import es.sebas1705.owlsplit.core.ui.theme.Sizes
@@ -117,8 +118,10 @@ fun ExpenseEditorRoute(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val viewModel = koinViewModel<ExpenseEditorViewModel>(key = "expense-$groupId-$expenseId") {
-        parametersOf(groupId, expenseId)
+    // The typed amounts use the separator of the app language (the key keeps one per language).
+    val separator = LocalMoneyFormat.current.decimalSeparator
+    val viewModel = koinViewModel<ExpenseEditorViewModel>(key = "expense-$groupId-$expenseId-$separator") {
+        parametersOf(groupId, expenseId, separator)
     }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(state.done) { if (state.done) onClose() }
@@ -131,7 +134,7 @@ fun ExpenseEditorScreen(
     onEvent: (ExpenseEditorIntent) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
-    format: MoneyFormat = MoneyFormat.Spanish,
+    format: MoneyFormat = LocalMoneyFormat.current,
 ) {
     if (!state.loaded) return
     val myMemberId = state.myMemberId

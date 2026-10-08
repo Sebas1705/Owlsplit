@@ -45,6 +45,7 @@ import compose.icons.tablericons.Logout
 import compose.icons.tablericons.Palette
 import compose.icons.tablericons.ShieldCheck
 import compose.icons.tablericons.Trash
+import es.sebas1705.owlsplit.core.datastore.AppLanguage
 import es.sebas1705.owlsplit.core.datastore.ThemeMode
 import es.sebas1705.owlsplit.core.ui.components.AccentPicker
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitContainer
@@ -86,6 +87,8 @@ import es.sebas1705.owlsplit.feature.profile.resources.reauth_title
 import es.sebas1705.owlsplit.feature.profile.resources.save
 import es.sebas1705.owlsplit.feature.profile.resources.session
 import es.sebas1705.owlsplit.feature.profile.resources.sign_out
+import es.sebas1705.owlsplit.feature.profile.resources.language
+import es.sebas1705.owlsplit.feature.profile.resources.language_system
 import es.sebas1705.owlsplit.feature.profile.resources.theme
 import es.sebas1705.owlsplit.feature.profile.resources.theme_dark
 import es.sebas1705.owlsplit.feature.profile.resources.theme_light
@@ -275,6 +278,14 @@ private fun Preferences(state: ProfileState, onEvent: (ProfileIntent) -> Unit) {
                 ),
                 selectedIndex = modes.indexOf(state.theme),
                 onSelect = { onEvent(ProfileIntent.ThemeChanged(modes[it])) },
+            )
+            Text(stringResource(Res.string.language), style = Owlsplit.type.label, color = Owlsplit.colors.textSecondary)
+            val languages = AppLanguage.entries
+            SegmentedControl(
+                // Each language in its own name, so it can be found whatever the app is in.
+                options = listOf(stringResource(Res.string.language_system), "Español", "English"),
+                selectedIndex = languages.indexOf(state.language),
+                onSelect = { onEvent(ProfileIntent.LanguageChanged(languages[it])) },
             )
         }
     }
