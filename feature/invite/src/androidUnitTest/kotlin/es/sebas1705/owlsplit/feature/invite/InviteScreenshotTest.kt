@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import es.sebas1705.owlsplit.core.testing.ui.assertAccessible
 import es.sebas1705.owlsplit.core.ui.components.TextSharer
 import es.sebas1705.owlsplit.core.ui.theme.OwlsplitTheme
 import es.sebas1705.owlsplit.data.models.InvitePreview
@@ -42,6 +43,7 @@ class InviteScreenshotTest {
 
     private fun capture(name: String, dark: Boolean = false, content: @Composable () -> Unit) {
         compose.setContent { OwlsplitTheme(darkTheme = dark) { content() } }
+        compose.assertAccessible()
         compose.onRoot().captureRoboImage("screenshots/invite_$name.png")
     }
 

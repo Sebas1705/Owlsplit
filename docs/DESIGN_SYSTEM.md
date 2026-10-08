@@ -23,7 +23,7 @@ Se implementa sobre **Material 3** de Compose Multiplatform con un `OwlsplitThem
 | `divider` | `#ECEEF3` | `#22252E` | Separadores y pistas de barras |
 | `textPrimary` | `#0B0C10` | `#F5F6FA` | Texto e importes; también deudas |
 | `textSecondary` | `#5B5F6B` | `#8A8E99` | Subtítulos, etiquetas |
-| `textMuted` | `#8A8E99` | `#5B5F6B` | Pistas y metadatos, solo ≥ 12 sp o no esencial |
+| `textMuted` | `#696D78` | `#80848F` | Pistas, marcadores de posición y metadatos; contraste AA (≥ 4,5:1) sobre fondo y superficie (P11a) |
 | `accent` | `#3B4BF5` | `#3B4BF5` | Botón principal, selección, avatares incluidos |
 | `onAccent` | `#FFFFFF` | `#FFFFFF` | Texto sobre `accent` (contraste 6:1) |
 | `accentText` | `#3B4BF5` | `#8C96FF` | Enlaces y texto de acento sobre superficies |
@@ -31,7 +31,7 @@ Se implementa sobre **Material 3** de Compose Multiplatform con un `OwlsplitThem
 | `positive` | `#087A54` | `#34C38F` | Saldos a favor (contraste ≥ 4.5:1 en ambos temas) |
 | `positiveFill` | `#0E9F6E` | `#34C38F` | Barras de saldo a favor (elemento gráfico) |
 | `negativeFill` | `#0B0C10` | `#F5F6FA` | Barras de saldo en contra |
-| `warning` | `#B26A00` | `#F2B84B` | Pendiente de sincronizar, conflictos |
+| `warning` | `#9A5B00` | `#F2B84B` | Pendiente de sincronizar, conflictos |
 | `error` | `#C4372B` | `#FF7A6E` | Solo errores de validación o de sistema, nunca deudas |
 | `brandBeak` | `#E8B04B` | `#E8B04B` | Exclusivo del logotipo |
 

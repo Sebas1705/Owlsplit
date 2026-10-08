@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import es.sebas1705.owlsplit.core.testing.ui.assertAccessible
 import es.sebas1705.owlsplit.core.ui.format.LocalMoneyFormat
 import es.sebas1705.owlsplit.core.ui.format.MoneyFormat
 import es.sebas1705.owlsplit.core.ui.theme.OwlsplitTheme
@@ -15,6 +16,7 @@ import es.sebas1705.owlsplit.domain.usecases.groups.HomeGroup
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -52,6 +54,7 @@ class HomeScreenshotTest {
                 CompositionLocalProvider(LocalMoneyFormat provides format) { HomeScreen(state, {}, navigation) }
             }
         }
+        compose.assertAccessible()
         compose.onRoot().captureRoboImage("screenshots/home_$name.png")
     }
 
@@ -63,6 +66,12 @@ class HomeScreenshotTest {
 
     @Test
     fun groupsDark() = capture("groups_dark", withGroups.copy(suggestLinking = false, pending = 0), dark = true)
+
+    @Test
+    fun groupsLargeText() {
+        RuntimeEnvironment.setFontScale(2f)
+        capture("groups_large_text", withGroups)
+    }
 
     @Test
     @Config(qualifiers = "en-w411dp-h891dp-xxhdpi")

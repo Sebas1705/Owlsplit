@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -227,9 +226,12 @@ private fun Nudge(onEvent: (HomeIntent) -> Unit, onLink: () -> Unit) {
                 style = Owlsplit.type.body,
                 color = Owlsplit.colors.textSecondary
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s)
+            ) {
                 TextActionButton(stringResource(Res.string.nudge_dismiss), { onEvent(HomeIntent.DismissNudge) })
-                Spacer(Modifier.weight(1f))
+                // All the width left: with large text the label still fits.
                 PrimaryPillButton(stringResource(Res.string.nudge_action), onLink, Modifier.weight(1f))
             }
         }

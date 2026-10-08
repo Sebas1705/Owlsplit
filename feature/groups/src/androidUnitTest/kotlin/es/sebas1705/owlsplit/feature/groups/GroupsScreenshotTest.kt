@@ -4,6 +4,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import es.sebas1705.owlsplit.core.testing.ui.assertAccessible
 import es.sebas1705.owlsplit.core.ui.theme.GroupAccent
 import es.sebas1705.owlsplit.core.ui.theme.OwlsplitTheme
 import es.sebas1705.owlsplit.data.models.Expense
@@ -31,6 +32,7 @@ import kotlinx.datetime.LocalDate
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -92,6 +94,7 @@ class GroupsScreenshotTest {
         compose.setContent {
             OwlsplitTheme(darkTheme = dark) { GroupScreen(state.copy(tab = tab), {}, navigation, today = today) }
         }
+        compose.assertAccessible()
         compose.onRoot().captureRoboImage("screenshots/group_$name.png")
     }
 
@@ -103,6 +106,21 @@ class GroupsScreenshotTest {
 
     @Test
     fun balances() = group("balances", GroupTab.BALANCES)
+
+    // Text at 200 % (spec, accessibility): amounts shrink to fit, nothing is cut.
+    @Test
+    fun expensesLargeText() = largeText { group("expenses_large_text", GroupTab.EXPENSES) }
+
+    @Test
+    fun balancesLargeText() = largeText { group("balances_large_text", GroupTab.BALANCES) }
+
+    @Test
+    fun settleLargeText() = largeText { group("settle_large_text", GroupTab.SETTLE) }
+
+    private fun largeText(block: () -> Unit) {
+        RuntimeEnvironment.setFontScale(2f)
+        block()
+    }
 
     @Test
     fun settle() = group("settle", GroupTab.SETTLE)
@@ -124,12 +142,14 @@ class GroupsScreenshotTest {
                 )
             }
         }
+        compose.assertAccessible()
         compose.onRoot().captureRoboImage("screenshots/group_editor.png")
     }
 
     @Test
     fun members() {
         compose.setContent { OwlsplitTheme { MembersScreen(MembersState(true, members, "ana"), {}, {}) } }
+        compose.assertAccessible()
         compose.onRoot().captureRoboImage("screenshots/group_members.png")
     }
 
@@ -149,6 +169,7 @@ class GroupsScreenshotTest {
                 )
             }
         }
+        compose.assertAccessible()
         compose.onRoot().captureRoboImage("screenshots/group_editor_dates.png")
     }
 
@@ -163,6 +184,7 @@ class GroupsScreenshotTest {
                 )
             }
         }
+        compose.assertAccessible()
         compose.onRoot().captureRoboImage("screenshots/group_record_payment.png")
     }
 }

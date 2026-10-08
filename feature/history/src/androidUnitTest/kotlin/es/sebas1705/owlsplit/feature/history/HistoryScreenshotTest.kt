@@ -4,6 +4,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import es.sebas1705.owlsplit.core.testing.ui.assertAccessible
 import es.sebas1705.owlsplit.core.ui.theme.OwlsplitTheme
 import es.sebas1705.owlsplit.data.models.ChangeAction
 import es.sebas1705.owlsplit.data.models.ChangeLogEntry
@@ -70,6 +71,7 @@ class HistoryScreenshotTest {
         compose.setContent {
             OwlsplitTheme { HistoryScreen(HistoryState(loaded = true, items = items), {}, onBack = {}, today = today) }
         }
+        compose.assertAccessible()
         compose.onRoot().captureRoboImage("screenshots/history_group.png")
     }
 
@@ -85,6 +87,7 @@ class HistoryScreenshotTest {
                 )
             }
         }
+        compose.assertAccessible()
         compose.onRoot().captureRoboImage("screenshots/history_activity_dark.png")
     }
 }

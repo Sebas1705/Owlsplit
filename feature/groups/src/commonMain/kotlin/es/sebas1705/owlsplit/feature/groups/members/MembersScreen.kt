@@ -14,8 +14,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,6 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Minus
 import compose.icons.tablericons.Plus
+import es.sebas1705.owlsplit.core.ui.components.SwitchRow
 import es.sebas1705.owlsplit.core.ui.components.Avatar
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitContainer
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitTextField
@@ -144,19 +143,11 @@ private fun MemberDialog(form: MemberForm, onEvent: (MembersIntent) -> Unit) {
                 )
                 WeightStepper(form.weight) { onEvent(MembersIntent.WeightChanged(it)) }
                 if (form.memberId != null && !form.isMe) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            stringResource(Res.string.active_label),
-                            style = Owlsplit.type.body,
-                            color = colors.textPrimary,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Switch(
-                            checked = form.active,
-                            onCheckedChange = { onEvent(MembersIntent.ActiveChanged(it)) },
-                            colors = SwitchDefaults.colors(checkedTrackColor = colors.accent),
-                        )
-                    }
+                    SwitchRow(
+                        stringResource(Res.string.active_label),
+                        form.active,
+                        { onEvent(MembersIntent.ActiveChanged(it)) }
+                    )
                     if (form.inUse) {
                         Text(
                             stringResource(Res.string.member_in_use),
