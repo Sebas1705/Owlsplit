@@ -32,7 +32,14 @@ fun SwitchRow(text: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit
         Switch(
             checked = checked,
             onCheckedChange = null,
-            colors = SwitchDefaults.colors(checkedTrackColor = colors.accent)
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = colors.onAccent,
+                checkedTrackColor = colors.accent,
+                checkedBorderColor = colors.accent,
+                uncheckedThumbColor = colors.textMuted,
+                uncheckedTrackColor = colors.surfaceVariant,
+                uncheckedBorderColor = colors.textMuted,
+            )
         )
     }
 }

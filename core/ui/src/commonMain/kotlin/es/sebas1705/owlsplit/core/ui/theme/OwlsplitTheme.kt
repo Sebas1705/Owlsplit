@@ -47,10 +47,13 @@ fun OwlsplitTheme(
         MaterialTheme(
             colorScheme = colors.toColorScheme(),
             typography = materialTypography(family),
+            // Menus (extraSmall), fields, cards and dialogs (extraLarge) with the corners of the design system.
             shapes = Shapes(
+                extraSmall = OwlsplitShapes.control,
                 small = OwlsplitShapes.control,
                 medium = OwlsplitShapes.container,
                 large = OwlsplitShapes.container,
+                extraLarge = OwlsplitShapes.dialog,
             ),
             content = content,
         )
@@ -72,10 +75,27 @@ private fun OwlsplitColors.toColorScheme(): ColorScheme {
         onSurface = textPrimary,
         surfaceVariant = surfaceVariant,
         onSurfaceVariant = textSecondary,
+        // Every container is the surface colour: depth comes from background vs surface (no shadows),
+        // and no Material tonal tint on top of it.
+        surfaceTint = surface,
+        surfaceBright = surface,
+        surfaceDim = background,
+        surfaceContainerLowest = surface,
+        surfaceContainerLow = surface,
         surfaceContainer = surface,
         surfaceContainerHigh = surface,
+        surfaceContainerHighest = surfaceVariant,
+        secondaryContainer = accentContainer,
+        onSecondaryContainer = accentText,
+        tertiary = accent,
+        onTertiary = onAccent,
+        // Snackbars: the opposite of the theme, as the system does.
+        inverseSurface = textPrimary,
+        inverseOnSurface = surface,
+        inversePrimary = accentText,
         outline = textMuted,
         outlineVariant = divider,
         error = error,
+        onError = onAccent,
     )
 }

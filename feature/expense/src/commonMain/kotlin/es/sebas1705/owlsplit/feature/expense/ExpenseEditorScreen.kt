@@ -1,5 +1,14 @@
 package es.sebas1705.owlsplit.feature.expense
 
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.layout.ColumnScope
+import es.sebas1705.owlsplit.core.ui.components.BottomActionBar
+import es.sebas1705.owlsplit.core.ui.components.bleedHorizontally
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import es.sebas1705.owlsplit.core.ui.components.OwlsplitMenuItem
+import es.sebas1705.owlsplit.core.ui.components.OwlsplitDropdownMenu
 import es.sebas1705.owlsplit.core.ui.format.formatDecimal
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,8 +32,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -159,23 +166,9 @@ fun ExpenseEditorScreen(
                 }
             }
         }
-        Column(
-            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Spacing.l),
-            verticalArrangement = Arrangement.spacedBy(Spacing.l),
-        ) {
-            Amount(state, format, currency) { onEvent(ExpenseEditorIntent.KeypadOpen(!state.keypadOpen)) }
-            CurrencyLine(state, format, onEvent)
-            if (state.keypadOpen) {
-                AmountKeypad(
-                    format.decimalSeparator,
-                    stringResource(Res.string.backspace),
-                    { onEvent(ExpenseEditorIntent.Key(it)) }
-                )
-            } else {
-                Details(state, onEvent, format, currency, myMemberId)
-            }
-        }
-        Column(Modifier.padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
+        val scroll = rememberScrollState()
+        EditorBody(state, onEvent, format, currency, myMemberId, scroll)
+        BottomActionBar(contentBelow = !state.keypadOpen && scroll.canScrollForward) {
             if (state.keypadOpen) {
                 PrimaryPillButton(stringResource(Res.string.done), { onEvent(ExpenseEditorIntent.KeypadOpen(false)) })
             } else {
@@ -189,6 +182,43 @@ fun ExpenseEditorScreen(
         }
     }
     if (state.confirmDelete) DeleteDialog(onEvent)
+}
+
+/** The keypad while the amount is typed (low, near "Done"), the rest of the form otherwise. */
+@Composable
+private fun ColumnScope.EditorBody(
+    state: ExpenseEditorState,
+    onEvent: (ExpenseEditorIntent) -> Unit,
+    format: MoneyFormat,
+    currency: Currency,
+    myMemberId: String?,
+    scroll: ScrollState,
+) {
+    if (state.keypadOpen) {
+        // The keypad sits low, next to "Done": within reach of the thumb.
+        Column(
+            Modifier.weight(1f).padding(horizontal = Spacing.l),
+            verticalArrangement = Arrangement.spacedBy(Spacing.l),
+        ) {
+            Amount(state, format, currency) { onEvent(ExpenseEditorIntent.KeypadOpen(false)) }
+            CurrencyLine(state, format, onEvent)
+            Spacer(Modifier.weight(1f))
+            AmountKeypad(
+                format.decimalSeparator,
+                stringResource(Res.string.backspace),
+                { onEvent(ExpenseEditorIntent.Key(it)) }
+            )
+        }
+    } else {
+        Column(
+            Modifier.weight(1f).verticalScroll(scroll).padding(horizontal = Spacing.l),
+            verticalArrangement = Arrangement.spacedBy(Spacing.l),
+        ) {
+            Amount(state, format, currency) { onEvent(ExpenseEditorIntent.KeypadOpen(true)) }
+            CurrencyLine(state, format, onEvent)
+            Details(state, onEvent, format, currency, myMemberId)
+        }
+    }
 }
 
 @Composable
@@ -267,7 +297,14 @@ private fun Details(
 @Composable
 private fun Categories(selected: ExpenseCategory, onSelect: (ExpenseCategory) -> Unit) {
     val colors = Owlsplit.colors
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
+    // Opens on the chosen category (editing "Other" would otherwise show it off screen).
+    val row = rememberLazyListState(initialFirstVisibleItemIndex = ExpenseCategory.entries.indexOf(selected))
+    LazyRow(
+        Modifier.bleedHorizontally(Spacing.l),
+        state = row,
+        contentPadding = PaddingValues(horizontal = Spacing.l),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.s),
+    ) {
         items(ExpenseCategory.entries) { category ->
             val isSelected = category == selected
             Row(
@@ -330,14 +367,15 @@ internal fun PayerRow(state: ExpenseEditorState, myMemberId: String?, onSelect: 
                 modifier = Modifier.padding(start = Spacing.xs).size(18.dp)
             )
         }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+        OwlsplitDropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             state.members.filter { it.active }.forEach { member ->
-                DropdownMenuItem(
-                    text = { Text(memberName(member, myMemberId), style = Owlsplit.type.body) },
+                OwlsplitMenuItem(
+                    memberName(member, myMemberId),
                     onClick = {
                         open = false
                         onSelect(member.id)
                     },
+                    selected = member.id == payer?.id,
                 )
             }
         }

@@ -1,5 +1,8 @@
 package es.sebas1705.owlsplit.feature.groups.detail
 
+import compose.icons.tablericons.Search
+import es.sebas1705.owlsplit.core.ui.components.OwlsplitMenuItem
+import es.sebas1705.owlsplit.core.ui.components.OwlsplitDropdownMenu
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -9,8 +12,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -52,6 +53,8 @@ internal fun ExpenseFilters(state: GroupState, detail: GroupDetail, onEvent: (Gr
             onValueChange = { onEvent(GroupIntent.Search(it)) },
             label = stringResource(Res.string.search_label),
             placeholder = stringResource(Res.string.search_placeholder),
+            leadingIcon = TablerIcons.Search,
+            showLabel = false,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s), verticalAlignment = Alignment.CenterVertically) {
             val anyone = stringResource(Res.string.filter_anyone)
@@ -93,14 +96,15 @@ private fun <T> Chip(label: String, selected: Boolean, options: List<Pair<T, Str
             Text(label, style = Owlsplit.type.label, color = if (selected) colors.accentText else colors.textPrimary)
             Icon(TablerIcons.ChevronDown, null, tint = colors.textMuted, modifier = Modifier.size(16.dp))
         }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+        OwlsplitDropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             options.forEach { (value, text) ->
-                DropdownMenuItem(
-                    text = { Text(text, style = Owlsplit.type.body) },
+                OwlsplitMenuItem(
+                    text,
                     onClick = {
                         open = false
                         onSelect(value)
                     },
+                    selected = text == label,
                 )
             }
         }

@@ -96,6 +96,8 @@ fun MemberBalanceRow(
     format: MoneyFormat,
     modifier: Modifier = Modifier,
     spokenDescription: String? = null,
+    /** The member's colour (memberAccent); null: neutral. */
+    accent: GroupAccent? = null,
 ) {
     val colors = Owlsplit.colors
     val fraction = if (largestAbsBalanceMinor == 0L) 0f else abs(balanceMinor).toFloat() / largestAbsBalanceMinor
@@ -110,7 +112,7 @@ fun MemberBalanceRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.m),
     ) {
-        Avatar(name, size = 30.dp)
+        if (accent != null) ProfileAvatar(name, accent, size = 30.dp) else Avatar(name, size = 30.dp)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             Text(name, style = Owlsplit.type.bodyStrong, color = colors.textPrimary, maxLines = 1)
             Box(Modifier.fillMaxWidth().height(Sizes.balanceBar).background(colors.divider, BarShape)) {

@@ -35,7 +35,11 @@ fun PrimaryPillButton(text: String, onClick: () -> Unit, modifier: Modifier = Mo
         colors = ButtonDefaults.buttonColors(
             containerColor = Owlsplit.colors.accent,
             contentColor = Owlsplit.colors.onAccent,
+            disabledContainerColor = Owlsplit.colors.surfaceVariant,
+            disabledContentColor = Owlsplit.colors.textMuted,
         ),
+        // Flat in every state (Material lifts it on hover and focus): no shadows in the design system.
+        elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp, 0.dp, 0.dp, 0.dp),
         modifier = modifier.fillMaxWidth().height(Sizes.primaryButtonHeight),
     ) {
         Text(text, style = Owlsplit.type.bodyStrong)

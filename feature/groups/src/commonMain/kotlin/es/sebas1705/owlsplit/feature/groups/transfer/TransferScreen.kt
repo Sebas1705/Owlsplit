@@ -1,5 +1,7 @@
 package es.sebas1705.owlsplit.feature.groups.transfer
 
+import es.sebas1705.owlsplit.core.ui.components.OwlsplitMenuItem
+import es.sebas1705.owlsplit.core.ui.components.OwlsplitDropdownMenu
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,8 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -140,14 +140,15 @@ private fun MemberRow(label: String, selectedId: String?, state: TransferState, 
                 modifier = Modifier.padding(start = Spacing.xs).size(18.dp)
             )
         }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+        OwlsplitDropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             state.members.forEach { member ->
-                DropdownMenuItem(
-                    text = { Text(display(member.id), style = Owlsplit.type.body) },
+                OwlsplitMenuItem(
+                    display(member.id),
                     onClick = {
                         open = false
                         onSelect(member.id)
                     },
+                    selected = member.id == selectedId,
                 )
             }
         }

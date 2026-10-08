@@ -1,5 +1,11 @@
 package es.sebas1705.owlsplit.feature.groups.detail
 
+import androidx.compose.foundation.layout.offset
+import es.sebas1705.owlsplit.core.ui.theme.memberAccent
+import es.sebas1705.owlsplit.core.ui.components.BottomActionBar
+import androidx.compose.foundation.lazy.rememberLazyListState
+import es.sebas1705.owlsplit.core.ui.components.OwlsplitMenuItem
+import es.sebas1705.owlsplit.core.ui.components.OwlsplitDropdownMenu
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -7,14 +13,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -123,8 +126,10 @@ fun GroupScreen(
     val currency = Currency.of(detail.group.baseCurrency)
     Column(modifier.fillMaxSize().background(Owlsplit.colors.background)) {
         TopBar("", navigation.back) { Actions(detail, onEvent, navigation) }
+        val list = rememberLazyListState()
         LazyColumn(
             Modifier.weight(1f),
+            state = list,
             contentPadding = PaddingValues(Spacing.l),
             verticalArrangement = Arrangement.spacedBy(Spacing.l),
         ) {
@@ -147,11 +152,9 @@ fun GroupScreen(
             }
         }
         if (state.tab == GroupTab.EXPENSES) {
-            PrimaryPillButton(
-                stringResource(Res.string.add_expense),
-                navigation.addExpense,
-                Modifier.padding(Spacing.l)
-            )
+            BottomActionBar(contentBelow = list.canScrollForward) {
+                PrimaryPillButton(stringResource(Res.string.add_expense), navigation.addExpense)
+            }
         }
     }
     Dialogs(state, detail, currency, format, onEvent)
@@ -170,34 +173,35 @@ private fun Actions(detail: GroupDetail, onEvent: (GroupIntent) -> Unit, navigat
         IconButton(onClick = { menu = true }) {
             Icon(TablerIcons.DotsVertical, stringResource(Res.string.more), tint = Owlsplit.colors.textPrimary)
         }
-        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-            DropdownMenuItem(
-                text = { Text(stringResource(Res.string.invite)) },
+        OwlsplitDropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            OwlsplitMenuItem(
+                stringResource(Res.string.invite),
                 onClick = {
                     menu = false
                     navigation.invite()
                 },
             )
-            DropdownMenuItem(
-                text = { Text(stringResource(Res.string.history)) },
+            OwlsplitMenuItem(
+                stringResource(Res.string.history),
                 onClick = {
                     menu = false
                     navigation.history()
                 },
             )
-            DropdownMenuItem(
-                text = { Text(stringResource(if (detail.archivedByMe) Res.string.unarchive else Res.string.archive)) },
+            OwlsplitMenuItem(
+                stringResource(if (detail.archivedByMe) Res.string.unarchive else Res.string.archive),
                 onClick = {
                     menu = false
                     onEvent(GroupIntent.ToggleArchive)
                 },
             )
-            DropdownMenuItem(
-                text = { Text(stringResource(Res.string.leave), color = Owlsplit.colors.error) },
+            OwlsplitMenuItem(
+                stringResource(Res.string.leave),
                 onClick = {
                     menu = false
                     onEvent(GroupIntent.AskLeave)
                 },
+                color = Owlsplit.colors.error,
             )
         }
     }
@@ -301,7 +305,15 @@ private fun Balances(detail: GroupDetail, currency: Currency, format: MoneyForma
                 balance < 0 -> stringResource(Res.string.balance_owes, member.name, amount)
                 else -> stringResource(Res.string.balance_even, member.name)
             }
-            MemberBalanceRow(member.name, balance, largest, currency, format, spokenDescription = spoken)
+            MemberBalanceRow(
+                member.name,
+                balance,
+                largest,
+                currency,
+                format,
+                spokenDescription = spoken,
+                accent = memberAccent(member.id, member.avatar),
+            )
         }
     }
 }
@@ -332,7 +344,14 @@ private fun LazyListScope.settle(
             }
         }
     }
-    item { TextActionButton(stringResource(Res.string.record_payment), onRecordPayment) }
+    // Pulled back by the button padding: the label lines up with the cards.
+    item {
+        TextActionButton(
+            stringResource(Res.string.record_payment),
+            onRecordPayment,
+            Modifier.offset(x = -Spacing.m)
+        )
+    }
     if (detail.transfers.isNotEmpty()) {
         item {
             Text(

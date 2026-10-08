@@ -7,6 +7,7 @@ object OwlsplitShapes {
     val container = RoundedCornerShape(16.dp)
     val control = RoundedCornerShape(12.dp)
     val pill = RoundedCornerShape(percent = 50)
+    val dialog = RoundedCornerShape(24.dp)
 }
 
 object Spacing {

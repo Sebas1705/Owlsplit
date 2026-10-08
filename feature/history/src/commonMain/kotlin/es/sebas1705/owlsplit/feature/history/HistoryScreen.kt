@@ -1,5 +1,6 @@
 package es.sebas1705.owlsplit.feature.history
 
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -175,7 +176,8 @@ private fun Entry(
             Text(headline(item), style = Owlsplit.type.body, color = colors.textPrimary)
             changes(item, format, today)?.let { Text(it, style = Owlsplit.type.caption, color = colors.textSecondary) }
             if (showGroup) Text(item.groupName, style = Owlsplit.type.caption, color = colors.textMuted)
-            Row {
+            // Text buttons pad their label: pull them back so it lines up with the text above.
+            Row(Modifier.offset(x = -Spacing.m)) {
                 if (item.canRestore) {
                     TextActionButton(
                         stringResource(Res.string.restore),
