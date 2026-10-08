@@ -3,6 +3,7 @@ package es.sebas1705.owlsplit.feature.invite
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,6 +42,7 @@ import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
 import es.sebas1705.owlsplit.core.ui.theme.Sizes
 import es.sebas1705.owlsplit.core.ui.theme.Spacing
 import es.sebas1705.owlsplit.domain.usecases.invite.InviteCodes
+import es.sebas1705.owlsplit.domain.usecases.invite.InviteLink
 import es.sebas1705.owlsplit.feature.invite.resources.Res
 import es.sebas1705.owlsplit.feature.invite.resources.back
 import es.sebas1705.owlsplit.feature.invite.resources.cancel
@@ -60,6 +62,7 @@ import es.sebas1705.owlsplit.feature.invite.resources.retry
 import es.sebas1705.owlsplit.feature.invite.resources.share_link
 import es.sebas1705.owlsplit.feature.invite.resources.share_text
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -82,14 +85,6 @@ fun InviteScreen(
     sharer: TextSharer,
     modifier: Modifier = Modifier,
 ) {
-    val clipboard = LocalClipboardManager.current
-    var copied by remember { mutableStateOf(false) }
-    LaunchedEffect(copied) {
-        if (copied) {
-            delay(COPIED_MILLIS)
-            copied = false
-        }
-    }
     Column(modifier.fillMaxSize().background(Owlsplit.colors.background)) {
         Row(Modifier.fillMaxWidth().heightIn(min = Sizes.touchTarget), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) {
@@ -106,69 +101,127 @@ fun InviteScreen(
                 color = Owlsplit.colors.textPrimary,
                 modifier = Modifier.semantics { heading() },
             )
-            Text(stringResource(Res.string.invite_body), style = Owlsplit.type.body, color = Owlsplit.colors.textSecondary)
+            Text(
+                stringResource(Res.string.invite_body),
+                style = Owlsplit.type.body,
+                color = Owlsplit.colors.textSecondary
+            )
             when (state.status) {
-                InviteStatus.PREPARING -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
-                    CircularProgressIndicator(Modifier.size(20.dp), color = Owlsplit.colors.accent, strokeWidth = 2.dp)
-                    Text(stringResource(Res.string.preparing), style = Owlsplit.type.body, color = Owlsplit.colors.textSecondary)
-                }
-                InviteStatus.OFFLINE, InviteStatus.FAILED -> Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
-                    val message = if (state.status == InviteStatus.OFFLINE) Res.string.offline else Res.string.failed
-                    Text(stringResource(message), style = Owlsplit.type.body, color = Owlsplit.colors.error)
-                    TextActionButton(stringResource(Res.string.retry), { onEvent(InviteIntent.Retry) })
-                }
-                InviteStatus.READY -> state.link?.let { link ->
-                    OwlsplitContainer(title = stringResource(Res.string.code_label)) {
-                        Text(
-                            InviteCodes.display(link.code),
-                            style = Owlsplit.type.amountHeadline,
-                            color = Owlsplit.colors.textPrimary,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.m),
-                        )
-                        Text(
-                            link.url,
-                            style = Owlsplit.type.caption,
-                            color = Owlsplit.colors.textSecondary,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.m),
-                        )
-                    }
-                    val message = stringResource(Res.string.share_text, state.groupName, link.url, InviteCodes.display(link.code))
-                    PrimaryPillButton(stringResource(Res.string.share_link), {
-                        if (!sharer.share(message)) {
-                            clipboard.setText(AnnotatedString(message))
-                            copied = true
-                        }
-                    })
-                    TextActionButton(
-                        stringResource(if (copied) Res.string.copied else Res.string.copy_code),
-                        {
-                            clipboard.setText(AnnotatedString(link.code))
-                            copied = true
-                        },
-                        Modifier.align(Alignment.CenterHorizontally),
-                    )
-                    TextActionButton(
-                        stringResource(Res.string.regenerate),
-                        { onEvent(InviteIntent.AskRegenerate) },
-                        Modifier.align(Alignment.CenterHorizontally),
-                        color = Owlsplit.colors.textSecondary,
-                    )
-                }
+                InviteStatus.PREPARING -> Preparing()
+                InviteStatus.OFFLINE -> Failed(Res.string.offline, onEvent)
+                InviteStatus.FAILED -> Failed(Res.string.failed, onEvent)
+                InviteStatus.READY -> state.link?.let { Ready(it, state.groupName, sharer, onEvent) }
             }
         }
     }
-    if (state.confirmRegenerate) {
-        AlertDialog(
-            onDismissRequest = { onEvent(InviteIntent.DismissDialog) },
-            containerColor = Owlsplit.colors.surface,
-            title = { Text(stringResource(Res.string.regenerate_title), style = Owlsplit.type.title, color = Owlsplit.colors.textPrimary) },
-            text = { Text(stringResource(Res.string.regenerate_body), style = Owlsplit.type.body, color = Owlsplit.colors.textSecondary) },
-            confirmButton = {
-                TextActionButton(stringResource(Res.string.regenerate_confirm), { onEvent(InviteIntent.ConfirmRegenerate) }, color = Owlsplit.colors.error)
-            },
-            dismissButton = { TextActionButton(stringResource(Res.string.cancel), { onEvent(InviteIntent.DismissDialog) }) },
+    if (state.confirmRegenerate) RegenerateDialog(onEvent)
+}
+
+@Composable
+private fun Preparing() {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
+        CircularProgressIndicator(Modifier.size(20.dp), color = Owlsplit.colors.accent, strokeWidth = 2.dp)
+        Text(stringResource(Res.string.preparing), style = Owlsplit.type.body, color = Owlsplit.colors.textSecondary)
+    }
+}
+
+@Composable
+private fun Failed(message: StringResource, onEvent: (InviteIntent) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
+        Text(stringResource(message), style = Owlsplit.type.body, color = Owlsplit.colors.error)
+        TextActionButton(stringResource(Res.string.retry), { onEvent(InviteIntent.Retry) })
+    }
+}
+
+/** The code (big, to read aloud), the link, and the ways to pass them on. */
+@Composable
+private fun ColumnScope.Ready(
+    link: InviteLink,
+    groupName: String,
+    sharer: TextSharer,
+    onEvent: (InviteIntent) -> Unit
+) {
+    val clipboard = LocalClipboardManager.current
+    var copied by remember { mutableStateOf(false) }
+    LaunchedEffect(copied) {
+        if (copied) {
+            delay(COPIED_MILLIS)
+            copied = false
+        }
+    }
+    val code = InviteCodes.display(link.code)
+    OwlsplitContainer(title = stringResource(Res.string.code_label)) {
+        Text(
+            code,
+            style = Owlsplit.type.amountHeadline,
+            color = Owlsplit.colors.textPrimary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.m),
+        )
+        Text(
+            link.url,
+            style = Owlsplit.type.caption,
+            color = Owlsplit.colors.textSecondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.m),
         )
     }
+    val message = stringResource(Res.string.share_text, groupName, link.url, code)
+    PrimaryPillButton(stringResource(Res.string.share_link), {
+        // Without a share sheet (iOS for now) the message goes to the clipboard.
+        if (!sharer.share(message)) {
+            clipboard.setText(AnnotatedString(message))
+            copied = true
+        }
+    })
+    TextActionButton(
+        stringResource(if (copied) Res.string.copied else Res.string.copy_code),
+        {
+            clipboard.setText(AnnotatedString(link.code))
+            copied = true
+        },
+        Modifier.align(Alignment.CenterHorizontally),
+    )
+    TextActionButton(
+        stringResource(Res.string.regenerate),
+        { onEvent(InviteIntent.AskRegenerate) },
+        Modifier.align(Alignment.CenterHorizontally),
+        color = Owlsplit.colors.textSecondary,
+    )
+}
+
+@Composable
+private fun RegenerateDialog(onEvent: (InviteIntent) -> Unit) {
+    val colors = Owlsplit.colors
+    AlertDialog(
+        onDismissRequest = { onEvent(InviteIntent.DismissDialog) },
+        containerColor = colors.surface,
+        title = {
+            Text(
+                stringResource(Res.string.regenerate_title),
+                style = Owlsplit.type.title,
+                color = colors.textPrimary
+            )
+        },
+        text = {
+            Text(
+                stringResource(Res.string.regenerate_body),
+                style = Owlsplit.type.body,
+                color = colors.textSecondary
+            )
+        },
+        confirmButton = {
+            TextActionButton(
+                stringResource(Res.string.regenerate_confirm),
+                { onEvent(InviteIntent.ConfirmRegenerate) },
+                color = colors.error,
+            )
+        },
+        dismissButton = {
+            TextActionButton(
+                stringResource(Res.string.cancel),
+                { onEvent(InviteIntent.DismissDialog) }
+            )
+        },
+    )
 }

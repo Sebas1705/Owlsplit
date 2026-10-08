@@ -11,6 +11,8 @@
     <string name="action_expense">Gasto</string>
     <string name="action_settle">Saldar</string>
     <string name="action_group">Grupo</string>
+    <string name="action_join">Unirme</string>
+    <string name="join_with_code">Tengo un código de invitación</string>
     <string name="groups">Grupos</string>
     <plurals name="people">
         <item quantity="one">%1$d persona</item>

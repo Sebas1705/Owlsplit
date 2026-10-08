@@ -182,7 +182,12 @@ private fun ChoiceRow(text: String, enabled: Boolean, leading: @Composable () ->
 
 @Composable
 private fun Heading(text: String) {
-    Text(text, style = Owlsplit.type.title, color = Owlsplit.colors.textPrimary, modifier = Modifier.semantics { heading() })
+    Text(
+        text,
+        style = Owlsplit.type.title,
+        color = Owlsplit.colors.textPrimary,
+        modifier = Modifier.semantics { heading() }
+    )
 }
 
 @Composable

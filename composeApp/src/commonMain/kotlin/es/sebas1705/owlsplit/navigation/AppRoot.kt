@@ -51,6 +51,8 @@ import es.sebas1705.owlsplit.feature.groups.transfer.TransferRoute
 import es.sebas1705.owlsplit.feature.history.HistoryRoute
 import es.sebas1705.owlsplit.feature.home.HomeNavigation
 import es.sebas1705.owlsplit.feature.home.HomeRoute
+import es.sebas1705.owlsplit.feature.invite.InviteRoute
+import es.sebas1705.owlsplit.feature.invite.JoinRoute
 import es.sebas1705.owlsplit.feature.onboarding.OnboardingRoute
 import es.sebas1705.owlsplit.feature.onboarding.StartChoice
 import es.sebas1705.owlsplit.feature.profile.ProfileRoute
@@ -92,6 +94,13 @@ private data class TransferDest(val groupId: String)
 
 @Serializable
 private data class HistoryDest(val groupId: String)
+
+@Serializable
+private data class InviteDest(val groupId: String)
+
+/** [code] null asks for it (a link or the onboarding bring one). */
+@Serializable
+private data class JoinDest(val code: String? = null)
 
 /** [expenseId] null creates an expense. */
 @Serializable
@@ -140,8 +149,11 @@ private fun Tabs(modifier: Modifier, startChoice: StartChoice?, onStartHandled: 
     val entry by nav.currentBackStackEntryAsState()
     val current = Tab.entries.firstOrNull { tab -> entry?.destination?.hasRoute(tab.route::class) == true }
     LaunchedEffect(startChoice) {
-        // Joining arrives with invitations (P10); for now only "create a group" opens a screen.
-        if (startChoice == StartChoice.CREATE_GROUP) nav.navigate(GroupEditorDest())
+        when (startChoice) {
+            StartChoice.CREATE_GROUP -> nav.navigate(GroupEditorDest())
+            StartChoice.JOIN_GROUP -> nav.navigate(JoinDest())
+            else -> Unit
+        }
         if (startChoice != null) onStartHandled()
     }
     Scaffold(
@@ -169,7 +181,7 @@ private fun Tabs(modifier: Modifier, startChoice: StartChoice?, onStartHandled: 
     }
 }
 
-/** A group, its editor, its members and the expense editor. */
+/** A group, its editor, its members, the expense editor, invitations and joining. */
 private fun NavGraphBuilder.groupScreens(nav: NavController) {
     composable<GroupDest> { backStack ->
         val route = backStack.toRoute<GroupDest>()
@@ -200,6 +212,16 @@ private fun NavGraphBuilder.groupScreens(nav: NavController) {
     composable<TransferDest> { backStack ->
         TransferRoute(backStack.toRoute<TransferDest>().groupId, onClose = { nav.popBackStack() })
     }
+    composable<InviteDest> { backStack ->
+        InviteRoute(backStack.toRoute<InviteDest>().groupId, onBack = { nav.popBackStack() })
+    }
+    composable<JoinDest> { backStack ->
+        JoinRoute(
+            backStack.toRoute<JoinDest>().code,
+            onBack = { nav.popBackStack() },
+            onJoined = { id -> nav.navigate(GroupDest(id)) { popUpTo<JoinDest> { inclusive = true } } },
+        )
+    }
     composable<HistoryDest> { backStack ->
         HistoryRoute(backStack.toRoute<HistoryDest>().groupId, onBack = { nav.popBackStack() })
     }
@@ -211,6 +233,7 @@ private fun homeNavigation(nav: NavController) = HomeNavigation(
     addExpense = { nav.navigate(ExpenseDest(it)) },
     settle = { nav.navigate(GroupDest(it, GroupTab.SETTLE.name)) },
     link = { nav.navigateToTab(ProfileTab) },
+    joinGroup = { nav.navigate(JoinDest()) },
 )
 
 private fun groupNavigation(nav: NavController, groupId: String) = GroupNavigation(
@@ -221,6 +244,7 @@ private fun groupNavigation(nav: NavController, groupId: String) = GroupNavigati
     openExpense = { nav.navigate(ExpenseDest(groupId, it)) },
     recordPayment = { nav.navigate(TransferDest(groupId)) },
     history = { nav.navigate(HistoryDest(groupId)) },
+    invite = { nav.navigate(InviteDest(groupId)) },
 )
 
 private fun NavController.navigateToTab(route: Any) = navigate(route) {

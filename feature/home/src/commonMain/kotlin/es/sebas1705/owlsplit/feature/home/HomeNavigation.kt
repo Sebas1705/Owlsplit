@@ -7,4 +7,5 @@ class HomeNavigation(
     val addExpense: (groupId: String) -> Unit,
     val settle: (groupId: String) -> Unit,
     val link: () -> Unit,
+    val joinGroup: () -> Unit,
 )
