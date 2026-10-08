@@ -31,7 +31,7 @@ include(
     ":core:testing",
 )
 
-include(":data:models", ":data:local", ":data:remote", ":data:repository")
+include(":data:models", ":data:local", ":data:remote", ":data:repository", ":data:fx")
 
 include(":domain:usecases")
 
