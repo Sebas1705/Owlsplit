@@ -23,3 +23,6 @@ SELECT * FROM change_log WHERE id = ?;
 
 markSynced:
 UPDATE change_log SET sync_state = 'SYNCED' WHERE id = ?;
+
+selectRecent:
+SELECT * FROM change_log ORDER BY created_at DESC, id LIMIT ?;

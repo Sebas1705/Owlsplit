@@ -69,10 +69,12 @@ import es.sebas1705.owlsplit.feature.groups.resources.leave
 import es.sebas1705.owlsplit.feature.groups.resources.leave_body
 import es.sebas1705.owlsplit.feature.groups.resources.leave_confirm
 import es.sebas1705.owlsplit.feature.groups.resources.leave_title
+import es.sebas1705.owlsplit.feature.groups.resources.history
 import es.sebas1705.owlsplit.feature.groups.resources.members
 import es.sebas1705.owlsplit.feature.groups.resources.more
 import es.sebas1705.owlsplit.feature.groups.resources.no_expenses_body
 import es.sebas1705.owlsplit.feature.groups.resources.no_expenses_title
+import es.sebas1705.owlsplit.feature.groups.resources.no_match
 import es.sebas1705.owlsplit.feature.groups.resources.paid_by
 import es.sebas1705.owlsplit.feature.groups.resources.record_payment
 import es.sebas1705.owlsplit.feature.groups.resources.settle
@@ -137,7 +139,7 @@ fun GroupScreen(
                 )
             }
             when (state.tab) {
-                GroupTab.EXPENSES -> expenses(state, detail, currency, format, today, navigation.openExpense)
+                GroupTab.EXPENSES -> expenses(state, detail, format, today, onEvent, navigation.openExpense)
                 GroupTab.BALANCES -> item { Balances(detail, currency, format) }
                 GroupTab.SETTLE -> settle(detail, currency, format, today, onEvent, navigation.recordPayment)
             }
@@ -167,6 +169,13 @@ private fun Actions(detail: GroupDetail, onEvent: (GroupIntent) -> Unit, navigat
             Icon(TablerIcons.DotsVertical, stringResource(Res.string.more), tint = Owlsplit.colors.textPrimary)
         }
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(Res.string.history)) },
+                onClick = {
+                    menu = false
+                    navigation.history()
+                },
+            )
             DropdownMenuItem(
                 text = { Text(stringResource(if (detail.archivedByMe) Res.string.unarchive else Res.string.archive)) },
                 onClick = {
@@ -226,39 +235,42 @@ private fun Header(detail: GroupDetail, currency: Currency, format: MoneyFormat)
 private fun LazyListScope.expenses(
     state: GroupState,
     detail: GroupDetail,
-    currency: Currency,
     format: MoneyFormat,
     today: LocalDate,
+    onEvent: (GroupIntent) -> Unit,
     onOpen: (String) -> Unit,
 ) {
     if (detail.expenses.isEmpty()) {
         item { EmptyState(stringResource(Res.string.no_expenses_title), stringResource(Res.string.no_expenses_body)) }
         return
     }
-    detail.expenses.groupBy { it.date }.forEach { (date, dayExpenses) ->
+    item(key = "filters") { ExpenseFilters(state, detail, onEvent) }
+    val visible = state.visibleExpenses
+    if (visible.isEmpty()) {
+        item(key = "no-match") {
+            Text(stringResource(Res.string.no_match), style = Owlsplit.type.body, color = Owlsplit.colors.textSecondary)
+        }
+    }
+    visible.groupBy { it.date }.forEach { (date, dayExpenses) ->
         item(key = "day-$date") {
             Text(dayLabel(date, today), style = Owlsplit.type.label, color = Owlsplit.colors.textSecondary)
         }
         item(key = "list-$date") {
             OwlsplitContainer {
                 dayExpenses.forEach { expense ->
-                    val payer = expense.payers.keys.firstOrNull()?.let { detail.members.nameOf(it) }.orEmpty()
+                    // Shares are in the expense's own currency.
+                    val currency = Currency.of(expense.currency)
+                    val payers = expense.payers.keys.joinToString(", ") { detail.members.nameOf(it) }
                     val share = state.myShares[expense.id] ?: 0
+                    val shareText = stringResource(Res.string.your_share, format.format(share, currency))
                     ExpenseRow(
                         title = expense.title,
-                        subtitle = stringResource(Res.string.paid_by, payer),
+                        subtitle = stringResource(Res.string.paid_by, payers),
                         icon = categoryIcon(expense.category.name),
                         amountMinor = expense.amountMinor,
-                        currency = Currency.of(expense.currency),
+                        currency = currency,
                         format = format,
-                        detail = if (share > 0) {
-                            stringResource(
-                                Res.string.your_share,
-                                format.format(share, currency)
-                            )
-                        } else {
-                            null
-                        },
+                        detail = shareText.takeIf { share > 0 },
                         onClick = { onOpen(expense.id) },
                     )
                 }

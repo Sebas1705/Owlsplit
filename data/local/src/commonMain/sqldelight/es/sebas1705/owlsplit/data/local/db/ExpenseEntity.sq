@@ -75,3 +75,6 @@ UPDATE expense_entity SET server_version = :version, sync_state = 'SYNCED' WHERE
 
 setServerVersion:
 UPDATE expense_entity SET server_version = :version WHERE id = :id;
+
+selectAllByGroup:
+SELECT * FROM expense_entity WHERE group_id = ? ORDER BY date DESC, created_at DESC, id;

@@ -35,4 +35,4 @@ include(":data:models", ":data:local", ":data:remote", ":data:repository", ":dat
 
 include(":domain:usecases")
 
-include(":feature:onboarding", ":feature:profile", ":feature:home", ":feature:groups", ":feature:expense")
+include(":feature:onboarding", ":feature:profile", ":feature:home", ":feature:groups", ":feature:expense", ":feature:history")

@@ -2,6 +2,8 @@ package es.sebas1705.owlsplit.data.repository.sync
 
 import es.sebas1705.owlsplit.data.models.GroupInput
 import es.sebas1705.owlsplit.data.models.ChangeAction
+import es.sebas1705.owlsplit.data.models.EntityType
+import es.sebas1705.owlsplit.data.repository.ConflictRepositoryImpl
 import es.sebas1705.owlsplit.data.models.OutboxType
 import es.sebas1705.owlsplit.data.models.SyncState
 import es.sebas1705.owlsplit.data.repository.TestEnv
@@ -161,5 +163,36 @@ class OutboxProcessorTest {
         val pushes = h.remote.pushLog.size
         h.push()
         assertEquals(pushes, h.remote.pushLog.size)
+    }
+
+    @Test
+    fun `the losing version can be reapplied as a new edit or dismissed`() = runTest {
+        val h = Harness(this)
+        val g = h.env.groups.create(trip, "Ana")
+        h.push()
+        val theirs = h.remoteGroup(g)
+        h.remote.serverWrite(
+            theirs.copy(group = theirs.group.copy(name = "Theirs", meta = theirs.group.meta.copy(version = 2)))
+        )
+        h.env.groups.update(g, trip.copy(name = "Mine"))
+        h.push()
+
+        val conflicts =
+            ConflictRepositoryImpl(
+                h.env.db,
+                h.env.groups,
+                h.env.members,
+                h.env.expenses,
+                h.env.transfers,
+                h.env.dispatcher
+            )
+        val conflict = conflicts.observe().first().single()
+        assertEquals(EntityType.GROUP, conflict.entityType)
+        assertTrue(conflicts.reapply(conflict.id))
+        assertEquals("Mine", h.group(g).name)
+        assertTrue(conflicts.observe().first().isEmpty())
+        h.push()
+        assertEquals("Mine", h.remoteGroup(g).group.name) // now on top of theirs (v3)
+        assertEquals(3L, h.remoteGroup(g).version)
     }
 }

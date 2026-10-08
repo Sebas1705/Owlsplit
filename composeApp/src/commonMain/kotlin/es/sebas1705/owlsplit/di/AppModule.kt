@@ -12,6 +12,8 @@ import es.sebas1705.owlsplit.data.remote.FirebaseAccountService
 import es.sebas1705.owlsplit.data.remote.FirestoreProfileRemote
 import es.sebas1705.owlsplit.data.repository.ChangeLogRepository
 import es.sebas1705.owlsplit.data.repository.ChangeLogRepositoryImpl
+import es.sebas1705.owlsplit.data.repository.ConflictRepository
+import es.sebas1705.owlsplit.data.repository.ConflictRepositoryImpl
 import es.sebas1705.owlsplit.data.repository.ExpenseRepository
 import es.sebas1705.owlsplit.data.repository.ExpenseRepositoryImpl
 import es.sebas1705.owlsplit.data.repository.GroupRepository
@@ -60,6 +62,7 @@ val dataModule = module {
     single<TransferRepository> { TransferRepositoryImpl(get(), get(), Dispatchers.IO) }
     single<ChangeLogRepository> { ChangeLogRepositoryImpl(get(), Dispatchers.IO) }
     single { LocalData(get(), Dispatchers.IO) }
+    single<ConflictRepository> { ConflictRepositoryImpl(get(), get(), get(), get(), get(), Dispatchers.IO) }
 }
 
 /** Account, profile and their use cases. Needs [syncModule] (Firebase) and a platform `GoogleCredentials`. */

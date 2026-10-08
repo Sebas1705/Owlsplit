@@ -21,6 +21,7 @@
 | `feature:profile` | Pestaña Perfil: perfil, vincular Google, divisa preferida, tema, cerrar sesión, borrar cuenta | P11 |
 | `feature:home` | Inicio: balance total, estado de sincronización, acciones rápidas, grupos, aviso para vincular | P9b (balance convertido) |
 | `feature:groups` | Pantalla de grupo (Gastos · Saldos · Saldar), editor de grupo y miembros | P9b, P10 |
+| `feature:history` | Historial de un grupo y pestaña Actividad: cambios legibles, restaurar borrados, reaplicar o descartar conflictos | P11 |
 | `feature:expense` | Editor de gasto: teclado propio, categoría, pagador y los cuatro tipos de reparto con validación en vivo | P9b (divisas, varios pagadores, fecha) |
 
 Módulos previstos: más `feature:*` en P9b–P10 (`feature:groups`, no `feature:group`: Gradle reserva `group` en los accesores tipados). Las features solo ven `domain`, `data:models` y `core` (ARCHITECTURE.md). El motor de sincronización vive en `data:repository` (paquete `sync`), no en un módulo `data:sync`.

@@ -1,6 +1,7 @@
 package es.sebas1705.owlsplit.data.repository
 
 import es.sebas1705.owlsplit.data.models.ChangeLogEntry
+import es.sebas1705.owlsplit.data.models.Conflict
 import es.sebas1705.owlsplit.data.models.Expense
 import es.sebas1705.owlsplit.data.models.ExpenseInput
 import es.sebas1705.owlsplit.data.models.GroupInput
@@ -38,7 +39,8 @@ interface MemberRepository {
 }
 
 interface ExpenseRepository {
-    fun observeExpenses(groupId: String): Flow<List<Expense>>
+    /** Visible expenses; [includeDeleted] adds deleted ones (history, restore). */
+    fun observeExpenses(groupId: String, includeDeleted: Boolean = false): Flow<List<Expense>>
     suspend fun get(id: String): Expense?
     suspend fun create(groupId: String, input: ExpenseInput): String
     suspend fun update(id: String, input: ExpenseInput)
@@ -55,4 +57,17 @@ interface TransferRepository {
 
 interface ChangeLogRepository {
     fun observe(groupId: String): Flow<List<ChangeLogEntry>>
+
+    /** The latest [limit] entries of every group (Actividad). */
+    fun observeRecent(limit: Long): Flow<List<ChangeLogEntry>>
+}
+
+/** Local edits that lost against someone else's (docs/SYNC.md): kept until reapplied or dismissed. */
+interface ConflictRepository {
+    fun observe(): Flow<List<Conflict>>
+
+    /** Applies the lost version again on top of the current one (a normal edit). False if it cannot. */
+    suspend fun reapply(conflictId: Long): Boolean
+
+    suspend fun dismiss(conflictId: Long)
 }
