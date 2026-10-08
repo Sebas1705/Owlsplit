@@ -10,5 +10,9 @@ kotlin {
             api(project(":data:repository"))
             api(project(":domain:usecases"))
         }
+        // Screen audits for the Robolectric screenshot tests (androidUnitTest of each feature).
+        androidMain.dependencies {
+            implementation(libs.androidx.compose.ui.test.junit4)
+        }
     }
 }

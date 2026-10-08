@@ -13,8 +13,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,6 +31,7 @@ import androidx.compose.foundation.clickable
 import compose.icons.TablerIcons
 import compose.icons.tablericons.ChevronDown
 import es.sebas1705.owlsplit.core.money.Currency
+import es.sebas1705.owlsplit.core.ui.components.SwitchRow
 import es.sebas1705.owlsplit.core.ui.components.CurrencyPicker
 import es.sebas1705.owlsplit.core.ui.components.DateField
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitContainer
@@ -171,22 +170,12 @@ internal fun Payers(state: ExpenseEditorState, myMemberId: String?, onEvent: (Ex
                 }
             }
         }
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = Sizes.rowMinHeight).padding(horizontal = Spacing.m),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                stringResource(Res.string.several_payers),
-                style = Owlsplit.type.body,
-                color = colors.textPrimary,
-                modifier = Modifier.weight(1f),
-            )
-            Switch(
-                checked = state.draft.multiplePayers,
-                onCheckedChange = { onEvent(ExpenseEditorIntent.MultiplePayers(it)) },
-                colors = SwitchDefaults.colors(checkedTrackColor = colors.accent),
-            )
-        }
+        SwitchRow(
+            stringResource(Res.string.several_payers),
+            state.draft.multiplePayers,
+            { onEvent(ExpenseEditorIntent.MultiplePayers(it)) },
+            Modifier.heightIn(min = Sizes.rowMinHeight).padding(horizontal = Spacing.m),
+        )
     }
 }
 

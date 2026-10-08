@@ -26,6 +26,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.error
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -38,7 +40,11 @@ import es.sebas1705.owlsplit.core.ui.theme.OwlsplitShapes
 import es.sebas1705.owlsplit.core.ui.theme.Sizes
 import es.sebas1705.owlsplit.core.ui.theme.Spacing
 
-/** Single-line text field on the surface colour, label above, optional error below. */
+/**
+ * Single-line text field on the surface colour, label above, optional error below. The label
+ * and the error belong to the field for screen readers (its name and error state), so the
+ * texts drawn around it are hidden from them to avoid reading each twice.
+ */
 @Composable
 fun OwlsplitTextField(
     value: String,
@@ -53,7 +59,12 @@ fun OwlsplitTextField(
 ) {
     val colors = Owlsplit.colors
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        Text(label, style = Owlsplit.type.label, color = colors.textSecondary)
+        Text(
+            label,
+            style = Owlsplit.type.label,
+            color = colors.textSecondary,
+            modifier = Modifier.clearAndSetSemantics {}
+        )
         OutlinedTextField(
             value = value,
             onValueChange = { if (it.length <= maxLength) onValueChange(it) },
@@ -74,9 +85,19 @@ fun OwlsplitTextField(
                 unfocusedBorderColor = colors.divider,
                 cursorColor = colors.accent,
             ),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().semantics(mergeDescendants = true) {
+                contentDescription = label
+                if (error != null) error(error)
+            },
         )
-        if (error != null) Text(error, style = Owlsplit.type.caption, color = colors.error)
+        if (error != null) {
+            Text(
+                error,
+                style = Owlsplit.type.caption,
+                color = colors.error,
+                modifier = Modifier.clearAndSetSemantics {}
+            )
+        }
     }
 }
 

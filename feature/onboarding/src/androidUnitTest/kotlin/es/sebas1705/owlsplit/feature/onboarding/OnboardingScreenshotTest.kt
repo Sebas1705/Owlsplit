@@ -4,6 +4,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import es.sebas1705.owlsplit.core.testing.ui.assertAccessible
 import es.sebas1705.owlsplit.core.ui.theme.GroupAccent
 import es.sebas1705.owlsplit.core.ui.theme.OwlsplitTheme
 import org.junit.Rule
@@ -15,13 +16,14 @@ import org.robolectric.annotation.GraphicsMode
 /** Record with `recordRoborazziDebug`. */
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [35], qualifiers = "w411dp-h891dp-xxhdpi")
+@Config(sdk = [35], qualifiers = "es-w411dp-h891dp-xxhdpi")
 class OnboardingScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
 
     private fun capture(name: String, state: OnboardingState, dark: Boolean = false) {
         compose.setContent { OwlsplitTheme(darkTheme = dark) { OnboardingScreen(state, {}) } }
+        compose.assertAccessible()
         compose.onRoot().captureRoboImage("screenshots/onboarding_$name.png")
     }
 

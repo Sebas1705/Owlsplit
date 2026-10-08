@@ -21,6 +21,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -197,19 +198,39 @@ fun ExpenseRow(
         ) {
             Icon(icon, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(18.dp))
         }
-        Column(Modifier.weight(1f)) {
-            Text(
-                title,
-                style = Owlsplit.type.bodyStrong,
-                color = colors.textPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(subtitle, style = Owlsplit.type.caption, color = colors.textSecondary, maxLines = 1)
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(format.format(amountMinor, currency), style = Owlsplit.type.bodyStrong, color = colors.textPrimary)
-            if (detail != null) Text(detail, style = Owlsplit.type.caption, color = colors.textSecondary, maxLines = 1)
+        val amount = format.format(amountMinor, currency)
+        // With large text (≥ 150 %) the amounts go under the title instead of squeezing it.
+        if (LocalDensity.current.fontScale >= STACK_FONT_SCALE) {
+            Column(Modifier.weight(1f)) {
+                Text(title, style = Owlsplit.type.bodyStrong, color = colors.textPrimary)
+                Text(subtitle, style = Owlsplit.type.caption, color = colors.textSecondary)
+                Text(amount, style = Owlsplit.type.bodyStrong, color = colors.textPrimary)
+                if (detail != null) Text(detail, style = Owlsplit.type.caption, color = colors.textSecondary)
+            }
+        } else {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    title,
+                    style = Owlsplit.type.bodyStrong,
+                    color = colors.textPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(subtitle, style = Owlsplit.type.caption, color = colors.textSecondary, maxLines = 1)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(amount, style = Owlsplit.type.bodyStrong, color = colors.textPrimary)
+                if (detail != null) {
+                    Text(
+                        detail,
+                        style = Owlsplit.type.caption,
+                        color = colors.textSecondary,
+                        maxLines = 1
+                    )
+                }
+            }
         }
     }
 }
+
+private const val STACK_FONT_SCALE = 1.5f

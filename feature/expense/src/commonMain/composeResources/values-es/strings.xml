@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="new_expense">Nuevo gasto</string>
+    <string name="edit_expense">Editar gasto</string>
+    <string name="close">Cerrar</string>
+    <string name="delete">Borrar</string>
+    <string name="amount_hint">Toca para cambiar el importe</string>
+    <string name="done">Hecho</string>
+    <string name="backspace">Borrar dígito</string>
+    <string name="title_label">Concepto</string>
+    <string name="title_placeholder">Cena, taxi, súper…</string>
+    <string name="category_label">Categoría</string>
+    <string name="paid_by">Pagó</string>
+    <string name="split_between">Entre</string>
+    <string name="type_equal">Iguales</string>
+    <string name="type_weights">Pesos</string>
+    <string name="type_exact">Importes</string>
+    <string name="type_percent">%</string>
+    <string name="you">%1$s (tú)</string>
+    <string name="not_included">Fuera</string>
+    <string name="save">Guardar</string>
+    <string name="missing_amount">Escribe el importe.</string>
+    <string name="missing_title">Escribe un concepto.</string>
+    <string name="no_payer">Elige quién pagó.</string>
+    <string name="no_beneficiary">Elige al menos una persona.</string>
+    <string name="exact_missing">Faltan %1$s por repartir.</string>
+    <string name="exact_extra">Sobran %1$s.</string>
+    <string name="percent_missing">Falta repartir un %1$s %.</string>
+    <string name="percent_extra">Sobra un %1$s %.</string>
+    <string name="invalid_split">El reparto no cuadra.</string>
+    <string name="delete_title">¿Borrar este gasto?</string>
+    <string name="delete_body">Los saldos se recalculan sin él.</string>
+    <string name="cancel">Cancelar</string>
+    <string name="currency_title">Divisa del gasto</string>
+    <string name="currency_search">Buscar (USD, JPY…)</string>
+    <string name="currency_change">Cambiar divisa, ahora %1$s</string>
+    <string name="in_group_currency">≈ %1$s en la divisa del grupo</string>
+    <string name="rate_label">Tipo de cambio</string>
+    <string name="rate_row">1 %1$s =</string>
+    <string name="rate_ecb">Tipo del BCE · %1$s. Puedes cambiarlo.</string>
+    <string name="rate_stale">Sin conexión: tipo guardado · %1$s.</string>
+    <string name="rate_manual">Tipo escrito a mano.</string>
+    <string name="rate_loading">Buscando el tipo de cambio…</string>
+    <string name="rate_missing_hint">No hay tipo disponible para esta divisa: escríbelo.</string>
+    <string name="missing_rate">Falta el tipo de cambio.</string>
+    <string name="several_payers">Varios pagadores</string>
+    <string name="payers_missing">Faltan %1$s de pagadores.</string>
+    <string name="payers_extra">Los pagadores suman %1$s de más.</string>
+    <string name="date_label">Fecha</string>
+    <string name="note_label">Nota (opcional)</string>
+    <string name="ok">Aceptar</string>
+</resources>

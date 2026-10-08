@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import es.sebas1705.owlsplit.core.testing.ui.assertAccessible
 import es.sebas1705.owlsplit.core.ui.components.TextSharer
 import es.sebas1705.owlsplit.core.ui.theme.OwlsplitTheme
 import es.sebas1705.owlsplit.data.models.InvitePreview
@@ -18,7 +19,7 @@ import org.robolectric.annotation.GraphicsMode
 /** Record with `recordRoborazziDebug`. */
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [35], qualifiers = "w411dp-h1200dp-xxhdpi")
+@Config(sdk = [35], qualifiers = "es-w411dp-h1200dp-xxhdpi")
 class InviteScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
@@ -42,6 +43,7 @@ class InviteScreenshotTest {
 
     private fun capture(name: String, dark: Boolean = false, content: @Composable () -> Unit) {
         compose.setContent { OwlsplitTheme(darkTheme = dark) { content() } }
+        compose.assertAccessible()
         compose.onRoot().captureRoboImage("screenshots/invite_$name.png")
     }
 
@@ -72,4 +74,8 @@ class InviteScreenshotTest {
 
     @Test
     fun joinPickDark() = capture("join_pick_dark", dark = true) { JoinScreen(picking, {}, {}) }
+
+    @Test
+    @Config(qualifiers = "en-w411dp-h1200dp-xxhdpi")
+    fun joinPickEnglish() = capture("join_pick_en") { JoinScreen(picking, {}, {}) }
 }

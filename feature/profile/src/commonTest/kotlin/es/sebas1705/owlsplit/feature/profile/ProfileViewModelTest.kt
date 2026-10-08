@@ -1,7 +1,8 @@
 package es.sebas1705.owlsplit.feature.profile
 
 import es.sebas1705.owlsplit.core.datastore.ThemeMode
-import es.sebas1705.owlsplit.core.datastore.ThemeSettings
+import es.sebas1705.owlsplit.core.datastore.AppLanguage
+import es.sebas1705.owlsplit.core.datastore.DisplaySettings
 import es.sebas1705.owlsplit.core.testing.CoroutineTestRule
 import es.sebas1705.owlsplit.core.testing.account.FakeAccounts
 import es.sebas1705.owlsplit.core.testing.account.FakeGoogle
@@ -38,10 +39,15 @@ class ProfileViewModelTest {
     @AfterTest
     fun tearDown() = rule.tearDown()
 
-    private class Themes : ThemeSettings {
+    private class Display : DisplaySettings {
         override val themeMode = MutableStateFlow(ThemeMode.SYSTEM)
         override suspend fun setThemeMode(mode: ThemeMode) {
             themeMode.value = mode
+        }
+
+        override val language = MutableStateFlow(AppLanguage.SYSTEM)
+        override suspend fun setLanguage(language: AppLanguage) {
+            this.language.value = language
         }
     }
 
@@ -52,13 +58,13 @@ class ProfileViewModelTest {
         val accounts = FakeAccounts(session)
         val profiles = FakeProfiles(ana)
         val google = FakeGoogle()
-        val themes = Themes()
+        val display = Display()
         val remote = FakeProfileRemote()
         private val sync = FakeSync(online)
         private val reset = DeviceReset { resets++ }
         val vm = ProfileViewModel(
             ObserveAccount(accounts, profiles),
-            themes,
+            display,
             SaveProfile(profiles),
             LinkGoogle(google, accounts, profiles),
             SignOut(sync, accounts, reset),
@@ -85,12 +91,15 @@ class ProfileViewModelTest {
     }
 
     @Test
-    fun currencyAndThemeApplyAtOnce() = runTest {
+    fun currencyThemeAndLanguageApplyAtOnce() = runTest {
         val env = Env()
         env.vm.onEvent(ProfileIntent.CurrencyChanged("USD"))
         env.vm.onEvent(ProfileIntent.ThemeChanged(ThemeMode.DARK))
+        env.vm.onEvent(ProfileIntent.LanguageChanged(AppLanguage.ENGLISH))
         assertEquals("USD", env.profiles.profile.value?.currency)
         assertEquals(ThemeMode.DARK, env.vm.uiState.value.theme)
+        assertEquals(AppLanguage.ENGLISH, env.vm.uiState.value.language)
+        assertEquals(AppLanguage.ENGLISH, env.display.language.value)
     }
 
     @Test

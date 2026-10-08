@@ -44,6 +44,7 @@ import es.sebas1705.owlsplit.core.ui.components.SegmentedControl
 import es.sebas1705.owlsplit.core.ui.components.SettleSuggestionRow
 import es.sebas1705.owlsplit.core.ui.components.TextActionButton
 import es.sebas1705.owlsplit.core.ui.format.MoneyFormat
+import es.sebas1705.owlsplit.core.ui.format.LocalMoneyFormat
 import es.sebas1705.owlsplit.core.ui.format.dayLabel
 import es.sebas1705.owlsplit.core.ui.theme.GroupAccent
 import es.sebas1705.owlsplit.core.ui.theme.GroupIcons
@@ -115,7 +116,7 @@ fun GroupScreen(
     onEvent: (GroupIntent) -> Unit,
     navigation: GroupNavigation,
     modifier: Modifier = Modifier,
-    format: MoneyFormat = MoneyFormat.Spanish,
+    format: MoneyFormat = LocalMoneyFormat.current,
     today: LocalDate = Today.System(),
 ) {
     val detail = state.detail ?: return

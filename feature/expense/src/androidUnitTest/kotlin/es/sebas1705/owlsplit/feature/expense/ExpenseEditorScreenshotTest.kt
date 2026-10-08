@@ -4,6 +4,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import es.sebas1705.owlsplit.core.testing.ui.assertAccessible
 import es.sebas1705.owlsplit.core.ui.theme.OwlsplitTheme
 import es.sebas1705.owlsplit.data.models.ExpenseCategory
 import es.sebas1705.owlsplit.data.models.Member
@@ -15,13 +16,14 @@ import es.sebas1705.owlsplit.domain.usecases.expenses.ExpenseDrafts
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /** Record with `recordRoborazziDebug`. */
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [35], qualifiers = "w411dp-h1000dp-xxhdpi")
+@Config(sdk = [35], qualifiers = "es-w411dp-h1000dp-xxhdpi")
 class ExpenseEditorScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
@@ -45,6 +47,7 @@ class ExpenseEditorScreenshotTest {
 
     private fun capture(name: String, state: ExpenseEditorState, dark: Boolean = false) {
         compose.setContent { OwlsplitTheme(darkTheme = dark) { ExpenseEditorScreen(state, {}, {}) } }
+        compose.assertAccessible()
         compose.onRoot().captureRoboImage("screenshots/expense_$name.png")
     }
 
@@ -64,6 +67,12 @@ class ExpenseEditorScreenshotTest {
 
     @Test
     fun equalSplit() = capture("equal", state(equal))
+
+    @Test
+    fun equalSplitLargeText() {
+        RuntimeEnvironment.setFontScale(2f)
+        capture("equal_large_text", state(equal))
+    }
 
     @Test
     fun equalSplitDark() = capture("equal_dark", state(equal), dark = true)

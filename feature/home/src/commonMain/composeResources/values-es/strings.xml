@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="total_balance">Balance total · %1$s</string>
+    <string name="synced">Sincronizado</string>
+    <plurals name="pending">
+        <item quantity="one">%1$d cambio pendiente</item>
+        <item quantity="other">%1$d cambios pendientes</item>
+    </plurals>
+    <string name="other_currencies">y %1$s en grupos en otras divisas</string>
+    <string name="approximate">Aproximado: incluye grupos en otras divisas al cambio de hoy.</string>
+    <string name="action_expense">Gasto</string>
+    <string name="action_settle">Saldar</string>
+    <string name="action_group">Grupo</string>
+    <string name="action_join">Unirme</string>
+    <string name="join_with_code">Tengo un código de invitación</string>
+    <string name="groups">Grupos</string>
+    <plurals name="people">
+        <item quantity="one">%1$d persona</item>
+        <item quantity="other">%1$d personas</item>
+    </plurals>
+    <string name="empty_title">Crea tu primer grupo</string>
+    <string name="empty_body">Apunta gastos y Owlsplit calcula quién debe a quién.</string>
+    <string name="create_group">Crear grupo</string>
+    <string name="pick_group">¿En qué grupo?</string>
+    <string name="cancel">Cancelar</string>
+    <string name="nudge_title">Protege tus grupos</string>
+    <string name="nudge_body">Vincula tu cuenta con Google para no perderlos si cambias de móvil.</string>
+    <string name="nudge_action">Vincular</string>
+    <string name="nudge_dismiss">Ahora no</string>
+    <string name="balance_spoken_owed">Te deben %1$s</string>
+    <string name="balance_spoken_owe">Debes %1$s</string>
+    <string name="balance_spoken_even">Estás en paz</string>
+</resources>

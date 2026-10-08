@@ -2,14 +2,14 @@
 
 | Módulo | Contenido | Plan que lo amplía |
 |---|---|---|
-| `composeApp` | Entrada Android/iOS, DI raíz, `AppConfig` por entorno, navegación (onboarding → pestañas Inicio · Actividad · Perfil), `SyncStarter`, Google con Credential Manager, `TextSharer` (hoja de compartir), `AndroidQrScanner`, App Links (`IncomingInvites`) | P9 |
+| `composeApp` | Entrada Android/iOS, DI raíz, `AppConfig` por entorno, idioma de la app (`LocalAppLocale`), navegación (onboarding → pestañas Inicio · Actividad · Perfil), `SyncStarter`, Google con Credential Manager, `TextSharer` (hoja de compartir), `AndroidQrScanner`, App Links (`IncomingInvites`) | P9 |
 | `core:common` | MVI base, `AppResult`, utilidades | — |
-| `core:ui` | `OwlsplitTheme` (tokens, Inter, formas), `MoneyFormat`, componentes (incluido `QrCode`) y `DesignCatalog`; capturas Roborazzi | P9 |
+| `core:ui` | `OwlsplitTheme` (tokens, Inter, formas), `MoneyFormat` y `LocalMoneyFormat`, componentes (incluidos `QrCode` y `SwitchRow`) y `DesignCatalog`; capturas Roborazzi | P9 |
 | `core:security` | `SecureStorage` | — |
 | `core:network` | Cliente Ktor por plataforma | P9 (tipos de cambio) |
-| `core:datastore` | Preferencias (`AppPreferences`: tema, perfil local, aviso para vincular; `ThemeSettings`) | P11 (idioma) |
+| `core:datastore` | Preferencias (`AppPreferences`: tema, idioma, perfil local, aviso para vincular; `DisplaySettings`) | — |
 | `core:logging` | Kermit | — |
-| `core:testing` | `CoroutineTestRule`, falsos de cuenta/sincronización, `InMemoryLedger` (los cuatro repositorios en memoria) y `FakeInvites` para tests de dominio y ViewModels | — |
+| `core:testing` | `CoroutineTestRule`, falsos de cuenta/sincronización, `InMemoryLedger` (los cuatro repositorios en memoria) , `FakeInvites` para tests de dominio y ViewModels, y `assertAccessible()` (androidMain) para las capturas | — |
 | `core:money` | Dinero, divisas, multiplicación-división exacta, reparto por restos mayores, tipos de cambio | — |
 | `data:models` | Documentos (`Group`, `Member`, `Expense`, `Transfer`, `ChangeLogEntry`) con `SyncMeta`, serializables | P6 |
 | `data:local` | Esquema SQLDelight completo v1 (`AppDatabase`), snapshot `databases/1.db` y `verifyMigrations` | P6, P9 |
@@ -26,3 +26,5 @@
 | `feature:invite` | Invitar (QR, código, enlace, compartir, regenerar) y Unirse (escanear, código o enlace → vista previa → unirse → reclamar miembro o añadirme) | P11 (escáner y compartir en iOS) |
 
 Nombres: (`feature:groups`, no `feature:group`: Gradle reserva `group` en los accesores tipados). Las features solo ven `domain`, `data:models` y `core` (ARCHITECTURE.md). El motor de sincronización vive en `data:repository` (paquete `sync`), no en un módulo `data:sync`.
+
+Textos y accesibilidad (P11a): cada módulo con recursos tiene `composeResources/values/strings.xml` en inglés (idioma por defecto) y `values-es/strings.xml` en español, con las mismas claves; en inglés el apóstrofo es `’` (Compose no interpreta `\'`). Las pruebas de captura de cada pantalla llaman a `assertAccessible()` antes de capturar.

@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -38,6 +37,7 @@ import es.sebas1705.owlsplit.core.ui.components.SyncStatus
 import es.sebas1705.owlsplit.core.ui.components.SyncStatusChip
 import es.sebas1705.owlsplit.core.ui.components.TextActionButton
 import es.sebas1705.owlsplit.core.ui.format.MoneyFormat
+import es.sebas1705.owlsplit.core.ui.format.LocalMoneyFormat
 import es.sebas1705.owlsplit.core.ui.theme.GroupAccent
 import es.sebas1705.owlsplit.core.ui.theme.GroupIcons
 import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
@@ -86,7 +86,7 @@ fun HomeScreen(
     onEvent: (HomeIntent) -> Unit,
     navigation: HomeNavigation,
     modifier: Modifier = Modifier,
-    format: MoneyFormat = MoneyFormat.Spanish,
+    format: MoneyFormat = LocalMoneyFormat.current,
 ) {
     val quick = { action: QuickAction ->
         val single = state.groups.singleOrNull()?.group?.id
@@ -226,9 +226,12 @@ private fun Nudge(onEvent: (HomeIntent) -> Unit, onLink: () -> Unit) {
                 style = Owlsplit.type.body,
                 color = Owlsplit.colors.textSecondary
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s)
+            ) {
                 TextActionButton(stringResource(Res.string.nudge_dismiss), { onEvent(HomeIntent.DismissNudge) })
-                Spacer(Modifier.weight(1f))
+                // All the width left: with large text the label still fits.
                 PrimaryPillButton(stringResource(Res.string.nudge_action), onLink, Modifier.weight(1f))
             }
         }

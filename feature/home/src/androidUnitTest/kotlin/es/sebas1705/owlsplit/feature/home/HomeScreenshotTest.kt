@@ -1,9 +1,13 @@
 package es.sebas1705.owlsplit.feature.home
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import es.sebas1705.owlsplit.core.testing.ui.assertAccessible
+import es.sebas1705.owlsplit.core.ui.format.LocalMoneyFormat
+import es.sebas1705.owlsplit.core.ui.format.MoneyFormat
 import es.sebas1705.owlsplit.core.ui.theme.OwlsplitTheme
 import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.data.models.SyncMeta
@@ -12,13 +16,14 @@ import es.sebas1705.owlsplit.domain.usecases.groups.HomeGroup
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /** Record with `recordRoborazziDebug`. */
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [35], qualifiers = "w411dp-h891dp-xxhdpi")
+@Config(sdk = [35], qualifiers = "es-w411dp-h891dp-xxhdpi")
 class HomeScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
@@ -43,8 +48,13 @@ class HomeScreenshotTest {
         suggestLinking = true,
     )
 
-    private fun capture(name: String, state: HomeState, dark: Boolean = false) {
-        compose.setContent { OwlsplitTheme(darkTheme = dark) { HomeScreen(state, {}, navigation) } }
+    private fun capture(name: String, state: HomeState, dark: Boolean = false, format: MoneyFormat = MoneyFormat.Spanish) {
+        compose.setContent {
+            OwlsplitTheme(darkTheme = dark) {
+                CompositionLocalProvider(LocalMoneyFormat provides format) { HomeScreen(state, {}, navigation) }
+            }
+        }
+        compose.assertAccessible()
         compose.onRoot().captureRoboImage("screenshots/home_$name.png")
     }
 
@@ -56,4 +66,14 @@ class HomeScreenshotTest {
 
     @Test
     fun groupsDark() = capture("groups_dark", withGroups.copy(suggestLinking = false, pending = 0), dark = true)
+
+    @Test
+    fun groupsLargeText() {
+        RuntimeEnvironment.setFontScale(2f)
+        capture("groups_large_text", withGroups)
+    }
+
+    @Test
+    @Config(qualifiers = "en-w411dp-h891dp-xxhdpi")
+    fun groupsEnglish() = capture("groups_en", withGroups, format = MoneyFormat.English)
 }

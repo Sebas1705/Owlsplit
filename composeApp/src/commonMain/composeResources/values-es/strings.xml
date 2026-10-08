@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tab_home">Inicio</string>
+    <string name="tab_activity">Actividad</string>
+    <string name="tab_profile">Perfil</string>
+    <string name="firebase_missing">Falta la configuración de Firebase de este entorno (google-services.json).</string>
+    <string name="back">Atrás</string>
+</resources>

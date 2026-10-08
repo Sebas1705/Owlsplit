@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title">Perfil</string>
+    <string name="anonymous_account">Cuenta sin vincular</string>
+    <string name="linked_google">Vinculada con Google</string>
+    <string name="your_profile">Tu perfil</string>
+    <string name="name_label">Nombre</string>
+    <string name="colour_label">Color</string>
+    <string name="save">Guardar cambios</string>
+    <string name="protect_title">Protege tus grupos</string>
+    <string name="protect_body">Si pierdes el móvil sin vincular la cuenta, pierdes tus grupos. Vincúlala con Google: no cambia nada más.</string>
+    <string name="link_google">Vincular con Google</string>
+    <string name="link_unavailable">Vincular estará disponible pronto en este dispositivo.</string>
+    <string name="preferences">Preferencias</string>
+    <string name="currency">Divisa para grupos nuevos</string>
+    <string name="theme">Tema</string>
+    <string name="theme_system">Sistema</string>
+    <string name="language">Idioma</string>
+    <string name="language_system">Sistema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Oscuro</string>
+    <string name="session">Sesión</string>
+    <string name="sign_out">Cerrar sesión</string>
+    <string name="delete_account">Borrar cuenta</string>
+    <string name="delete_title">¿Borrar tu cuenta?</string>
+    <string name="delete_body">Saldrás de todos tus grupos. Tus gastos se quedan en ellos a nombre de tu miembro, que pasa a ser un miembro sin cuenta. No se puede deshacer.</string>
+    <string name="delete_confirm">Borrar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="reauth_title">Confirma que eres tú</string>
+    <string name="reauth_body">Para borrar una cuenta vinculada, Google pide que vuelvas a entrar.</string>
+    <string name="reauth_confirm">Entrar con Google</string>
+    <string name="developer">Desarrollo</string>
+    <string name="design_catalog">Catálogo de diseño</string>
+    <string name="msg_linked">Cuenta vinculada con Google.</string>
+    <string name="msg_credential_in_use">Esa cuenta de Google ya tiene datos de Owlsplit. Traer tus grupos a ella llegará pronto.</string>
+    <string name="msg_offline">Sin conexión. Inténtalo cuando tengas red; no se ha borrado nada.</string>
+    <string name="msg_failed">Algo ha fallado. Inténtalo de nuevo.</string>
+    <string name="msg_saved">Perfil guardado.</string>
+</resources>
