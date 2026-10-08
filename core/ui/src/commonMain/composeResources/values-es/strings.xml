@@ -25,4 +25,17 @@
     <!-- %1$d day, %2$s short month, %3$d year -->
     <string name="day_month">%1$d %2$s</string>
     <string name="day_month_year">%1$d %2$s %3$d</string>
+    <!-- Group icons (GroupIcons keys), for screen readers -->
+    <string name="group_icon_plane">Viaje</string>
+    <string name="group_icon_home">Casa</string>
+    <string name="group_icon_users">Amigos</string>
+    <string name="group_icon_gift">Regalo</string>
+    <string name="group_icon_sun">Vacaciones</string>
+    <string name="group_icon_tent">Acampada</string>
+    <string name="group_icon_car">Coche</string>
+    <string name="group_icon_ticket">Evento</string>
+    <string name="group_icon_music">Música</string>
+    <string name="group_icon_ball">Deporte</string>
+    <string name="group_icon_briefcase">Trabajo</string>
+    <string name="group_icon_heart">Pareja</string>
 </resources>

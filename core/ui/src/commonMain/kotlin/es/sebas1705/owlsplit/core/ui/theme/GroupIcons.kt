@@ -24,6 +24,18 @@ import compose.icons.tablericons.Ticket
 import compose.icons.tablericons.ToolsKitchen2
 import compose.icons.tablericons.Users
 import es.sebas1705.owlsplit.core.ui.resources.Res
+import es.sebas1705.owlsplit.core.ui.resources.group_icon_plane
+import es.sebas1705.owlsplit.core.ui.resources.group_icon_home
+import es.sebas1705.owlsplit.core.ui.resources.group_icon_users
+import es.sebas1705.owlsplit.core.ui.resources.group_icon_gift
+import es.sebas1705.owlsplit.core.ui.resources.group_icon_sun
+import es.sebas1705.owlsplit.core.ui.resources.group_icon_tent
+import es.sebas1705.owlsplit.core.ui.resources.group_icon_car
+import es.sebas1705.owlsplit.core.ui.resources.group_icon_ticket
+import es.sebas1705.owlsplit.core.ui.resources.group_icon_music
+import es.sebas1705.owlsplit.core.ui.resources.group_icon_ball
+import es.sebas1705.owlsplit.core.ui.resources.group_icon_briefcase
+import es.sebas1705.owlsplit.core.ui.resources.group_icon_heart
 import es.sebas1705.owlsplit.core.ui.resources.category_accommodation
 import es.sebas1705.owlsplit.core.ui.resources.category_food
 import es.sebas1705.owlsplit.core.ui.resources.category_gifts
@@ -56,6 +68,25 @@ object GroupIcons {
     )
 
     fun of(key: String): ImageVector = all.firstOrNull { it.first == key }?.second ?: all.first().second
+
+    private val names: Map<String, StringResource> = mapOf(
+        "plane" to Res.string.group_icon_plane,
+        "home" to Res.string.group_icon_home,
+        "users" to Res.string.group_icon_users,
+        "gift" to Res.string.group_icon_gift,
+        "sun" to Res.string.group_icon_sun,
+        "tent" to Res.string.group_icon_tent,
+        "car" to Res.string.group_icon_car,
+        "ticket" to Res.string.group_icon_ticket,
+        "music" to Res.string.group_icon_music,
+        "ball" to Res.string.group_icon_ball,
+        "briefcase" to Res.string.group_icon_briefcase,
+        "heart" to Res.string.group_icon_heart,
+    )
+
+    /** What a screen reader says for the icon [key] ("Viaje", "Casa"…). */
+    @Composable
+    fun name(key: String): String = stringResource(names[key] ?: Res.string.group_icon_plane)
 }
 
 private class Category(val icon: ImageVector, val label: StringResource)

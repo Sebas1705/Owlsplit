@@ -80,10 +80,14 @@ import es.sebas1705.owlsplit.feature.onboarding.resources.welcome_title
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
-/** Onboarding wired to its ViewModel; [onFinished] fires once the profile is saved. */
+/**
+ * Onboarding wired to its ViewModel; [onFinished] fires once the profile is saved. A new
+ * [runKey] each time onboarding starts again (sign out, account deleted): the ViewModel outlives
+ * the screen, and an old one would reopen on its last step.
+ */
 @Composable
-fun OnboardingRoute(onFinished: (StartChoice) -> Unit, modifier: Modifier = Modifier) {
-    val viewModel = koinViewModel<OnboardingViewModel>()
+fun OnboardingRoute(onFinished: (StartChoice) -> Unit, modifier: Modifier = Modifier, runKey: String = "onboarding") {
+    val viewModel = koinViewModel<OnboardingViewModel>(key = runKey)
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(state.finished) { state.finished?.let(onFinished) }
     OnboardingScreen(state, viewModel::onEvent, modifier)

@@ -29,4 +29,4 @@ Todos los secretos vienen de Doppler `owlsplit/prd`; GitHub solo guarda `DOPPLER
 - Configuración de Firebase en Doppler (`scripts/setup-firebase-env.sh`).
 - Clave de publicación `Documents\owlsplit-release.jks` en Doppler (`scripts/setup-release-keystore.sh`); SHA-1 `D9:45:BC:07:…:08:C3`, SHA-256 `99:0B:AD:25:…:18:C3`, registradas en la app de release y en `assetlinks.json`. **Guardar una copia del `.jks` fuera del PC**: no se puede sustituir.
 - Cuenta de servicio `owlsplit-ci@owlsplit`, su clave en Doppler, `DOPPLER_TOKEN` en GitHub y el grupo `testers` (`scripts/setup-ci-access.mjs`).
-- **Pendiente**: Authentication en la consola de `owlsplit` (*Comenzar* → Anónimo y Google) y después `scripts/setup-firebase-env.sh` para que `google-services.json` incluya el cliente web de Google. Sin Authentication la app no pasa del onboarding.
+- Authentication activo (Anónimo y Google) desde el 2026-10-08; `google-services.json` incluye el cliente web de Google.

@@ -22,9 +22,9 @@ settings:
   base:
     MARKETING_VERSION: "1.0.0"
     CURRENT_PROJECT_VERSION: "1"
-    # REVERSED_CLIENT_ID of GoogleService-Info.plist once Google is enabled in Firebase; with this
-    # placeholder the app hides Google sign-in (GoogleSignIn.swift, isConfigured).
-    GOOGLE_REVERSED_CLIENT_ID: com.googleusercontent.apps.pending
+    # REVERSED_CLIENT_ID of GoogleService-Info.plist (Google enabled in Firebase on 2026-10-08).
+    # Without a matching URL scheme the app hides Google sign-in (GoogleSignIn.swift, isConfigured).
+    GOOGLE_REVERSED_CLIENT_ID: com.googleusercontent.apps.596963610720-898aq5tvpi789kss8s1osa1kq0htmt8i
 
 targets:
   Owlsplit:
