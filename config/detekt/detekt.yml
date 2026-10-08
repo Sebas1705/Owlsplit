@@ -24,7 +24,8 @@ comments:
 
 complexity:
   active: true
-  CyclomaticComplexMethod: { active: true, threshold: 15 }
+  # MVI intent handlers dispatch with one-line `when` branches: those do not add complexity.
+  CyclomaticComplexMethod: { active: true, threshold: 15, ignoreSimpleWhenEntries: true }
   LongMethod: { active: true, threshold: 60 }
   LongParameterList: { active: true, functionThreshold: 8, constructorThreshold: 8, ignoreAnnotated: ["Composable"], ignoreDataClasses: true }
   TooManyFunctions: { active: true, thresholdInFiles: 20, thresholdInClasses: 15 }

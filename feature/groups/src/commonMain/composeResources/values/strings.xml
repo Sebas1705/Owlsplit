@@ -31,9 +31,6 @@
     <string name="no_expenses_body">Añade el primero: Owlsplit reparte y lleva las cuentas.</string>
     <string name="paid_by">Pagó %1$s</string>
     <string name="your_share">Tu parte %1$s</string>
-    <string name="today">Hoy</string>
-    <string name="yesterday">Ayer</string>
-    <string name="months_short">ene feb mar abr may jun jul ago sep oct nov dic</string>
     <string name="balance_owed">%1$s, le deben %2$s</string>
     <string name="balance_owes">%1$s, debe %2$s</string>
     <string name="balance_even">%1$s, en paz</string>

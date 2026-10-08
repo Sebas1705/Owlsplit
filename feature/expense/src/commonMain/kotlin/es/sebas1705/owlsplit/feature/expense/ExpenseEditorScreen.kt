@@ -84,6 +84,9 @@ import es.sebas1705.owlsplit.feature.expense.resources.exact_extra
 import es.sebas1705.owlsplit.feature.expense.resources.exact_missing
 import es.sebas1705.owlsplit.feature.expense.resources.invalid_split
 import es.sebas1705.owlsplit.feature.expense.resources.missing_amount
+import es.sebas1705.owlsplit.feature.expense.resources.missing_rate
+import es.sebas1705.owlsplit.feature.expense.resources.payers_extra
+import es.sebas1705.owlsplit.feature.expense.resources.payers_missing
 import es.sebas1705.owlsplit.feature.expense.resources.missing_title
 import es.sebas1705.owlsplit.feature.expense.resources.new_expense
 import es.sebas1705.owlsplit.feature.expense.resources.no_beneficiary
@@ -157,6 +160,7 @@ fun ExpenseEditorScreen(
             verticalArrangement = Arrangement.spacedBy(Spacing.l),
         ) {
             Amount(state, format, currency) { onEvent(ExpenseEditorIntent.KeypadOpen(!state.keypadOpen)) }
+            CurrencyLine(state, format, onEvent)
             if (state.keypadOpen) {
                 AmountKeypad(
                     format.decimalSeparator,
@@ -234,9 +238,8 @@ private fun Details(
     )
     Text(stringResource(Res.string.category_label), style = Owlsplit.type.label, color = Owlsplit.colors.textSecondary)
     Categories(state.draft.category) { onEvent(ExpenseEditorIntent.CategoryChanged(it)) }
-    OwlsplitContainer {
-        PayerRow(state, myMemberId) { onEvent(ExpenseEditorIntent.PayerChanged(it)) }
-    }
+    if (state.foreign) Rate(state, onEvent)
+    Payers(state, myMemberId, onEvent)
     Text(stringResource(Res.string.split_between), style = Owlsplit.type.label, color = Owlsplit.colors.textSecondary)
     val types = SplitType.entries
     SegmentedControl(
@@ -254,6 +257,7 @@ private fun Details(
     } else {
         ValueSplit(state, format, currency, myMemberId, onEvent)
     }
+    DateAndNote(state, onEvent)
 }
 
 @Composable
@@ -288,11 +292,11 @@ private fun Categories(selected: ExpenseCategory, onSelect: (ExpenseCategory) ->
 }
 
 @Composable
-private fun memberName(member: Member, myMemberId: String?): String =
+internal fun memberName(member: Member, myMemberId: String?): String =
     if (member.id == myMemberId) stringResource(Res.string.you, member.name) else member.name
 
 @Composable
-private fun PayerRow(state: ExpenseEditorState, myMemberId: String?, onSelect: (String) -> Unit) {
+internal fun PayerRow(state: ExpenseEditorState, myMemberId: String?, onSelect: (String) -> Unit) {
     var open by remember { mutableStateOf(false) }
     val payer = state.members.firstOrNull { it.id == state.draft.payerId }
     Box {
@@ -427,6 +431,11 @@ private fun Problem(state: ExpenseEditorState, format: MoneyFormat, currency: Cu
         DraftProblem.MissingAmount -> stringResource(Res.string.missing_amount)
         DraftProblem.MissingTitle -> stringResource(Res.string.missing_title)
         DraftProblem.NoPayer -> stringResource(Res.string.no_payer)
+        DraftProblem.MissingRate -> stringResource(Res.string.missing_rate)
+        is DraftProblem.PayersMismatch -> {
+            val amount = format.format(abs(problem.missingMinor), currency)
+            stringResource(if (problem.missingMinor > 0) Res.string.payers_missing else Res.string.payers_extra, amount)
+        }
         is DraftProblem.Split -> when (val issue = problem.issue) {
             SplitIssue.NoBeneficiary -> stringResource(Res.string.no_beneficiary)
             is SplitIssue.ExactSumMismatch -> {

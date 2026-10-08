@@ -2,13 +2,17 @@ package es.sebas1705.owlsplit.domain.usecases.fx
 
 import es.sebas1705.owlsplit.core.money.Conversion
 import es.sebas1705.owlsplit.core.money.Currency
-import es.sebas1705.owlsplit.data.repository.fx.FxQuote
+import es.sebas1705.owlsplit.core.money.FxRate
 import es.sebas1705.owlsplit.data.repository.fx.FxRates
 import es.sebas1705.owlsplit.domain.usecases.groups.HomeData
 
+/** A rate as the screens see it: [rate] of the target per unit of the source, ECB [day], and [stale] when offline. */
+data class RateQuote(val rate: FxRate, val day: String, val stale: Boolean)
+
 /** The rate to freeze in a new expense; null when the user has to type it. */
 class GetFxRate(private val rates: FxRates) {
-    suspend operator fun invoke(from: String, to: String): FxQuote? = rates.latest(from, to)
+    suspend operator fun invoke(from: String, to: String): RateQuote? =
+        rates.latest(from, to)?.let { RateQuote(it.rate, it.day, it.stale) }
 }
 
 data class ConvertedTotal(

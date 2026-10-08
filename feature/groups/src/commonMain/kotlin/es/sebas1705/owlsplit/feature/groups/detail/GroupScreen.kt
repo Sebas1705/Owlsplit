@@ -44,6 +44,7 @@ import es.sebas1705.owlsplit.core.ui.components.SegmentedControl
 import es.sebas1705.owlsplit.core.ui.components.SettleSuggestionRow
 import es.sebas1705.owlsplit.core.ui.components.TextActionButton
 import es.sebas1705.owlsplit.core.ui.format.MoneyFormat
+import es.sebas1705.owlsplit.core.ui.format.dayLabel
 import es.sebas1705.owlsplit.core.ui.theme.GroupAccent
 import es.sebas1705.owlsplit.core.ui.theme.GroupIcons
 import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
@@ -69,7 +70,6 @@ import es.sebas1705.owlsplit.feature.groups.resources.leave_body
 import es.sebas1705.owlsplit.feature.groups.resources.leave_confirm
 import es.sebas1705.owlsplit.feature.groups.resources.leave_title
 import es.sebas1705.owlsplit.feature.groups.resources.members
-import es.sebas1705.owlsplit.feature.groups.resources.months_short
 import es.sebas1705.owlsplit.feature.groups.resources.more
 import es.sebas1705.owlsplit.feature.groups.resources.no_expenses_body
 import es.sebas1705.owlsplit.feature.groups.resources.no_expenses_title
@@ -85,17 +85,13 @@ import es.sebas1705.owlsplit.feature.groups.resources.suggestion_you_pay
 import es.sebas1705.owlsplit.feature.groups.resources.tab_balances
 import es.sebas1705.owlsplit.feature.groups.resources.tab_expenses
 import es.sebas1705.owlsplit.feature.groups.resources.tab_settle
-import es.sebas1705.owlsplit.feature.groups.resources.today
 import es.sebas1705.owlsplit.feature.groups.resources.transfer_title
 import es.sebas1705.owlsplit.feature.groups.resources.transfers
 import es.sebas1705.owlsplit.feature.groups.resources.unarchive
-import es.sebas1705.owlsplit.feature.groups.resources.yesterday
 import es.sebas1705.owlsplit.feature.groups.resources.you
 import es.sebas1705.owlsplit.feature.groups.resources.your_balance
 import es.sebas1705.owlsplit.feature.groups.resources.your_share
-import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.minus
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -419,18 +415,3 @@ internal fun ConfirmDialog(
         dismissButton = { TextActionButton(stringResource(Res.string.cancel), onDismiss) },
     )
 }
-
-@Composable
-private fun dayLabel(date: LocalDate, today: LocalDate): String {
-    val months = stringResource(Res.string.months_short).split(" ")
-    return when (date) {
-        today -> stringResource(Res.string.today)
-        today.minusDay() -> stringResource(Res.string.yesterday)
-        else -> {
-            val day = "${date.day} ${months[date.month.ordinal]}"
-            if (date.year == today.year) day else "$day ${date.year}"
-        }
-    }
-}
-
-private fun LocalDate.minusDay(): LocalDate = minus(1, DateTimeUnit.DAY)

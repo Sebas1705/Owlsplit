@@ -31,4 +31,22 @@
     <string name="delete_title">¿Borrar este gasto?</string>
     <string name="delete_body">Los saldos se recalculan sin él.</string>
     <string name="cancel">Cancelar</string>
+    <string name="currency_title">Divisa del gasto</string>
+    <string name="currency_search">Buscar (USD, JPY…)</string>
+    <string name="currency_change">Cambiar divisa, ahora %1$s</string>
+    <string name="in_group_currency">≈ %1$s en la divisa del grupo</string>
+    <string name="rate_label">Tipo de cambio</string>
+    <string name="rate_row">1 %1$s =</string>
+    <string name="rate_ecb">Tipo del BCE del %1$s. Puedes cambiarlo.</string>
+    <string name="rate_stale">Sin conexión: tipo guardado del %1$s.</string>
+    <string name="rate_manual">Tipo escrito a mano.</string>
+    <string name="rate_loading">Buscando el tipo de cambio…</string>
+    <string name="rate_missing_hint">No hay tipo disponible para esta divisa: escríbelo.</string>
+    <string name="missing_rate">Falta el tipo de cambio.</string>
+    <string name="several_payers">Varios pagadores</string>
+    <string name="payers_missing">Faltan %1$s de pagadores.</string>
+    <string name="payers_extra">Los pagadores suman %1$s de más.</string>
+    <string name="date_label">Fecha</string>
+    <string name="note_label">Nota (opcional)</string>
+    <string name="ok">Aceptar</string>
 </resources>
