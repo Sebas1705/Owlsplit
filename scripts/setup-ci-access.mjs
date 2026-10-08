@@ -1,12 +1,11 @@
 #!/usr/bin/env node
-// One-off (P11b): gives GitHub Actions what the release, staging and deploy workflows need.
-//  1. Service account owlsplit-ci@owlsplit with the least roles they use: on production App
-//     Distribution (releases), Rules + Hosting + Firestore indexes (deploy from main) and Service
-//     Usage Consumer (to call those APIs); on staging only App Distribution.
-//  2. A key for it in Doppler owlsplit/prd and owlsplit/stg as FIREBASE_SERVICE_ACCOUNT_JSON.
-//  3. Read-only Doppler service tokens in the GitHub secrets DOPPLER_TOKEN (prd) and
-//     DOPPLER_TOKEN_STG (stg).
-//  4. The App Distribution group "testers" in both projects ([email...] arguments are added).
+// One-off (P11b): gives GitHub Actions what the distribution, release and deploy workflows need.
+//  1. Service account owlsplit-ci@owlsplit with the least roles they use: App Distribution
+//     (builds for testers), Rules + Hosting + Firestore indexes (deploy from main) and Service
+//     Usage Consumer (to call those APIs).
+//  2. A key for it in Doppler owlsplit/prd as FIREBASE_SERVICE_ACCOUNT_JSON.
+//  3. A read-only Doppler service token in the GitHub secret DOPPLER_TOKEN.
+//  4. The App Distribution group "testers" ([email...] arguments are added).
 //
 //   node scripts/setup-ci-access.mjs [tester-email ...]
 //
@@ -19,7 +18,6 @@ import { join } from "node:path";
 import { createRequire } from "node:module";
 
 const PROJECT = "owlsplit";
-const STAGING = "owlsplit-stg";
 const ACCOUNT_ID = "owlsplit-ci";
 const EMAIL = `${ACCOUNT_ID}@${PROJECT}.iam.gserviceaccount.com`;
 const ROLES = {
@@ -30,7 +28,6 @@ const ROLES = {
     "roles/datastore.indexAdmin",
     "roles/serviceusage.serviceUsageConsumer",
   ],
-  [STAGING]: ["roles/firebaseappdistro.admin", "roles/serviceusage.serviceUsageConsumer"],
 };
 const APIS = {
   [PROJECT]: [
@@ -40,10 +37,9 @@ const APIS = {
     "firebaserules.googleapis.com",
     "firebasehosting.googleapis.com",
   ],
-  [STAGING]: ["cloudresourcemanager.googleapis.com", "firebaseappdistribution.googleapis.com"],
 };
-const DOPPLER = { [PROJECT]: "prd", [STAGING]: "stg" };
-const GITHUB_SECRET = { [PROJECT]: "DOPPLER_TOKEN", [STAGING]: "DOPPLER_TOKEN_STG" };
+const DOPPLER = { [PROJECT]: "prd" };
+const GITHUB_SECRET = { [PROJECT]: "DOPPLER_TOKEN" };
 const REPO = "Sebas1705/Owlsplit";
 
 /** firebase-tools as a library: the copy npx keeps in its cache (or FIREBASE_TOOLS_DIR). */
@@ -83,7 +79,7 @@ const { Client } = require(join(ft, "lib/apiv2"));
 const account = auth.getGlobalDefaultAccount();
 if (!account) throw new Error("Run `npx firebase-tools login` first");
 await requireAuth({ project: PROJECT, user: account.user, tokens: account.tokens });
-for (const project of [PROJECT, STAGING]) {
+for (const project of [PROJECT]) {
   for (const api of APIS[project]) await ensure(project, api, "owlsplit-ci", false);
 }
 
@@ -123,7 +119,7 @@ for (const config of Object.values(DOPPLER)) {
 }
 
 // 3. Read-only Doppler tokens for GitHub Actions.
-for (const project of [PROJECT, STAGING]) {
+for (const project of [PROJECT]) {
   const config = DOPPLER[project];
   const token = run("doppler", ["configs", "tokens", "create", `github-actions-${Date.now()}`, "--project", "owlsplit", "--config", config, "--plain"]);
   run("gh", ["secret", "set", GITHUB_SECRET[project], "--repo", REPO], token);
@@ -132,7 +128,7 @@ for (const project of [PROJECT, STAGING]) {
 
 // 4. Testers.
 const emails = process.argv.slice(2);
-for (const project of [PROJECT, STAGING]) {
+for (const project of [PROJECT]) {
   const created = firebase(["appdistribution:group:create", "Testers", "testers", "--project", project]);
   if (!/created|already exists/i.test(created)) console.warn(`${project}: could not confirm the testers group:\n${created}`);
   if (emails.length > 0) {

@@ -37,7 +37,7 @@ import compose.icons.tablericons.Activity
 import compose.icons.tablericons.ArrowLeft
 import compose.icons.tablericons.Home
 import compose.icons.tablericons.User
-import es.sebas1705.owlsplit.config.AppConfig
+import es.sebas1705.owlsplit.config.isDebugBuild
 import es.sebas1705.owlsplit.core.ui.catalog.DesignCatalog
 import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
 import es.sebas1705.owlsplit.domain.usecases.account.ObserveAccount
@@ -173,7 +173,7 @@ private fun Tabs(modifier: Modifier, startChoice: StartChoice?, onStartHandled: 
             composable<HomeTab> { HomeRoute(homeNavigation(nav)) }
             composable<ActivityTab> { HistoryRoute(groupId = null, onBack = null) }
             composable<ProfileTab> {
-                val catalog = if (AppConfig.ENVIRONMENT == "development") ({ nav.navigate(CatalogRoute) }) else null
+                val catalog = if (isDebugBuild) ({ nav.navigate(CatalogRoute) }) else null
                 ProfileRoute(onOpenCatalog = catalog)
             }
             composable<CatalogRoute> {

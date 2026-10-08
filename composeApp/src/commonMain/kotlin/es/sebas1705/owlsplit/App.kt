@@ -16,7 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import es.sebas1705.owlsplit.config.EnvironmentBadge
+import es.sebas1705.owlsplit.config.DebugBadge
 import es.sebas1705.owlsplit.core.common.UnexpectedErrors
 import es.sebas1705.owlsplit.core.datastore.AppLanguage
 import es.sebas1705.owlsplit.core.datastore.DisplaySettings
@@ -57,7 +57,7 @@ fun App(modifier: Modifier = Modifier) {
         CompositionLocalProvider(LocalAppLocale provides chosen.tag) {
             CompositionLocalProvider(LocalMoneyFormat provides moneyFormatFor(LocalAppLocale.current)) {
                 // Background first, then insets: the colour reaches behind the system bars (edge to edge).
-                EnvironmentBadge(modifier.background(Owlsplit.colors.background)) {
+                DebugBadge(modifier.background(Owlsplit.colors.background)) {
                     if (koinInject<FirebaseStatus>().configured) {
                         AppRoot()
                     } else {

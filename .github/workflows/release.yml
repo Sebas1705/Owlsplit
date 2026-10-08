@@ -1,10 +1,10 @@
 name: Release
 
-# The only distribution path: pushing a `vX.Y.Z` tag (or running this workflow by hand with a
-# version) builds the signed production APK and AAB, creates a GitHub Release with both, their
-# SHA-256 and notes generated from the PRs since the previous tag, and uploads the APK to Firebase
-# App Distribution (group `testers`). Every secret comes from Doppler: GitHub only holds
-# DOPPLER_TOKEN, a read-only service token of owlsplit/prd (scripts/setup-ci-access.mjs).
+# A version: pushing a `vX.Y.Z` tag (or running this workflow by hand with a version) builds the
+# signed APK and AAB, creates a GitHub Release with both, their SHA-256 and notes generated from
+# the PRs since the previous tag, and uploads the APK to Firebase App Distribution (group
+# `testers`). Builds of main reach the testers through distribute.yml. Every secret comes from
+# Doppler: GitHub only holds DOPPLER_TOKEN, a read-only service token of owlsplit/prd.
 on:
   push:
     tags: ["v*"]

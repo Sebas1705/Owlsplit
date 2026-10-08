@@ -30,9 +30,9 @@ Requisitos: JDK 21 y Android SDK (platform 36). iOS solo compila en macOS.
 ```bash
 export JAVA_HOME="/c/Users/sebss/.jdks/jdk-21.0.12.1+1"
 export ANDROID_HOME="/c/Users/sebss/Android/sdk"
-./gradlew :composeApp:assembleDebug                     # APK de desarrollo
-./gradlew testDebugUnitTest detekt                      # tests y análisis estático
-./gradlew :composeApp:assembleDebug -PappEnv=staging    # otro entorno
+scripts/doppler-sync-local.sh                   # configuración de Firebase (Doppler)
+./gradlew :composeApp:installDebug         # app de depuración (es.sebas1705.owlsplit.debug)
+./gradlew build                            # tests, detekt, lint y builds
 ```
 
 Estructura de módulos en [MODULE_MAP.md](MODULE_MAP.md); planes de implementación en [docs/plans](docs/plans/README.md).

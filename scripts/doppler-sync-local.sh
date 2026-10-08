@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Writes the Firebase config files of one Doppler config (dev by default) to the
-# paths the build expects. Both files are git-ignored.
+# Writes the Firebase config files of the `owlsplit` project (Doppler owlsplit/prd) to the paths
+# the build expects. Both files are git-ignored.
 set -euo pipefail
-CONFIG="${1:-dev}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-doppler secrets get GOOGLE_SERVICES_JSON --project owlsplit --config "$CONFIG" --plain \
+doppler secrets get GOOGLE_SERVICES_JSON --project owlsplit --config prd --plain \
   > "$ROOT/composeApp/google-services.json"
-doppler secrets get GOOGLE_SERVICE_INFO_PLIST --project owlsplit --config "$CONFIG" --plain \
+mkdir -p "$ROOT/iosApp/iosApp"
+doppler secrets get GOOGLE_SERVICE_INFO_PLIST --project owlsplit --config prd --plain \
   > "$ROOT/iosApp/iosApp/GoogleService-Info.plist"
 
-echo "Firebase config for '$CONFIG' written to composeApp/ and iosApp/iosApp/"
+echo "Firebase config of owlsplit written to composeApp/ and iosApp/iosApp/"

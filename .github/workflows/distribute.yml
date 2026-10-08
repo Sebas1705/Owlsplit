@@ -1,9 +1,8 @@
-name: Distribute staging
+name: Distribute
 
-# Every merge to `main` that changes the app reaches the testers as a staging build: package
-# es.sebas1705.owlsplit.stg on the owlsplit-stg Firebase project (installs next to production),
-# signed with the release key so each build installs over the previous one. Tagged production
-# releases go through release.yml. Secrets: Doppler owlsplit/stg through DOPPLER_TOKEN_STG.
+# Every merge to `main` that changes the app reaches the testers through Firebase App
+# Distribution (group `testers`): the same app and key as releases, versionName main-<n>.
+# Tagged versions go through release.yml, which also creates the GitHub Release.
 on:
   push:
     branches: [main]
@@ -11,7 +10,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: distribute-staging
+  group: distribute
   cancel-in-progress: true
 
 jobs:
@@ -19,34 +18,27 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_STG }}
+      DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
-      - name: Check access
-        id: access
-        run: |
-          # Until scripts/setup-ci-access.mjs has run there is nothing to distribute with.
-          if [ -z "$DOPPLER_TOKEN" ]; then
-            echo "::warning::No DOPPLER_TOKEN_STG secret yet: staging distribution skipped"
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          fi
+      - name: Version name
+        id: ver
+        run: echo "name=main-$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
 
       - uses: ./.github/actions/build-release
-        if: steps.access.outputs.ready == 'true'
         with:
-          environment: staging
-          version-name: stg-${{ github.run_number }}
+          version-name: ${{ steps.ver.outputs.name }}
           extra-secrets: FIREBASE_SERVICE_ACCOUNT_JSON
 
       - name: Upload to Firebase App Distribution
-        if: steps.access.outputs.ready == 'true'
         env:
           TESTER_GROUP: ${{ vars.FIREBASE_TESTER_GROUP || 'testers' }}
+          NAME: ${{ steps.ver.outputs.name }}
         run: |
-          export NOTES="Staging ${{ github.run_number }}: $(git log -1 --pretty='%s (%h)')"
+          export NOTES="$NAME: $(git log -1 --pretty='%s (%h)')"
           doppler run -- bash -c '
             umask 077
             printf "%s" "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-sa.json"
