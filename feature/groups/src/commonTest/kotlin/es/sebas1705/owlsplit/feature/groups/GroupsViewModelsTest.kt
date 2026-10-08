@@ -1,0 +1,143 @@
+package es.sebas1705.owlsplit.feature.groups
+
+import es.sebas1705.owlsplit.core.testing.CoroutineTestRule
+import es.sebas1705.owlsplit.core.testing.account.FakeAccounts
+import es.sebas1705.owlsplit.core.testing.account.FakeProfiles
+import es.sebas1705.owlsplit.core.testing.ledger.InMemoryLedger
+import es.sebas1705.owlsplit.core.ui.theme.GroupAccent
+import es.sebas1705.owlsplit.data.models.GroupInput
+import es.sebas1705.owlsplit.data.models.UserProfile
+import es.sebas1705.owlsplit.domain.usecases.account.ObserveAccount
+import es.sebas1705.owlsplit.domain.usecases.balances.ObserveGroupBalances
+import es.sebas1705.owlsplit.domain.usecases.expenses.ExpenseDrafts
+import es.sebas1705.owlsplit.domain.usecases.expenses.SaveExpense
+import es.sebas1705.owlsplit.domain.usecases.groups.GroupActions
+import es.sebas1705.owlsplit.domain.usecases.groups.MemberActions
+import es.sebas1705.owlsplit.domain.usecases.groups.ObserveGroupDetail
+import es.sebas1705.owlsplit.domain.usecases.groups.SettleUp
+import es.sebas1705.owlsplit.feature.groups.detail.GroupIntent
+import es.sebas1705.owlsplit.feature.groups.detail.GroupTab
+import es.sebas1705.owlsplit.feature.groups.detail.GroupViewModel
+import es.sebas1705.owlsplit.feature.groups.editor.GroupEditorIntent
+import es.sebas1705.owlsplit.feature.groups.editor.GroupEditorViewModel
+import es.sebas1705.owlsplit.feature.groups.members.MembersIntent
+import es.sebas1705.owlsplit.feature.groups.members.MembersViewModel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+class GroupsViewModelsTest {
+    private val rule = CoroutineTestRule()
+
+    @BeforeTest
+    fun setUp() = rule.setup()
+
+    @AfterTest
+    fun tearDown() = rule.tearDown()
+
+    private val ledger = InMemoryLedger()
+    private val accounts = FakeAccounts()
+    private val profiles = FakeProfiles(UserProfile("Ana", "accent:BLUE", "USD"))
+    private val balances = ObserveGroupBalances(ledger.groups, ledger.members, ledger.expenses, ledger.transfers)
+    private val detail =
+        ObserveGroupDetail(ledger.groups, ledger.members, ledger.expenses, ledger.transfers, balances, accounts)
+    private val actions = GroupActions(ledger.groups, profiles)
+    private val memberActions = MemberActions(ledger.members)
+
+    /** Ana and Luis; Ana paid 30,00 for both. */
+    private suspend fun dinnerGroup(): String {
+        val g = actions.create(GroupInput("Ibiza", "plane", "BLUE", "EUR"))
+        memberActions.add(g, "Luis")
+        val members = ledger.members.observeMembers(g).first()
+        val ana = members.first { it.userUid == "uid-ana" }.id
+        SaveExpense(
+            ledger.expenses
+        )(g, null, ExpenseDrafts.new(members, ana).copy(amountMinor = 3_000, title = "Cena"), "EUR", members)
+        return g
+    }
+
+    @Test
+    fun aNewGroupStartsInThePreferredCurrencyAndReportsItsId() = runTest {
+        val vm = GroupEditorViewModel(null, actions, detail, ObserveAccount(accounts, profiles))
+        assertEquals("USD", vm.uiState.value.currency)
+        assertFalse(vm.uiState.value.canSave)
+        vm.onEvent(GroupEditorIntent.NameChanged("Piso"))
+        vm.onEvent(GroupEditorIntent.AccentChanged(GroupAccent.ORANGE))
+        vm.onEvent(GroupEditorIntent.Save)
+        val id = assertNotNull(vm.uiState.value.savedGroupId)
+        val group = ledger.groups.observeGroup(id).first()!!
+        assertEquals("ORANGE", group.accent)
+        assertEquals("USD", group.baseCurrency)
+    }
+
+    @Test
+    fun editingLoadsTheGroup() = runTest {
+        val g = dinnerGroup()
+        val vm = GroupEditorViewModel(g, actions, detail, ObserveAccount(accounts, profiles))
+        assertTrue(vm.uiState.value.editing)
+        assertEquals("Ibiza", vm.uiState.value.name)
+        assertEquals("EUR", vm.uiState.value.currency)
+    }
+
+    @Test
+    fun theGroupShowsMySharesAndSettlingClearsTheDebt() = runTest {
+        val g = dinnerGroup()
+        val vm = GroupViewModel(g, GroupTab.EXPENSES, detail, SettleUp(ledger.transfers), actions)
+        val expense = ledger.expenseList.value.single()
+        assertEquals(1_500L, vm.uiState.value.myShares[expense.id])
+
+        val payment = vm.uiState.value.detail!!.balances!!.suggestedPayments.single()
+        vm.onEvent(GroupIntent.AskSettle(payment))
+        vm.onEvent(GroupIntent.ConfirmSettle)
+        assertTrue(vm.uiState.value.detail!!.balances!!.suggestedPayments.isEmpty())
+        assertNull(vm.uiState.value.confirmSettle)
+    }
+
+    @Test
+    fun archivingTogglesAndLeavingClosesTheScreen() = runTest {
+        val g = dinnerGroup()
+        val vm = GroupViewModel(g, GroupTab.SETTLE, detail, SettleUp(ledger.transfers), actions)
+        assertEquals(GroupTab.SETTLE, vm.uiState.value.tab)
+        vm.onEvent(GroupIntent.ToggleArchive)
+        assertTrue(vm.uiState.value.detail!!.archivedByMe)
+        vm.onEvent(GroupIntent.AskLeave)
+        vm.onEvent(GroupIntent.ConfirmLeave)
+        assertTrue(vm.uiState.value.closed)
+    }
+
+    @Test
+    fun membersAreAddedEditedAndDeactivatedWhenInUse() = runTest {
+        val g = dinnerGroup()
+        val vm = MembersViewModel(g, detail, memberActions)
+        vm.onEvent(MembersIntent.Add)
+        vm.onEvent(MembersIntent.NameChanged("Marta"))
+        vm.onEvent(MembersIntent.WeightChanged(2))
+        vm.onEvent(MembersIntent.Save)
+        val marta = vm.uiState.value.members.first { it.name == "Marta" }
+        assertEquals(2, marta.defaultWeight)
+
+        vm.onEvent(MembersIntent.Edit(marta))
+        vm.onEvent(MembersIntent.Delete)
+        assertNull(vm.uiState.value.form)
+        assertTrue(vm.uiState.value.members.none { it.name == "Marta" })
+
+        val luis = vm.uiState.value.members.first { it.name == "Luis" }
+        vm.onEvent(MembersIntent.Edit(luis))
+        vm.onEvent(MembersIntent.Delete)
+        assertTrue(vm.uiState.value.form!!.inUse)
+        assertFalse(vm.uiState.value.members.first { it.name == "Luis" }.active)
+
+        val me = vm.uiState.value.members.first { it.userUid == "uid-ana" }
+        vm.onEvent(MembersIntent.Edit(me))
+        assertTrue(vm.uiState.value.form!!.isMe)
+        vm.onEvent(MembersIntent.ActiveChanged(false))
+        assertTrue(vm.uiState.value.form!!.active)
+    }
+}

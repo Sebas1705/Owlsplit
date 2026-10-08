@@ -116,7 +116,10 @@ data class GroupDetail(
     val transfers: List<Transfer>,
     val balances: GroupBalances?,
     val myMemberId: String?,
-)
+    val myUid: String?,
+) {
+    val archivedByMe: Boolean get() = myUid != null && myUid in group.archivedBy
+}
 
 class ObserveGroupDetail(
     private val groups: GroupRepository,
@@ -134,7 +137,8 @@ class ObserveGroupDetail(
         balances(groupId),
     ) { (group, memberList, session), expenseList, transferList, groupBalances ->
         group?.let {
-            GroupDetail(it, memberList, expenseList, transferList, groupBalances, memberList.mine(session?.uid)?.id)
+            val uid = session?.uid
+            GroupDetail(it, memberList, expenseList, transferList, groupBalances, memberList.mine(uid)?.id, uid)
         }
     }
 }
