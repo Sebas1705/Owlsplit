@@ -91,6 +91,8 @@ Búho geométrico: cuadrado redondeado en `accent` con dos anillos blancos por o
 | `TextActionButton` | Acción secundaria en texto (`accentText` o el color que se pase, p. ej. `error` en diálogos destructivos) |
 | `ExpenseRow` | Icono de categoría, concepto, quién pagó, importe y "tu parte" |
 | `GroupIcons`, `categoryIcon`, `categoryName` | Los 12 iconos de grupo (clave guardada en `Group.icon`) y los iconos y nombres de las 11 categorías |
+| `CurrencyPicker` | Diálogo con todas las divisas soportadas y búsqueda por código |
+| `DateField` | Fila de fecha que abre el selector de Material 3 (días en UTC para que no se desplacen) |
 | `AccentPicker` | Fila de los 8 colores de `GroupAccent`, cada uno con nombre para lectores de pantalla (`accentName`) |
 | `Avatar` | Foto o iniciales sobre tono neutro; 24, 30, 36 y 48 dp |
 | `OwlsplitLogo` | El búho geométrico dibujado en Canvas (sin imágenes) |

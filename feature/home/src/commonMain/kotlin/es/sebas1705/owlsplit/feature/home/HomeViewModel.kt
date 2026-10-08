@@ -8,10 +8,14 @@ import es.sebas1705.owlsplit.core.datastore.LinkNudgeSettings
 import es.sebas1705.owlsplit.domain.usecases.account.ObserveAccount
 import es.sebas1705.owlsplit.domain.usecases.account.ObservePendingChanges
 import es.sebas1705.owlsplit.domain.usecases.account.ShouldSuggestLinking
+import es.sebas1705.owlsplit.domain.usecases.fx.ConvertTotal
+import es.sebas1705.owlsplit.domain.usecases.groups.HomeData
 import es.sebas1705.owlsplit.domain.usecases.groups.HomeGroup
 import es.sebas1705.owlsplit.domain.usecases.groups.ObserveHome
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.launch
 
 /** Shortcuts that need a group; with several groups the user picks one first. */
@@ -22,7 +26,10 @@ data class HomeState(
     val groups: List<HomeGroup> = emptyList(),
     val currency: String = "EUR",
     val total: Long = 0,
+    /** Balances in currencies without a rate, kept apart. */
     val otherCurrencies: Map<String, Long> = emptyMap(),
+    /** The total includes groups converted at today's rate. */
+    val approximate: Boolean = false,
     val pending: Long = 0,
     val suggestLinking: Boolean = false,
     /** Asking which group a quick action is for. */
@@ -35,10 +42,12 @@ sealed interface HomeIntent : MVIBaseIntent {
     data object DismissNudge : HomeIntent
 }
 
+@OptIn(ExperimentalCoroutinesApi::class) // mapLatest
 class HomeViewModel(
     observeHome: ObserveHome,
     observeAccount: ObserveAccount,
     observePending: ObservePendingChanges,
+    private val convertTotal: ConvertTotal,
     private val nudge: LinkNudgeSettings,
 ) : MVIBaseViewModel<HomeState, HomeIntent>() {
 
@@ -60,6 +69,14 @@ class HomeViewModel(
                     otherCurrencies = home.otherCurrencies,
                     pending = pending,
                     suggestLinking = ShouldSuggestLinking(account.session, home.groups.size, dismissed),
+                )
+            }.mapLatest { fresh ->
+                // Other currencies at the latest rate (cached; may hit the network once).
+                val converted = convertTotal(HomeData(fresh.groups, fresh.currency, fresh.total, fresh.otherCurrencies))
+                fresh.copy(
+                    total = converted.total,
+                    otherCurrencies = converted.unconverted,
+                    approximate = converted.approximate
                 )
             }.collect { fresh -> updateState { fresh.copy(picking = it.picking) } }
         }

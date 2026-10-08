@@ -1,9 +1,15 @@
 package es.sebas1705.owlsplit.feature.expense
 
+import es.sebas1705.owlsplit.core.ui.format.parseDecimal
+import es.sebas1705.owlsplit.core.ui.format.formatDecimal
 import es.sebas1705.owlsplit.core.testing.CoroutineTestRule
 import es.sebas1705.owlsplit.core.testing.account.FakeAccounts
 import es.sebas1705.owlsplit.core.testing.ledger.InMemoryLedger
+import es.sebas1705.owlsplit.core.money.FxRate
 import es.sebas1705.owlsplit.core.ui.components.KeypadKey
+import es.sebas1705.owlsplit.data.repository.fx.FxQuote
+import es.sebas1705.owlsplit.data.repository.fx.FxRates
+import es.sebas1705.owlsplit.domain.usecases.fx.GetFxRate
 import es.sebas1705.owlsplit.data.models.ExpenseCategory
 import es.sebas1705.owlsplit.data.models.GroupInput
 import es.sebas1705.owlsplit.data.models.MemberInput
@@ -15,6 +21,7 @@ import es.sebas1705.owlsplit.domain.usecases.expenses.DraftProblem
 import es.sebas1705.owlsplit.domain.usecases.expenses.SaveExpense
 import es.sebas1705.owlsplit.domain.usecases.groups.ObserveGroupDetail
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -69,8 +76,19 @@ class ExpenseEditorTest {
         return Triple(g, ana, luis)
     }
 
-    private fun editor(g: String, expenseId: String? = null) =
-        ExpenseEditorViewModel(g, expenseId, detail, SaveExpense(ledger.expenses), DeleteExpense(ledger.expenses))
+    private val rates = object : FxRates {
+        override suspend fun latest(from: String, to: String) =
+            if (from == "USD") FxQuote(FxRate.parse("0.9"), "2026-10-07") else null
+    }
+
+    private fun editor(g: String, expenseId: String? = null) = ExpenseEditorViewModel(
+        g,
+        expenseId,
+        detail,
+        SaveExpense(ledger.expenses),
+        DeleteExpense(ledger.expenses),
+        GetFxRate(rates),
+    )
 
     @Test
     fun aNewEqualExpensePaidByMe() = runTest {
@@ -143,5 +161,51 @@ class ExpenseEditorTest {
         vm.onEvent(ExpenseEditorIntent.ConfirmDelete)
         assertTrue(vm.uiState.value.done)
         assertTrue(ledger.expenseList.value.single().meta.deleted)
+    }
+
+    @Test
+    fun aForeignCurrencyFreezesTheRateWhichCanBeOverwritten() = runTest {
+        val (g, _, _) = group()
+        val vm = editor(g)
+        listOf(d(1), d(0)).forEach { vm.onEvent(ExpenseEditorIntent.Key(it)) }
+        vm.onEvent(ExpenseEditorIntent.TitleChanged("Taxi"))
+        vm.onEvent(ExpenseEditorIntent.CurrencyChanged("USD"))
+        assertEquals("0,9", vm.uiState.value.rate.text)
+        assertEquals("2026-10-07", vm.uiState.value.rate.day)
+        assertEquals(900L, vm.uiState.value.baseEquivalent)
+
+        vm.onEvent(ExpenseEditorIntent.RateChanged("0,95"))
+        assertEquals(950L, vm.uiState.value.baseEquivalent)
+        vm.onEvent(ExpenseEditorIntent.RateChanged("abc"))
+        assertEquals(DraftProblem.MissingRate, vm.uiState.value.check.problem)
+
+        vm.onEvent(ExpenseEditorIntent.CurrencyChanged("GBP")) // no rate: typed by hand
+        assertNull(vm.uiState.value.rate.day)
+        vm.onEvent(ExpenseEditorIntent.RateChanged("1,17"))
+        vm.onEvent(ExpenseEditorIntent.Save)
+        val saved = ledger.expenseList.value.single()
+        assertEquals("GBP", saved.currency)
+        assertEquals(1_170_000_000L, saved.fxRateScaled)
+    }
+
+    @Test
+    fun severalPayersMustAddUpToTheTotal() = runTest {
+        val (g, ana, luis) = group()
+        val vm = editor(g)
+        listOf(d(5), d(0)).forEach { vm.onEvent(ExpenseEditorIntent.Key(it)) }
+        vm.onEvent(ExpenseEditorIntent.TitleChanged("Súper"))
+        vm.onEvent(ExpenseEditorIntent.MultiplePayers(true))
+        assertEquals(mapOf(ana to 5_000L), vm.uiState.value.draft.payers)
+        vm.onEvent(ExpenseEditorIntent.PayerAmountChanged(ana, "30"))
+        vm.onEvent(ExpenseEditorIntent.PayerAmountChanged(luis, "15"))
+        assertEquals(DraftProblem.PayersMismatch(500), vm.uiState.value.check.problem)
+        vm.onEvent(ExpenseEditorIntent.PayerAmountChanged(luis, "20"))
+        vm.onEvent(ExpenseEditorIntent.DateChanged(LocalDate(2026, 7, 12)))
+        vm.onEvent(ExpenseEditorIntent.NoteChanged("Para la semana"))
+        vm.onEvent(ExpenseEditorIntent.Save)
+        val saved = ledger.expenseList.value.single()
+        assertEquals(mapOf(ana to 3_000L, luis to 2_000L), saved.payers)
+        assertEquals(LocalDate(2026, 7, 12), saved.date)
+        assertEquals("Para la semana", saved.note)
     }
 }

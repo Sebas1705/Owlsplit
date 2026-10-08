@@ -18,8 +18,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +37,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import compose.icons.TablerIcons
 import compose.icons.tablericons.ChevronDown
 import es.sebas1705.owlsplit.core.ui.components.AccentPicker
+import es.sebas1705.owlsplit.core.ui.components.CurrencyPicker
+import es.sebas1705.owlsplit.core.ui.components.DateField
+import es.sebas1705.owlsplit.core.ui.components.TextActionButton
+import es.sebas1705.owlsplit.core.ui.format.dayLabel
+import es.sebas1705.owlsplit.domain.usecases.groups.Today
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitContainer
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitTextField
 import es.sebas1705.owlsplit.core.ui.components.PrimaryPillButton
@@ -49,22 +52,28 @@ import es.sebas1705.owlsplit.core.ui.theme.Spacing
 import es.sebas1705.owlsplit.core.ui.theme.accentName
 import es.sebas1705.owlsplit.feature.groups.common.TopBar
 import es.sebas1705.owlsplit.feature.groups.resources.Res
+import es.sebas1705.owlsplit.feature.groups.resources.cancel
+import es.sebas1705.owlsplit.feature.groups.resources.clear_dates
 import es.sebas1705.owlsplit.feature.groups.resources.colour_label
 import es.sebas1705.owlsplit.feature.groups.resources.create
 import es.sebas1705.owlsplit.feature.groups.resources.currency_hint
 import es.sebas1705.owlsplit.feature.groups.resources.currency_label
+import es.sebas1705.owlsplit.feature.groups.resources.currency_search
+import es.sebas1705.owlsplit.feature.groups.resources.date_from
+import es.sebas1705.owlsplit.feature.groups.resources.date_to
+import es.sebas1705.owlsplit.feature.groups.resources.dates_invalid
 import es.sebas1705.owlsplit.feature.groups.resources.edit_group
 import es.sebas1705.owlsplit.feature.groups.resources.icon_label
 import es.sebas1705.owlsplit.feature.groups.resources.name_label
 import es.sebas1705.owlsplit.feature.groups.resources.name_placeholder
 import es.sebas1705.owlsplit.feature.groups.resources.new_group
+import es.sebas1705.owlsplit.feature.groups.resources.no_date
+import es.sebas1705.owlsplit.feature.groups.resources.ok
 import es.sebas1705.owlsplit.feature.groups.resources.save
+import es.sebas1705.owlsplit.feature.groups.resources.trip_dates
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-
-/** Currencies offered until the full picker (P9b). */
-internal val GROUP_CURRENCIES = listOf("EUR", "USD", "GBP", "CHF", "MXN", "ARS", "COP", "CLP", "BRL", "JPY")
 
 private const val ICONS_PER_ROW = 6
 
@@ -125,6 +134,7 @@ fun GroupEditorScreen(
                     modifier = Modifier.padding(horizontal = Spacing.m, vertical = Spacing.xs),
                 )
             }
+            TripDates(state, onEvent)
         }
         PrimaryPillButton(
             stringResource(if (state.editing) Res.string.save else Res.string.create),
@@ -218,16 +228,57 @@ private fun CurrencyRow(selected: String, enabled: Boolean, onSelect: (String) -
                 )
             }
         }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            GROUP_CURRENCIES.forEach { code ->
-                DropdownMenuItem(
-                    text = { Text(code, style = Owlsplit.type.body) },
-                    onClick = {
-                        open = false
-                        onSelect(code)
-                    },
-                )
-            }
+        if (open) {
+            CurrencyPicker(
+                selected = selected,
+                title = stringResource(Res.string.currency_label),
+                searchLabel = stringResource(Res.string.currency_search),
+                cancelLabel = stringResource(Res.string.cancel),
+                onSelect = {
+                    open = false
+                    onSelect(it)
+                },
+                onDismiss = { open = false },
+            )
+        }
+    }
+}
+
+@Composable
+private fun TripDates(state: GroupEditorState, onEvent: (GroupEditorIntent) -> Unit) {
+    val today = Today.System()
+    val noDate = stringResource(Res.string.no_date)
+    OwlsplitContainer(title = stringResource(Res.string.trip_dates)) {
+        DateField(
+            label = stringResource(Res.string.date_from),
+            text = state.startDate?.let { dayLabel(it, today) } ?: noDate,
+            date = state.startDate ?: today,
+            confirmLabel = stringResource(Res.string.ok),
+            cancelLabel = stringResource(Res.string.cancel),
+            onChange = { onEvent(GroupEditorIntent.StartChanged(it)) },
+        )
+        DateField(
+            label = stringResource(Res.string.date_to),
+            text = state.endDate?.let { dayLabel(it, today) } ?: noDate,
+            date = state.endDate ?: state.startDate ?: today,
+            confirmLabel = stringResource(Res.string.ok),
+            cancelLabel = stringResource(Res.string.cancel),
+            onChange = { onEvent(GroupEditorIntent.EndChanged(it)) },
+        )
+        if (!state.datesValid) {
+            Text(
+                stringResource(Res.string.dates_invalid),
+                style = Owlsplit.type.caption,
+                color = Owlsplit.colors.error,
+                modifier = Modifier.padding(horizontal = Spacing.m),
+            )
+        }
+        if (state.startDate != null || state.endDate != null) {
+            TextActionButton(
+                stringResource(Res.string.clear_dates),
+                { onEvent(GroupEditorIntent.ClearDates) },
+                Modifier.padding(horizontal = Spacing.xs),
+            )
         }
     }
 }

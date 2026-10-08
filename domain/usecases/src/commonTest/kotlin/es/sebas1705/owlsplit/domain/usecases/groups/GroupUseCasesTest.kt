@@ -173,4 +173,17 @@ class GroupUseCasesTest {
         assertEquals(LocalDate(2026, 7, 12), ledger.expenseList.value.single().date)
         assertNull(ledger.expenseList.value.single().note)
     }
+
+    @Test
+    fun aManualTransferNeedsTwoMembersAndAnAmount() = runTest {
+        val g = trip()
+        val (ana, luis) = dinner(g)
+        val record = RecordTransfer(ledger.transfers, today)
+        assertFalse(record(g, ana, ana, 500, "EUR", null))
+        assertFalse(record(g, luis, ana, 0, "EUR", null))
+        assertTrue(record(g, luis, ana, 1_500, "EUR", "  Bizum  "))
+        val transfer = ledger.transferList.value.single()
+        assertEquals("Bizum", transfer.note)
+        assertTrue(detail(g).first()!!.balances!!.balances.values.all { it == 0L })
+    }
 }

@@ -28,6 +28,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Check
@@ -48,6 +49,7 @@ fun OwlsplitTextField(
     error: String? = null,
     maxLength: Int = Int.MAX_VALUE,
     capitalization: KeyboardCapitalization = KeyboardCapitalization.Sentences,
+    keyboardType: KeyboardType = KeyboardType.Text,
 ) {
     val colors = Owlsplit.colors
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
@@ -60,7 +62,11 @@ fun OwlsplitTextField(
             placeholder = placeholder?.let { { Text(it, style = Owlsplit.type.body, color = colors.textMuted) } },
             textStyle = Owlsplit.type.body.copy(color = colors.textPrimary),
             shape = OwlsplitShapes.control,
-            keyboardOptions = KeyboardOptions(capitalization = capitalization, imeAction = ImeAction.Done),
+            keyboardOptions = KeyboardOptions(
+                capitalization = capitalization,
+                keyboardType = keyboardType,
+                imeAction = ImeAction.Done,
+            ),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = colors.surface,
                 unfocusedContainerColor = colors.surface,

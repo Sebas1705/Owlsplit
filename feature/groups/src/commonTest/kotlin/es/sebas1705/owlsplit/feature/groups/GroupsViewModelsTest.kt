@@ -14,6 +14,7 @@ import es.sebas1705.owlsplit.domain.usecases.expenses.SaveExpense
 import es.sebas1705.owlsplit.domain.usecases.groups.GroupActions
 import es.sebas1705.owlsplit.domain.usecases.groups.MemberActions
 import es.sebas1705.owlsplit.domain.usecases.groups.ObserveGroupDetail
+import es.sebas1705.owlsplit.domain.usecases.groups.RecordTransfer
 import es.sebas1705.owlsplit.domain.usecases.groups.SettleUp
 import es.sebas1705.owlsplit.feature.groups.detail.GroupIntent
 import es.sebas1705.owlsplit.feature.groups.detail.GroupTab
@@ -22,8 +23,11 @@ import es.sebas1705.owlsplit.feature.groups.editor.GroupEditorIntent
 import es.sebas1705.owlsplit.feature.groups.editor.GroupEditorViewModel
 import es.sebas1705.owlsplit.feature.groups.members.MembersIntent
 import es.sebas1705.owlsplit.feature.groups.members.MembersViewModel
+import es.sebas1705.owlsplit.feature.groups.transfer.TransferIntent
+import es.sebas1705.owlsplit.feature.groups.transfer.TransferViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -139,5 +143,42 @@ class GroupsViewModelsTest {
         assertTrue(vm.uiState.value.form!!.isMe)
         vm.onEvent(MembersIntent.ActiveChanged(false))
         assertTrue(vm.uiState.value.form!!.active)
+    }
+
+    @Test
+    fun tripDatesAreOptionalButOrdered() = runTest {
+        val vm = GroupEditorViewModel(null, actions, detail, ObserveAccount(accounts, profiles))
+        vm.onEvent(GroupEditorIntent.NameChanged("Ibiza"))
+        vm.onEvent(GroupEditorIntent.StartChanged(LocalDate(2026, 7, 20)))
+        vm.onEvent(GroupEditorIntent.EndChanged(LocalDate(2026, 7, 10)))
+        assertFalse(vm.uiState.value.canSave)
+        vm.onEvent(GroupEditorIntent.EndChanged(LocalDate(2026, 7, 27)))
+        vm.onEvent(GroupEditorIntent.Save)
+        val group = ledger.groups.observeGroup(vm.uiState.value.savedGroupId!!).first()!!
+        assertEquals(LocalDate(2026, 7, 20), group.startDate)
+
+        val edit = GroupEditorViewModel(group.id, actions, detail, ObserveAccount(accounts, profiles))
+        edit.onEvent(GroupEditorIntent.NameChanged("Ibiza 26"))
+        edit.onEvent(GroupEditorIntent.Save)
+        assertEquals(LocalDate(2026, 7, 27), ledger.groups.observeGroup(group.id).first()!!.endDate) // kept on edit
+    }
+
+    @Test
+    fun aManualPaymentStartsFromMeAndNeedsAnAmount() = runTest {
+        val g = dinnerGroup()
+        val vm = TransferViewModel(g, detail, RecordTransfer(ledger.transfers))
+        val ana = vm.uiState.value.myMemberId
+        assertEquals(ana, vm.uiState.value.fromId)
+        assertFalse(vm.uiState.value.canSave)
+        vm.onEvent(TransferIntent.ToChanged(ana!!))
+        vm.onEvent(TransferIntent.AmountChanged("12,5"))
+        assertTrue(vm.uiState.value.sameMember)
+        val luis = vm.uiState.value.members.first { it.name == "Luis" }.id
+        vm.onEvent(TransferIntent.FromChanged(luis))
+        vm.onEvent(TransferIntent.AmountChanged("12,555")) // too many decimals: ignored
+        assertEquals("12,5", vm.uiState.value.amountText)
+        vm.onEvent(TransferIntent.Save)
+        assertTrue(vm.uiState.value.done)
+        assertEquals(1_250L, ledger.transferList.value.single().amountMinor)
     }
 }

@@ -19,4 +19,7 @@
     <string name="category_health">Salud</string>
     <string name="category_gifts">Regalos</string>
     <string name="category_other">Otros</string>
+    <string name="today">Hoy</string>
+    <string name="yesterday">Ayer</string>
+    <string name="months_short">ene feb mar abr may jun jul ago sep oct nov dic</string>
 </resources>

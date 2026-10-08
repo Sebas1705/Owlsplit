@@ -14,6 +14,7 @@
 | `data:models` | Documentos (`Group`, `Member`, `Expense`, `Transfer`, `ChangeLogEntry`) con `SyncMeta`, serializables | P6 |
 | `data:local` | Esquema SQLDelight completo v1 (`AppDatabase`), snapshot `databases/1.db` y `verifyMigrations` | P6, P9 |
 | `data:repository` | Repositorios con Flows (cada escritura guarda la entidad, compacta el outbox y registra el historial en una transacción) y motor de sincronización `sync` (`RemoteStore`, `SyncEngine`) | P8, P9 |
+| `data:fx` | `FrankfurterRates` (Ktor): tipos del BCE en punto fijo, caché por par en DataStore | — |
 | `data:remote` | Firebase (GitLive): `FirestoreRemoteStore` (adaptador del motor), `FirebaseAccountService`, `FirestoreProfileRemote` (`users/{uid}`); test de humo y test de sincronización con emuladores | P10 |
 | `domain:usecases` | `ledger` (partes, netos, saldos, pagos sugeridos), `ObserveGroupBalances` y `account` (onboarding, Google, perfil, cerrar sesión, borrar cuenta, aviso para vincular), `groups` (Inicio, detalle, acciones, saldar) y `expenses` (borradores con validación en vivo) | P9b |
 | `feature:onboarding` | Bienvenida → nombre y avatar → primer grupo; "Ya tengo cuenta" con Google | P9, P10 |

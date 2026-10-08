@@ -47,6 +47,7 @@ import es.sebas1705.owlsplit.feature.home.resources.Res
 import es.sebas1705.owlsplit.feature.home.resources.action_expense
 import es.sebas1705.owlsplit.feature.home.resources.action_group
 import es.sebas1705.owlsplit.feature.home.resources.action_settle
+import es.sebas1705.owlsplit.feature.home.resources.approximate
 import es.sebas1705.owlsplit.feature.home.resources.balance_spoken_even
 import es.sebas1705.owlsplit.feature.home.resources.balance_spoken_owe
 import es.sebas1705.owlsplit.feature.home.resources.balance_spoken_owed
@@ -170,6 +171,13 @@ private fun Balance(state: HomeState, format: MoneyFormat) {
                 )
             } else {
                 SyncStatusChip(SyncStatus.SYNCED, stringResource(Res.string.synced))
+            }
+            if (state.approximate) {
+                Text(
+                    stringResource(Res.string.approximate),
+                    style = Owlsplit.type.caption,
+                    color = Owlsplit.colors.textSecondary
+                )
             }
             if (state.otherCurrencies.isNotEmpty()) {
                 val others = state.otherCurrencies.entries.joinToString(" · ") { (code, value) ->

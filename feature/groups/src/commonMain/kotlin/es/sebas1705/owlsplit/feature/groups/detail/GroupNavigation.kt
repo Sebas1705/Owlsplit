@@ -7,4 +7,5 @@ class GroupNavigation(
     val edit: () -> Unit,
     val addExpense: () -> Unit,
     val openExpense: (String) -> Unit,
+    val recordPayment: () -> Unit,
 )

@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
@@ -25,7 +26,13 @@ interface LinkNudgeSettings {
     suspend fun dismissLinkNudge()
 }
 
-class AppPreferences(private val dataStore: DataStore<Preferences>) : ThemeSettings, LinkNudgeSettings {
+/** Small values the app can rebuild (exchange rates): kept on the device, never synced. */
+interface KeyValueCache {
+    suspend fun get(key: String): String?
+    suspend fun put(key: String, value: String)
+}
+
+class AppPreferences(private val dataStore: DataStore<Preferences>) : ThemeSettings, LinkNudgeSettings, KeyValueCache {
 
     // ── Theme ─────────────────────────────────────────────────────────────────
     override val themeMode: Flow<ThemeMode> = dataStore.data.map { prefs ->
@@ -53,6 +60,13 @@ class AppPreferences(private val dataStore: DataStore<Preferences>) : ThemeSetti
     // ── Link nudge ────────────────────────────────────────────────────────────
     override val linkNudgeDismissed: Flow<Boolean> = dataStore.data.map { it[Keys.LINK_NUDGE_DISMISSED] ?: false }
     override suspend fun dismissLinkNudge() { dataStore.edit { it[Keys.LINK_NUDGE_DISMISSED] = true } }
+
+    // ── Cache ─────────────────────────────────────────────────────────────────
+    override suspend fun get(key: String): String? = dataStore.data.first()[stringPreferencesKey("cache:$key")]
+    override suspend fun put(
+        key: String,
+        value: String
+    ) { dataStore.edit { it[stringPreferencesKey("cache:$key")] = value } }
 
     /** Back to a fresh install (sign out, account deletion). */
     suspend fun clear() { dataStore.edit { it.clear() } }

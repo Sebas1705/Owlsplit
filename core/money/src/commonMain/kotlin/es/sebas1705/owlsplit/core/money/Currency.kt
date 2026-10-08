@@ -15,5 +15,8 @@ data class Currency(val code: String, val decimals: Int) {
             requireNotNull(CurrencyTable.byCode[code]) { "Unknown currency: $code" }
 
         fun isKnown(code: String): Boolean = code in CurrencyTable.byCode
+
+        /** Every supported currency, by code. */
+        val all: List<Currency> by lazy { CurrencyTable.byCode.values.sortedBy { it.code } }
     }
 }

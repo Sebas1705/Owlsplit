@@ -33,7 +33,7 @@ class ExpenseEditorScreenshotTest {
 
     private fun state(draft: ExpenseDraft, keypad: Boolean = false, texts: Map<String, String> = emptyMap()) = ExpenseEditorState(
         loaded = true,
-        currency = "EUR",
+        baseCurrency = "EUR",
         myMemberId = "ana",
         members = members,
         amount = AmountInput.of(draft.amountMinor, 2),
@@ -52,12 +52,15 @@ class ExpenseEditorScreenshotTest {
         amountMinor = 4_860,
         title = "Cena en Es Vedrà",
         category = ExpenseCategory.FOOD,
-        payerId = "ana",
+        payers = mapOf("ana" to 4_860L),
         values = mapOf("ana" to 1L, "luis" to 1L, "marta" to 1L),
     )
 
     @Test
-    fun keypad() = capture("keypad", state(ExpenseDraft(amountMinor = 1_250, payerId = "ana"), keypad = true))
+    fun keypad() = capture(
+        "keypad",
+        state(ExpenseDraft(amountMinor = 1_250, payers = mapOf("ana" to 1_250L)), keypad = true)
+    )
 
     @Test
     fun equalSplit() = capture("equal", state(equal))
@@ -71,6 +74,22 @@ class ExpenseEditorScreenshotTest {
         state(
             equal.copy(splitType = SplitType.EXACT, values = mapOf("ana" to 2_000L, "luis" to 1_540L, "marta" to 0L)),
             texts = mapOf("ana" to "20", "luis" to "15,4", "marta" to "0"),
+        ),
+    )
+
+    @Test
+    fun foreignCurrencyAndSeveralPayers() = capture(
+        "foreign_payers",
+        state(
+            equal.copy(
+                currency = "USD",
+                fxRateScaled = 923_450_000,
+                multiplePayers = true,
+                payers = mapOf("ana" to 3_000L, "luis" to 1_860L),
+            ),
+        ).copy(
+            rate = RateState(text = "0,92345", day = "2026-10-07"),
+            payerTexts = mapOf("ana" to "30", "luis" to "18,6"),
         ),
     )
 }
