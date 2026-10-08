@@ -17,6 +17,7 @@
     <string name="deleted">%1$s deleted %2$s</string>
     <string name="restored">%1$s restored %2$s</string>
     <string name="joined">%1$s joined the group</string>
+    <string name="left">%1$s left the group</string>
     <!-- I did it -->
     <string name="created_me">You added %1$s</string>
     <string name="created_group_me">You created the group</string>
@@ -26,6 +27,7 @@
     <string name="deleted_me">You deleted %1$s</string>
     <string name="restored_me">You restored %1$s</string>
     <string name="joined_me">You joined the group</string>
+    <string name="left_me">You left the group</string>
     <string name="conflict">Conflict on %1$s: someone else’s version was kept</string>
     <!-- Changes -->
     <string name="change">%1$s %2$s → %3$s</string>

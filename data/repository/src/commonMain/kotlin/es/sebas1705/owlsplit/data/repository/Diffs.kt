@@ -44,5 +44,10 @@ internal object Diffs {
         field("name", old?.name, new.name)
         field("defaultWeight", old?.defaultWeight, new.defaultWeight)
         field("active", old?.active, new.active)
+        // Who the member is (the uid already in every entry's author): lets the history name the
+        // author of old entries after they leave, and tell "left the group" from an edit.
+        field(USER_UID, old?.userUid, new.userUid)
     }
+
+    const val USER_UID = "userUid"
 }

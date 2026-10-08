@@ -39,7 +39,8 @@ class HistoryViewModelTest {
     private val ledger = InMemoryLedger()
     private val conflicts = FakeConflicts()
     private val accounts = FakeAccounts()
-    private val describer = HistoryDescriber(ledger.groups, ledger.members, ledger.expenses, ledger.transfers)
+    private val describer =
+        HistoryDescriber(ledger.groups, ledger.members, ledger.expenses, ledger.transfers, ledger.changeLog)
 
     private fun viewModel(groupId: String?) = HistoryViewModel(
         groupId,
