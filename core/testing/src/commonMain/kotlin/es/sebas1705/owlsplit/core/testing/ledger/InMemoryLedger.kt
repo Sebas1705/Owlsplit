@@ -1,6 +1,7 @@
 package es.sebas1705.owlsplit.core.testing.ledger
 
 import es.sebas1705.owlsplit.data.models.ChangeLogEntry
+import es.sebas1705.owlsplit.data.models.Conflict
 import es.sebas1705.owlsplit.data.models.Expense
 import es.sebas1705.owlsplit.data.models.ExpenseInput
 import es.sebas1705.owlsplit.data.models.Group
@@ -12,6 +13,7 @@ import es.sebas1705.owlsplit.data.models.SyncState
 import es.sebas1705.owlsplit.data.models.Transfer
 import es.sebas1705.owlsplit.data.models.TransferInput
 import es.sebas1705.owlsplit.data.repository.ChangeLogRepository
+import es.sebas1705.owlsplit.data.repository.ConflictRepository
 import es.sebas1705.owlsplit.data.repository.ExpenseRepository
 import es.sebas1705.owlsplit.data.repository.GroupRepository
 import es.sebas1705.owlsplit.data.repository.MemberRepository
@@ -164,4 +166,20 @@ class InMemoryLedger(var uid: String = "uid-ana") {
 
     private fun editTransfer(id: String, change: (Transfer) -> Transfer) =
         transferList.update { list -> list.map { if (it.id == id) change(it) else it } }
+}
+
+/** Conflicts in memory; [reapplied] records what was reapplied. */
+class FakeConflicts : ConflictRepository {
+    val open = MutableStateFlow<List<Conflict>>(emptyList())
+    val reapplied = mutableListOf<Long>()
+
+    override fun observe(): Flow<List<Conflict>> = open
+
+    override suspend fun reapply(conflictId: Long): Boolean {
+        reapplied += conflictId
+        dismiss(conflictId)
+        return true
+    }
+
+    override suspend fun dismiss(conflictId: Long) = open.update { list -> list.filter { it.id != conflictId } }
 }
