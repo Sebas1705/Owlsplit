@@ -2,9 +2,9 @@
 
 | Módulo | Contenido | Plan que lo amplía |
 |---|---|---|
-| `composeApp` | Entrada Android/iOS, DI raíz, `AppConfig` por entorno, navegación (onboarding → pestañas Inicio · Actividad · Perfil), `SyncStarter`, Google con Credential Manager, `TextSharer` (hoja de compartir) | P9 |
+| `composeApp` | Entrada Android/iOS, DI raíz, `AppConfig` por entorno, navegación (onboarding → pestañas Inicio · Actividad · Perfil), `SyncStarter`, Google con Credential Manager, `TextSharer` (hoja de compartir), `AndroidQrScanner`, App Links (`IncomingInvites`) | P9 |
 | `core:common` | MVI base, `AppResult`, utilidades | — |
-| `core:ui` | `OwlsplitTheme` (tokens, Inter, formas), `MoneyFormat`, componentes y `DesignCatalog`; capturas Roborazzi | P9 |
+| `core:ui` | `OwlsplitTheme` (tokens, Inter, formas), `MoneyFormat`, componentes (incluido `QrCode`) y `DesignCatalog`; capturas Roborazzi | P9 |
 | `core:security` | `SecureStorage` | — |
 | `core:network` | Cliente Ktor por plataforma | P9 (tipos de cambio) |
 | `core:datastore` | Preferencias (`AppPreferences`: tema, perfil local, aviso para vincular; `ThemeSettings`) | P11 (idioma) |
@@ -23,6 +23,6 @@
 | `feature:groups` | Pantalla de grupo (Gastos · Saldos · Saldar), editor de grupo y miembros | P9b, P10 |
 | `feature:history` | Historial de un grupo y pestaña Actividad: cambios legibles, restaurar borrados, reaplicar o descartar conflictos | P11 |
 | `feature:expense` | Editor de gasto: teclado propio, categoría, pagador y los cuatro tipos de reparto con validación en vivo | P9b (divisas, varios pagadores, fecha) |
-| `feature:invite` | Invitar (código, enlace, compartir, regenerar) y Unirse (código o enlace → vista previa → unirse → reclamar miembro o añadirme) | P10b (QR, enlaces) |
+| `feature:invite` | Invitar (QR, código, enlace, compartir, regenerar) y Unirse (escanear, código o enlace → vista previa → unirse → reclamar miembro o añadirme) | P11 (escáner y compartir en iOS) |
 
 Nombres: (`feature:groups`, no `feature:group`: Gradle reserva `group` en los accesores tipados). Las features solo ven `domain`, `data:models` y `core` (ARCHITECTURE.md). El motor de sincronización vive en `data:repository` (paquete `sync`), no en un módulo `data:sync`.

@@ -107,7 +107,25 @@ cd firebase && npx firebase-tools emulators:exec --only firestore --project demo
 
 - `FirestoreInviteService`: al abrir Invitar se vacía el outbox y se escribe `invites/{code}`; al regenerar se borra el anterior. Unirse escribe en `groups/{id}` solo `memberUids` (`arrayUnion`), `lastJoinCode`, `version` (`increment`), `updatedAt` y `updatedBy`, que la regla `join()` comprueba contra el código vigente.
 - Probado contra `owlsplit-dev` (2026-10-08): invitar, borrar los datos de la app (usuario anónimo nuevo), unirse con el código y reclamar un miembro sin cuenta.
-- Los enlaces `https://owlsplit-dev.web.app/j/<código>` aún no abren la app ni tienen página: llegan con P10b (Hosting, App Links / Universal Links). Mientras tanto, pegar el enlace en Unirse funciona.
+
+### Hosting y App Links (P10b)
+
+- `firebase/hosting` se sirve en `https://owlsplit-dev.web.app`: `/j/<código>` → `join.html` (código, abrir la app, pasos si no está instalada), `/` página de inicio y `/.well-known/assetlinks.json`. `firebase.json` define su propio `ignore` porque el de por defecto excluye los ficheros que empiezan por punto (`.well-known`).
+- Desplegar (sesión del usuario en firebase-tools):
+
+  ```sh
+  cd firebase && npx firebase-tools deploy --only hosting --project dev
+  ```
+
+- `assetlinks.json` declara `es.sebas1705.owlsplit.dev` con la huella SHA‑256 de la clave de depuración (`B3:DD:…:CE:F5`). Si cambia la clave (otro PC, firma de App Distribution), añadir su huella y volver a desplegar. Comprobar en el dispositivo:
+
+  ```sh
+  adb shell pm verify-app-links --re-verify es.sebas1705.owlsplit.dev
+  adb shell pm get-app-links es.sebas1705.owlsplit.dev
+  ```
+
+- Verificado el 2026-10-08: dominio `verified`, el enlace abre Unirse con el código con la app cerrada y abierta.
+- Pendiente (P11): sitio de producción `owlsplit.web.app` con la huella de la clave de publicación, y `apple-app-site-association` para Universal Links (necesita el Team ID de Apple).
 
 ## Borrado de cuenta
 
