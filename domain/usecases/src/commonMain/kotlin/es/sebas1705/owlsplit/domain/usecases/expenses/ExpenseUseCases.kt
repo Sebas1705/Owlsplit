@@ -17,7 +17,10 @@ import es.sebas1705.owlsplit.domain.usecases.groups.Today
 import kotlinx.datetime.LocalDate
 import es.sebas1705.owlsplit.domain.ledger.SplitType as LedgerSplitType
 
-/** An expense being edited. [values] mean what [splitType] says (see `SplitSpec`). */
+/**
+ * An expense being edited. [values] mean what [splitType] says (see `SplitSpec`); a member takes
+ * part when it has an entry, even at 0 while amounts are being typed (0 is left out when saving).
+ */
 data class ExpenseDraft(
     val amountMinor: Long = 0,
     val title: String = "",
@@ -70,13 +73,13 @@ object ExpenseDrafts {
 
     /** Switching type keeps who takes part and fills sensible values for the new type. */
     fun withType(draft: ExpenseDraft, type: SplitType, members: List<Member>): ExpenseDraft {
-        val included = members.filter { (draft.values[it.id] ?: 0) > 0 }.ifEmpty { members.filter { it.active } }
+        val included = members.filter { it.id in draft.values }.ifEmpty { members.filter { it.active } }
         return draft.copy(splitType = type, values = defaults(type, included, draft.amountMinor))
     }
 
     /** Includes or excludes a member, recomputing the defaults of the current type. */
     fun toggle(draft: ExpenseDraft, member: Member, members: List<Member>): ExpenseDraft {
-        val included = members.filter { (draft.values[it.id] ?: 0) > 0 }.map { it.id }.toMutableSet()
+        val included = members.filter { it.id in draft.values }.map { it.id }.toMutableSet()
         if (!included.add(member.id)) included.remove(member.id)
         return draft.copy(values = defaults(draft.splitType, members.filter { it.id in included }, draft.amountMinor))
     }
