@@ -8,15 +8,15 @@ Decisión en [ADR 0002](adr/0002-firebase-gitlive.md). SDK KMP: `dev.gitlive:fir
 |---|---|---|---|
 | development | `owlsplit-dev` | `owlsplit/dev` | Desarrollo local y emuladores |
 | staging | `owlsplit-stg` | `owlsplit/stg` | Pruebas internas (App Distribution) |
-| production | `owlsplit-prd` | `owlsplit/prd` | Tiendas |
+| production | `owlsplit` | `owlsplit/prd` | Tiendas |
 
-Los ids definitivos se fijan al crearlos (si los nombres están cogidos, se añade sufijo) y se anotan aquí. Una app Android y una iOS por proyecto.
+Una app Android y una iOS por proyecto. Producción se llama `owlsplit` (sin sufijo) para que su sitio de Hosting sea `owlsplit.web.app`.
 
 | Proyecto | Estado | Firestore | App Android | App iOS |
 |---|---|---|---|---|
 | `owlsplit-dev` | Creado 2026-10-07 (P2); Auth anónimo activo | `(default)`, `eur3` | `1:217818479934:android:046eb4b90d7880ae2f406f` (`es.sebas1705.owlsplit.dev`) | `1:217818479934:ios:7d3e0b78a8f438342f406f` (`es.sebas1705.owlsplit.dev`) |
-| `owlsplit-stg` | Pendiente (P11) | — | — | — |
-| `owlsplit-prd` | Pendiente (P11) | — | — | — |
+| `owlsplit-stg` | Creado 2026-10-08 (P11b); **Auth pendiente de activar en consola** | `(default)`, `eur3` | `1:438831852571:android:4f65db079a0f2546dd1cbe` (`es.sebas1705.owlsplit.stg`) | `1:438831852571:ios:3e80230c81d80be5dd1cbe` (`es.sebas1705.owlsplit.stg`) |
+| `owlsplit` | Creado 2026-10-08 (P11b); **Auth pendiente de activar en consola** | `(default)`, `eur3` | `1:596963610720:android:44ad7ca230b5953346f305` (`es.sebas1705.owlsplit`) | `1:596963610720:ios:c3a61a92a48f3cd446f305` (`es.sebas1705.owlsplit`) |
 
 Notas de creación: un proyecto nuevo trae desactivada la API de Firestore (se activa antes de crear la base de datos), y Authentication solo se inicializa desde la consola (*Comenzar*); por API exige Identity Platform con facturación. Plan **Spark** (gratuito) durante el MVP: no se usan Cloud Functions ni Storage (Storage exige Blaze para buckets nuevos; llegará con el escaneo de tickets).
 
@@ -139,5 +139,17 @@ Los nombres que el usuario escribió en gastos de grupos ajenos se quedan (son d
 
 ## Secretos y configuración
 
-- `google-services.json` y `GoogleService-Info.plist` en Doppler por perfil; un script los sincroniza en local (como en YouKnow).
-- Cuenta de servicio de CI para App Distribution con permisos mínimos; otra para desplegar reglas.
+Doppler `owlsplit` tiene un config por perfil (`dev`, `stg`, `prd`) con los mismos nombres: `GOOGLE_SERVICES_JSON`, `GOOGLE_SERVICE_INFO_PLIST`, `FIREBASE_PROJECT_ID`, `FIREBASE_ANDROID_APP_ID`, `FIREBASE_IOS_APP_ID`, `FIREBASE_API_KEY`. `prd` además guarda la firma (`SIGNING_*`) y la cuenta de servicio de CI (`FIREBASE_SERVICE_ACCOUNT_JSON`).
+
+- `scripts/doppler-sync-local.sh [dev|stg|prd]`: escribe los ficheros de configuración de un perfil en `composeApp/` e `iosApp/` (git-ignored).
+- `scripts/setup-firebase-env.sh stg|prd`: descarga la configuración de las apps de ese proyecto y la guarda en Doppler. Volver a ejecutarlo tras activar Google o registrar huellas: cambia `google-services.json`.
+- `scripts/setup-release-keystore.sh`: crea la clave de publicación (una sola vez), la guarda en Doppler `prd` y registra sus huellas en la app Android de producción. La copia del `.jks` queda en `Documents\owlsplit-release.jks`.
+- `node scripts/setup-ci-access.mjs [correos de testers]`: cuenta de servicio `owlsplit-ci@owlsplit` con permisos mínimos (App Distribution, reglas, Hosting, índices), su clave en Doppler `prd`, el token de solo lectura de Doppler en el secreto `DOPPLER_TOKEN` de GitHub y el grupo `testers` de App Distribution.
+
+Las escrituras en Doppler y en los secretos de GitHub las hace el propietario con estos scripts.
+
+## Despliegues
+
+- **Producción**: cada push a `main` que toque `firebase/` despliega reglas, índices y Hosting a `owlsplit` (`.github/workflows/deploy-firebase.yml`, cuenta `owlsplit-ci`). Las reglas ya pasaron sus tests en el PR.
+- **Staging y dev**, a mano: `cd firebase && npx firebase-tools deploy --only firestore,hosting --project stg` (o `dev`). Los tres sitios sirven el mismo `assetlinks.json`, con los tres paquetes.
+- **Crashlytics**: activo en staging y producción (manifiesto, `firebase_crashlytics_collection_enabled`), apagado en desarrollo. Los errores inesperados de las pantallas se registran como no fatales y la app muestra un mensaje genérico.

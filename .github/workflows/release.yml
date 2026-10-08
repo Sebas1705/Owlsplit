@@ -1,0 +1,110 @@
+name: Release
+
+# The only distribution path: pushing a `vX.Y.Z` tag (or running this workflow by hand with a
+# version) builds the signed production APK and AAB, creates a GitHub Release with both, their
+# SHA-256 and notes generated from the PRs since the previous tag, and uploads the APK to Firebase
+# App Distribution (group `testers`). Every secret comes from Doppler: GitHub only holds
+# DOPPLER_TOKEN, a read-only service token of owlsplit/prd (scripts/setup-ci-access.mjs).
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version without prefix, e.g. 1.0.0 (or 1.0.0-beta.1 for a pre-release)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+# Never cancel a release halfway: two tags in a row queue up.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version and tag
+        id: ver
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then RAW="$INPUT_VERSION"; else RAW="$GITHUB_REF_NAME"; fi
+          VERSION="${RAW#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::Invalid version '$RAW'. Expected X.Y.Z or X.Y.Z-suffix (e.g. 1.0.0, 1.0.0-beta.1)"
+            exit 1
+          fi
+          TAG="v$VERSION"
+          if [ "$EVENT" = "workflow_dispatch" ] && gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::Release $TAG already exists. Pick another version."
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          case "$VERSION" in *-*) echo "prerelease=--prerelease" >> "$GITHUB_OUTPUT" ;; *) echo "prerelease=" >> "$GITHUB_OUTPUT" ;; esac
+
+      - uses: ./.github/actions/build-release
+        with:
+          version-name: ${{ steps.ver.outputs.version }}
+          extra-secrets: FIREBASE_SERVICE_ACCOUNT_JSON
+
+      - name: Prepare release assets
+        id: assets
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: |
+          APK="Owlsplit-$TAG.apk"
+          AAB="Owlsplit-$TAG.aab"
+          cp composeApp/build/outputs/apk/release/composeApp-release.apk "$RUNNER_TEMP/$APK"
+          cp composeApp/build/outputs/bundle/release/composeApp-release.aab "$RUNNER_TEMP/$AAB"
+          (cd "$RUNNER_TEMP" && sha256sum "$APK" "$AAB" > "Owlsplit-$TAG.sha256")
+          echo "apk=$RUNNER_TEMP/$APK" >> "$GITHUB_OUTPUT"
+          echo "aab=$RUNNER_TEMP/$AAB" >> "$GITHUB_OUTPUT"
+          echo "sha=$RUNNER_TEMP/Owlsplit-$TAG.sha256" >> "$GITHUB_OUTPUT"
+
+      # A pushed tag gets the release attached to it (--verify-tag); a manual run lets `gh` create
+      # the tag on the run's commit (--target).
+      - name: Create the GitHub Release
+        env:
+          EVENT: ${{ github.event_name }}
+          TAG: ${{ steps.ver.outputs.tag }}
+          PRERELEASE: ${{ steps.ver.outputs.prerelease }}
+          APK: ${{ steps.assets.outputs.apk }}
+          AAB: ${{ steps.assets.outputs.aab }}
+          SHA: ${{ steps.assets.outputs.sha }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then REF_FLAG="--target $GITHUB_SHA"; else REF_FLAG="--verify-tag"; fi
+          # shellcheck disable=SC2086
+          gh release create "$TAG" "$APK" "$AAB" "$SHA" --title "$TAG" --generate-notes $PRERELEASE $REF_FLAG
+
+      - name: Upload to Firebase App Distribution
+        env:
+          TESTER_GROUP: ${{ vars.FIREBASE_TESTER_GROUP || 'testers' }}
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: |
+          export NOTES="$TAG: $(git log -1 --pretty='%s (%h)')"
+          doppler run -- bash -c '
+            umask 077
+            printf "%s" "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-sa.json"
+            export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json"
+            npx --yes firebase-tools@15.32.1 appdistribution:distribute composeApp/build/outputs/apk/release/composeApp-release.apk \
+              --app "$FIREBASE_ANDROID_APP_ID" \
+              --groups "$TESTER_GROUP" \
+              --release-notes "$NOTES"'
+
+      - name: Remove credentials from the runner
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks" "$RUNNER_TEMP/firebase-sa.json" composeApp/google-services.json
