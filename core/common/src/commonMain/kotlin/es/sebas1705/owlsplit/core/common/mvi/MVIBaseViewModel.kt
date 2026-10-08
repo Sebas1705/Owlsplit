@@ -2,6 +2,8 @@ package es.sebas1705.owlsplit.core.common.mvi
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import es.sebas1705.owlsplit.core.common.UnexpectedErrors
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +28,9 @@ abstract class MVIBaseViewModel<S : MVIBaseState, I : MVIBaseIntent> : ViewModel
         _uiState.value = reducer(_uiState.value)
     }
 
+    /** Work of the screen: an error that escapes it is reported instead of crashing the app. */
     protected fun execute(block: suspend () -> Unit): Job =
-        viewModelScope.launch { block() }
+        viewModelScope.launch(errorHandler) { block() }
+
+    private val errorHandler = CoroutineExceptionHandler { _, error -> UnexpectedErrors.report(error) }
 }
