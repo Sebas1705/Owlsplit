@@ -28,8 +28,10 @@ esac
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-npx --yes firebase-tools apps:sdkconfig android "$ANDROID_APP" --project "$PROJECT" --out "$TMP/google-services.json" >/dev/null
-npx --yes firebase-tools apps:sdkconfig ios "$IOS_APP" --project "$PROJECT" --out "$TMP/GoogleService-Info.plist" >/dev/null
+# On Windows Node can abort while exiting after writing the file: check the files, not the exit code.
+npx --yes firebase-tools apps:sdkconfig android "$ANDROID_APP" --project "$PROJECT" --out "$TMP/google-services.json" >/dev/null 2>&1 || true
+npx --yes firebase-tools apps:sdkconfig ios "$IOS_APP" --project "$PROJECT" --out "$TMP/GoogleService-Info.plist" >/dev/null 2>&1 || true
+[ -s "$TMP/google-services.json" ] && [ -s "$TMP/GoogleService-Info.plist" ] || { echo "Could not download the app configs of $PROJECT" >&2; exit 1; }
 
 API_KEY="$(node -e 'const j=require(process.argv[1]); process.stdout.write(j.client[0].api_key[0].current_key)' "$TMP/google-services.json")"
 

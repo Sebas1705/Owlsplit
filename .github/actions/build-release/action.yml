@@ -1,11 +1,16 @@
-name: Build signed production release
+name: Build signed release
 description: >
-  Builds the production APK and AAB of composeApp signed with the release keystore. Every secret
-  comes from Doppler owlsplit/prd (the job exports DOPPLER_TOKEN and checks out the repo first).
+  Builds the release APK and AAB of composeApp for one environment, signed with the release
+  keystore. Every secret comes from the Doppler config of that environment (the job exports its
+  DOPPLER_TOKEN and checks out the repo first).
   Writes composeApp/google-services.json so the Crashlytics plugin injects its build id and
   uploads the R8 mapping. Outputs land in composeApp/build/outputs/{apk,bundle}/release/.
 
 inputs:
+  environment:
+    description: production or staging (APP_ENV; picks the Firebase project and applicationId).
+    required: false
+    default: production
   version-name:
     description: versionName (e.g. 1.0.0).
     required: true
@@ -30,7 +35,7 @@ runs:
           for name in GOOGLE_SERVICES_JSON FIREBASE_ANDROID_APP_ID \
                       SIGNING_KEYSTORE_BASE64 SIGNING_STORE_PASSWORD SIGNING_KEY_ALIAS SIGNING_KEY_PASSWORD \
                       $EXTRA_SECRETS; do
-            if [ -z "${!name:-}" ]; then echo "::error::Missing secret $name in Doppler owlsplit/prd"; missing=1; fi
+            if [ -z "${!name:-}" ]; then echo "::error::Missing secret $name in Doppler"; missing=1; fi
           done
           exit $missing'
 
@@ -50,7 +55,7 @@ runs:
     - name: Build APK and AAB
       shell: bash
       env:
-        APP_ENV: production
+        APP_ENV: ${{ inputs.environment }}
         VERSION_CODE: ${{ github.run_number }}
         VERSION_NAME: ${{ inputs.version-name }}
       run: |

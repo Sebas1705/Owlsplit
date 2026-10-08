@@ -139,14 +139,14 @@ Los nombres que el usuario escribió en gastos de grupos ajenos se quedan (son d
 
 ## Secretos y configuración
 
-Doppler `owlsplit` tiene un config por perfil (`dev`, `stg`, `prd`) con los mismos nombres: `GOOGLE_SERVICES_JSON`, `GOOGLE_SERVICE_INFO_PLIST`, `FIREBASE_PROJECT_ID`, `FIREBASE_ANDROID_APP_ID`, `FIREBASE_IOS_APP_ID`, `FIREBASE_API_KEY`. `prd` además guarda la firma (`SIGNING_*`) y la cuenta de servicio de CI (`FIREBASE_SERVICE_ACCOUNT_JSON`).
+Doppler `owlsplit` tiene un config por perfil (`dev`, `stg`, `prd`) con los mismos nombres: `GOOGLE_SERVICES_JSON`, `GOOGLE_SERVICE_INFO_PLIST`, `FIREBASE_PROJECT_ID`, `FIREBASE_ANDROID_APP_ID`, `FIREBASE_IOS_APP_ID`, `FIREBASE_API_KEY`. `prd` y `stg` además guardan la firma (`SIGNING_*`, la misma clave) y la cuenta de servicio de CI (`FIREBASE_SERVICE_ACCOUNT_JSON`); GitHub solo tiene `DOPPLER_TOKEN` (prd) y `DOPPLER_TOKEN_STG` (stg), de solo lectura.
 
 - `scripts/doppler-sync-local.sh [dev|stg|prd]`: escribe los ficheros de configuración de un perfil en `composeApp/` e `iosApp/` (git-ignored).
 - `scripts/setup-firebase-env.sh stg|prd`: descarga la configuración de las apps de ese proyecto y la guarda en Doppler. Volver a ejecutarlo tras activar Google o registrar huellas: cambia `google-services.json`.
 - `scripts/setup-release-keystore.sh`: crea la clave de publicación (una sola vez), la guarda en Doppler `prd` y registra sus huellas en la app Android de producción. La copia del `.jks` queda en `Documents\owlsplit-release.jks`.
 - `node scripts/setup-ci-access.mjs [correos de testers]`: cuenta de servicio `owlsplit-ci@owlsplit` con permisos mínimos (App Distribution, reglas, Hosting, índices), su clave en Doppler `prd`, el token de solo lectura de Doppler en el secreto `DOPPLER_TOKEN` de GitHub y el grupo `testers` de App Distribution.
 
-Las escrituras en Doppler y en los secretos de GitHub las hace el propietario con estos scripts.
+Distribución a testers: docs/RELEASE.md.
 
 ## Despliegues
 

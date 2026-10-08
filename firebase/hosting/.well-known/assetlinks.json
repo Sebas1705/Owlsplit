@@ -1,6 +1,8 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "es.sebas1705.owlsplit.dev",
@@ -10,22 +12,28 @@
     }
   },
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "es.sebas1705.owlsplit.stg",
       "sha256_cert_fingerprints": [
-        "B3:DD:4C:8E:6C:84:BA:53:47:64:83:C7:2C:EA:8D:03:50:ED:B9:11:51:1E:13:08:9A:CF:D7:EF:F6:12:CE:F5"
+        "B3:DD:4C:8E:6C:84:BA:53:47:64:83:C7:2C:EA:8D:03:50:ED:B9:11:51:1E:13:08:9A:CF:D7:EF:F6:12:CE:F5",
+        "99:0B:AD:25:1C:E0:37:EE:8A:CB:2D:70:57:07:E5:F4:96:83:8E:5C:25:A4:0A:67:DD:FE:27:21:FC:3A:18:C3"
       ]
     }
   },
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "es.sebas1705.owlsplit",
       "sha256_cert_fingerprints": [
-        "B3:DD:4C:8E:6C:84:BA:53:47:64:83:C7:2C:EA:8D:03:50:ED:B9:11:51:1E:13:08:9A:CF:D7:EF:F6:12:CE:F5"
+        "B3:DD:4C:8E:6C:84:BA:53:47:64:83:C7:2C:EA:8D:03:50:ED:B9:11:51:1E:13:08:9A:CF:D7:EF:F6:12:CE:F5",
+        "99:0B:AD:25:1C:E0:37:EE:8A:CB:2D:70:57:07:E5:F4:96:83:8E:5C:25:A4:0A:67:DD:FE:27:21:FC:3A:18:C3"
       ]
     }
   }

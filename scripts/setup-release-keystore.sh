@@ -41,7 +41,8 @@ SHA1="$(echo "$FINGERPRINTS" | awk '/SHA1:/ {print $2}')"
 SHA256="$(echo "$FINGERPRINTS" | awk '/SHA256:/ {print $2}')"
 
 for sha in "$SHA1" "$SHA256"; do
-  npx --yes firebase-tools apps:android:sha:create "$PROD_ANDROID_APP" "$sha" --project owlsplit >/dev/null
+  # On Windows Node can abort while exiting after it succeeded: check the list instead of the exit code.
+  npx --yes firebase-tools apps:android:sha:create "$PROD_ANDROID_APP" "$sha" --project owlsplit >/dev/null 2>&1 || true
 done
 
 echo "Release keystore: $KEYSTORE (keep a copy outside this PC)"
