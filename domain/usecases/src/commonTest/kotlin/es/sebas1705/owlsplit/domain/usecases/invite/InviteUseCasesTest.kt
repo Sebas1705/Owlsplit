@@ -3,17 +3,15 @@ package es.sebas1705.owlsplit.domain.usecases.invite
 import es.sebas1705.owlsplit.core.testing.account.FakeAccounts
 import es.sebas1705.owlsplit.core.testing.account.FakeProfiles
 import es.sebas1705.owlsplit.core.testing.account.FakeSync
+import es.sebas1705.owlsplit.core.testing.ledger.FakeInvites
 import es.sebas1705.owlsplit.core.testing.ledger.InMemoryLedger
 import es.sebas1705.owlsplit.data.models.AccountResult
-import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.data.models.GroupInput
 import es.sebas1705.owlsplit.data.models.InvitePreview
 import es.sebas1705.owlsplit.data.models.MemberInput
 import es.sebas1705.owlsplit.data.models.PreviewResult
 import es.sebas1705.owlsplit.data.models.UserProfile
-import es.sebas1705.owlsplit.data.repository.invite.InviteService
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,36 +24,7 @@ class InviteUseCasesTest {
     private val sync = FakeSync()
     private val accounts = FakeAccounts()
 
-    /** The server side: published invites, and a join that adds the uid to the group. */
-    private inner class Server : InviteService {
-        val published = mutableMapOf<String, String>()
-        var joinResult: AccountResult = AccountResult.Done
-
-        override suspend fun publish(group: Group, memberCount: Int): AccountResult {
-            published[group.inviteCode] = group.id
-            return AccountResult.Done
-        }
-
-        override suspend fun withdraw(code: String): AccountResult {
-            published -= code
-            return AccountResult.Done
-        }
-
-        override suspend fun preview(code: String): PreviewResult =
-            published[code]?.let { PreviewResult.Found(InvitePreview(code, it, "Ibiza", "plane", 2)) }
-                ?: PreviewResult.NotFound
-
-        override suspend fun join(preview: InvitePreview): AccountResult {
-            if (joinResult == AccountResult.Done) {
-                ledger.groupList.update { list ->
-                    list.map { if (it.id == preview.groupId) it.copy(memberUids = it.memberUids + ledger.uid) else it }
-                }
-            }
-            return joinResult
-        }
-    }
-
-    private val server = Server()
+    private val server = FakeInvites(ledger)
     private val share = ShareInvite(ledger.groups, ledger.members, server, sync, "https://owlsplit-dev.web.app")
 
     @Test
