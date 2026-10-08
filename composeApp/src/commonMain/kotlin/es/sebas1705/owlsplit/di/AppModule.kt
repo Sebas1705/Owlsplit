@@ -1,6 +1,7 @@
 package es.sebas1705.owlsplit.di
 
 import es.sebas1705.owlsplit.core.datastore.AppPreferences
+import es.sebas1705.owlsplit.core.datastore.LinkNudgeSettings
 import es.sebas1705.owlsplit.core.datastore.ThemeSettings
 import es.sebas1705.owlsplit.core.datastore.createDataStore
 import es.sebas1705.owlsplit.core.security.SecureStorage
@@ -39,12 +40,12 @@ import es.sebas1705.owlsplit.feature.profile.ProfileViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import org.koin.core.module.dsl.viewModel
-import org.koin.dsl.bind
+import org.koin.dsl.binds
 import org.koin.dsl.module
 
 val appModule = module {
     single { SecureStorage() }
-    single { AppPreferences(createDataStore()) } bind ThemeSettings::class
+    single { AppPreferences(createDataStore()) } binds arrayOf(ThemeSettings::class, LinkNudgeSettings::class)
     single { createDatabase(get<DatabaseDriverFactory>()) }
 }
 

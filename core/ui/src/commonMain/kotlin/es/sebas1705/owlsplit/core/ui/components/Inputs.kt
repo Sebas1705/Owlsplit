@@ -84,7 +84,7 @@ fun TextActionButton(
     color: Color = Owlsplit.colors.accentText,
 ) {
     TextButton(onClick = onClick, enabled = enabled, modifier = modifier.heightIn(min = Sizes.touchTarget)) {
-        Text(text, style = Owlsplit.type.bodyStrong, color = color)
+        Text(text, style = Owlsplit.type.bodyStrong, color = if (enabled) color else Owlsplit.colors.textMuted)
     }
 }
 
