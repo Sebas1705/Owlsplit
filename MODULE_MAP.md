@@ -2,7 +2,7 @@
 
 | Módulo | Contenido | Plan que lo amplía |
 |---|---|---|
-| `composeApp` | Entrada Android/iOS, DI raíz, `AppConfig` e `isDebugBuild`, Crashlytics (`CrashReporting`), idioma de la app (`LocalAppLocale`), navegación (onboarding → pestañas Inicio · Actividad · Perfil), `SyncStarter`, Google con Credential Manager, `TextSharer` (hoja de compartir), `AndroidQrScanner`, App Links (`IncomingInvites`) | P9 |
+| `composeApp` | Entrada Android/iOS (iOS: `iosApp/project.yml` con XcodeGen; compartir, escáner, Google por `GoogleSignInBridge`), DI raíz, `AppConfig` e `isDebugBuild`, Crashlytics (`CrashReporting`), idioma de la app (`LocalAppLocale`), navegación (onboarding → pestañas Inicio · Actividad · Perfil), `SyncStarter`, Google con Credential Manager, `TextSharer` (hoja de compartir), `AndroidQrScanner`, App Links (`IncomingInvites`) | P9 |
 | `core:common` | MVI base (los errores de `execute` van a `UnexpectedErrors`), `AppResult`, utilidades | — |
 | `core:ui` | `OwlsplitTheme` (tokens, Inter, formas), `MoneyFormat` y `LocalMoneyFormat`, componentes (incluidos `QrCode` y `SwitchRow`) y `DesignCatalog`; capturas Roborazzi | P9 |
 | `core:security` | `SecureStorage` | — |
@@ -23,7 +23,7 @@
 | `feature:groups` | Pantalla de grupo (Gastos · Saldos · Saldar), editor de grupo y miembros | P9b, P10 |
 | `feature:history` | Historial de un grupo y pestaña Actividad: cambios legibles, restaurar borrados, reaplicar o descartar conflictos | P11 |
 | `feature:expense` | Editor de gasto: teclado propio, categoría, pagador y los cuatro tipos de reparto con validación en vivo | P9b (divisas, varios pagadores, fecha) |
-| `feature:invite` | Invitar (QR, código, enlace, compartir, regenerar) y Unirse (escanear, código o enlace → vista previa → unirse → reclamar miembro o añadirme) | P11 (escáner y compartir en iOS) |
+| `feature:invite` | Invitar (QR, código, enlace, compartir, regenerar) y Unirse (escanear, código o enlace → vista previa → unirse → reclamar miembro o añadirme) | — |
 
 Nombres: (`feature:groups`, no `feature:group`: Gradle reserva `group` en los accesores tipados). Las features solo ven `domain`, `data:models` y `core` (ARCHITECTURE.md). El motor de sincronización vive en `data:repository` (paquete `sync`), no en un módulo `data:sync`.
 
