@@ -103,6 +103,12 @@ cd firebase && npx firebase-tools emulators:exec --only firestore --project demo
 - **La credencial ya pertenece a otra cuenta**: por ahora se informa y no se cambia nada; el traspaso de grupos descrito arriba necesita unirse por código (P10).
 - **Apple e iOS**: aplazados a P11 (falta el proyecto Xcode); obligatorio para publicar en App Store si se ofrece Google.
 
+### Estado (P10a)
+
+- `FirestoreInviteService`: al abrir Invitar se vacía el outbox y se escribe `invites/{code}`; al regenerar se borra el anterior. Unirse escribe en `groups/{id}` solo `memberUids` (`arrayUnion`), `lastJoinCode`, `version` (`increment`), `updatedAt` y `updatedBy`, que la regla `join()` comprueba contra el código vigente.
+- Probado contra `owlsplit-dev` (2026-10-08): invitar, borrar los datos de la app (usuario anónimo nuevo), unirse con el código y reclamar un miembro sin cuenta.
+- Los enlaces `https://owlsplit-dev.web.app/j/<código>` aún no abren la app ni tienen página: llegan con P10b (Hosting, App Links / Universal Links). Mientras tanto, pegar el enlace en Unirse funciona.
+
 ## Borrado de cuenta
 
 Sin Cloud Functions, lo hace el cliente en este orden (reintentable):
