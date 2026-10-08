@@ -10,5 +10,6 @@ class GroupNavigation(
     val openExpense: (String) -> Unit,
     val recordPayment: () -> Unit,
     val history: () -> Unit,
+    val stats: () -> Unit,
     val invite: () -> Unit,
 )
