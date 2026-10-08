@@ -3,7 +3,6 @@ package es.sebas1705.owlsplit.config
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -30,9 +29,9 @@ fun EnvironmentBadge(
         if (AppConfig.ENVIRONMENT != "production") {
             Surface(
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .safeDrawingPadding()
-                    .padding(8.dp),
+                    // In the status bar strip: over the content it would cover real controls.
+                    .align(Alignment.TopCenter)
+                    .padding(top = 4.dp),
                 color = MaterialTheme.colorScheme.secondaryContainer,
             ) {
                 Text(

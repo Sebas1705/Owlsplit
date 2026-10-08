@@ -8,24 +8,60 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-class AppPreferences(private val dataStore: DataStore<Preferences>) {
+enum class ThemeMode { SYSTEM, LIGHT, DARK }
+
+/** The user's profile as stored on this device. */
+data class StoredProfile(val name: String, val avatar: String, val currency: String)
+
+/** Light/dark preference, separate so screens can be tested without a DataStore. */
+interface ThemeSettings {
+    val themeMode: Flow<ThemeMode>
+    suspend fun setThemeMode(mode: ThemeMode)
+}
+
+class AppPreferences(private val dataStore: DataStore<Preferences>) : ThemeSettings {
 
     // ── Theme ─────────────────────────────────────────────────────────────────
-    val isDarkMode: Flow<Boolean> = dataStore.data.map { it[Keys.DARK_MODE] ?: false }
-    suspend fun setDarkMode(value: Boolean) { dataStore.edit { it[Keys.DARK_MODE] = value } }
+    override val themeMode: Flow<ThemeMode> = dataStore.data.map { prefs ->
+        prefs[Keys.THEME]?.let { name -> ThemeMode.entries.firstOrNull { it.name == name } } ?: ThemeMode.SYSTEM
+    }
+    override suspend fun setThemeMode(mode: ThemeMode) { dataStore.edit { it[Keys.THEME] = mode.name } }
 
-    // ── Locale ────────────────────────────────────────────────────────────────
-    val language: Flow<String> = dataStore.data.map { it[Keys.LANGUAGE] ?: "en" }
+    // ── Locale (P11) ──────────────────────────────────────────────────────────
+    val language: Flow<String?> = dataStore.data.map { it[Keys.LANGUAGE] }
     suspend fun setLanguage(code: String) { dataStore.edit { it[Keys.LANGUAGE] = code } }
 
-    // ── Onboarding ────────────────────────────────────────────────────────────
-    val onboardingDone: Flow<Boolean> = dataStore.data.map { it[Keys.ONBOARDING_DONE] ?: false }
-    suspend fun setOnboardingDone() { dataStore.edit { it[Keys.ONBOARDING_DONE] = true } }
+    // ── Profile: null until onboarding is finished ────────────────────────────
+    val profile: Flow<StoredProfile?> = dataStore.data.map { prefs ->
+        val name = prefs[Keys.NAME] ?: return@map null
+        StoredProfile(name, prefs[Keys.AVATAR].orEmpty(), prefs[Keys.CURRENCY] ?: DEFAULT_CURRENCY)
+    }
+    suspend fun setProfile(profile: StoredProfile) {
+        dataStore.edit {
+            it[Keys.NAME] = profile.name
+            it[Keys.AVATAR] = profile.avatar
+            it[Keys.CURRENCY] = profile.currency
+        }
+    }
+
+    // ── Link nudge ────────────────────────────────────────────────────────────
+    val linkNudgeDismissed: Flow<Boolean> = dataStore.data.map { it[Keys.LINK_NUDGE_DISMISSED] ?: false }
+    suspend fun dismissLinkNudge() { dataStore.edit { it[Keys.LINK_NUDGE_DISMISSED] = true } }
+
+    /** Back to a fresh install (sign out, account deletion). */
+    suspend fun clear() { dataStore.edit { it.clear() } }
 
     private object Keys {
-        val DARK_MODE = booleanPreferencesKey("dark_mode")
+        val THEME = stringPreferencesKey("theme_mode")
         val LANGUAGE = stringPreferencesKey("language")
-        val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
+        val NAME = stringPreferencesKey("profile_name")
+        val AVATAR = stringPreferencesKey("profile_avatar")
+        val CURRENCY = stringPreferencesKey("profile_currency")
+        val LINK_NUDGE_DISMISSED = booleanPreferencesKey("link_nudge_dismissed")
+    }
+
+    companion object {
+        const val DEFAULT_CURRENCY = "EUR"
     }
 }
 

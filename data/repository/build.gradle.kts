@@ -7,6 +7,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":data:models"))
+            api(project(":core:datastore"))
             implementation(project(":data:local"))
             implementation(libs.sqldelight.coroutines)
             implementation(libs.kotlinx.coroutines.core)

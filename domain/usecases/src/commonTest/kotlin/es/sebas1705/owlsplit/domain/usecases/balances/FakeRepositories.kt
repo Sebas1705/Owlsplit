@@ -23,6 +23,7 @@ class FakeGroups(val group: MutableStateFlow<Group?>) : GroupRepository {
     override suspend fun create(input: GroupInput, creatorName: String): String = error("unused")
     override suspend fun update(id: String, input: GroupInput) = error("unused")
     override suspend fun setArchived(id: String, archived: Boolean) = error("unused")
+    override suspend fun leave(id: String) = error("unused")
 }
 
 class FakeMembers(val members: MutableStateFlow<List<Member>>) : MemberRepository {

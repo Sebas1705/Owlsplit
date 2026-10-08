@@ -130,6 +130,22 @@ class SyncEngineTest {
     }
 
     @Test
+    fun `flush uploads everything now and reports what could not be uploaded`() = runTest {
+        val h = Harness(this)
+        val g = h.env.groups.create(trip, "Ana")
+        h.remote.scripted += PushResult.Transient
+        h.engine.pushNow() // the group now waits for its backoff
+        assertTrue(h.env.outbox().isNotEmpty())
+
+        assertTrue(h.engine.flush()) // ignores the backoff
+        assertTrue(h.env.outbox().isEmpty())
+
+        h.env.groups.update(g, trip.copy(name = "Offline"))
+        repeat(5) { h.remote.scripted += PushResult.Transient }
+        assertEquals(false, h.engine.flush())
+    }
+
+    @Test
     fun `a group that disappears from my groups is marked as lost`() = runTest {
         val h = Harness(this)
         val g = h.env.groups.create(trip, "Ana")

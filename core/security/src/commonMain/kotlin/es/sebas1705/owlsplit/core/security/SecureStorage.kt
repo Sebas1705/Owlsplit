@@ -1,6 +1,6 @@
 package es.sebas1705.owlsplit.core.security
 
-expect class SecureStorage {
+expect class SecureStorage() {
     fun getString(key: String, defaultValue: String = ""): String
     fun putString(key: String, value: String)
     fun remove(key: String)

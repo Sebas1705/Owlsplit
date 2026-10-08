@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 
 class NetCalculatorTest {
     @Test
-    fun `one payer, equal split, base currency`() {
+    fun `one payer with an equal split in the base currency`() {
         val e = expense(4_860, payers = mapOf("ana" to 4_860L), split = equalAmong(ana, sebas, marta, luis))
         assertEquals(
             mapOf("ana" to 3_645L, "sebas" to -1_215L, "marta" to -1_215L, "luis" to -1_215L),

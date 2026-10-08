@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tab_home">Inicio</string>
+    <string name="tab_activity">Actividad</string>
+    <string name="tab_profile">Perfil</string>
+    <string name="home_empty_title">Aún no tienes grupos</string>
+    <string name="home_empty_body">Pronto podrás crear grupos y unirte a los de tus amigos desde aquí.</string>
+    <string name="activity_empty_title">Sin actividad todavía</string>
+    <string name="activity_empty_body">Aquí verás los gastos y cambios de todos tus grupos.</string>
+    <string name="link_nudge_title">Protege tus grupos</string>
+    <string name="link_nudge_body">Vincula tu cuenta con Google para no perderlos si cambias de móvil.</string>
+    <string name="link_nudge_action">Vincular</string>
+    <string name="link_nudge_dismiss">Ahora no</string>
+    <string name="firebase_missing">Falta la configuración de Firebase de este entorno (google-services.json).</string>
+    <string name="back">Atrás</string>
+</resources>

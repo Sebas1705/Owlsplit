@@ -71,4 +71,39 @@ class GroupRepositoryTest {
             assertTrue(awaitItem().single().archivedBy.isEmpty())
         }
     }
+
+    @Test
+    fun `leaving leaves my member as a ghost and removes me from the group`() = runTest {
+        val env = TestEnv(this)
+        val groupId = env.groups.create(input, creatorName = "Ana")
+
+        env.groups.leave(groupId)
+
+        val member = env.members.observeMembers(groupId).first().single()
+        assertEquals(null, member.userUid)
+        assertEquals(emptyList(), env.groups.observeGroup(groupId).first()!!.memberUids)
+    }
+
+    @Test
+    fun `leaving a synced group queues the member release before the group`() = runTest {
+        val env = TestEnv(this)
+        val groupId = env.groups.create(input, creatorName = "Ana")
+        env.db.outboxQueries.selectAll().executeAsList().forEach { env.db.outboxQueries.deleteById(it.id) }
+
+        env.groups.leave(groupId)
+
+        val types = env.outbox().map { OutboxType.valueOf(it.entity_type) }
+        assertEquals(listOf(OutboxType.MEMBER, OutboxType.CHANGE_LOG, OutboxType.GROUP), types)
+        assertTrue(env.outbox().first().payload.contains("\"userUid\":null"))
+    }
+
+    @Test
+    fun `wiping removes every local row`() = runTest {
+        val env = TestEnv(this)
+        env.groups.create(input, creatorName = "Ana")
+        LocalData(env.db, env.dispatcher).wipe()
+        assertTrue(env.groups.observeGroups().first().isEmpty())
+        assertTrue(env.outbox().isEmpty())
+        assertTrue(env.changeLog.observe("any").first().isEmpty())
+    }
 }

@@ -1,0 +1,14 @@
+-- Removes every local row (sign out, account deletion). The schema stays.
+wipe {
+  DELETE FROM expense_payer;
+  DELETE FROM expense_split;
+  DELETE FROM expense_entity;
+  DELETE FROM transfer_entity;
+  DELETE FROM member_entity;
+  DELETE FROM group_entity;
+  DELETE FROM change_log;
+  DELETE FROM conflict;
+  DELETE FROM outbox;
+  DELETE FROM sync_cursor;
+  DELETE FROM meta;
+}

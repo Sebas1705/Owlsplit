@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="accent_blue">Azul</string>
+    <string name="accent_orange">Naranja</string>
+    <string name="accent_violet">Violeta</string>
+    <string name="accent_green">Verde</string>
+    <string name="accent_pink">Rosa</string>
+    <string name="accent_amber">Ámbar</string>
+    <string name="accent_cyan">Cian</string>
+    <string name="accent_graphite">Grafito</string>
+</resources>

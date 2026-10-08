@@ -8,7 +8,7 @@ class ShareCalculatorTest {
     private fun issue(result: SplitResult) = (result as SplitResult.Invalid).issue
 
     @Test
-    fun `equal split follows member order, not map order`() {
+    fun `equal split follows member order and not map order`() {
         val split = SplitSpec(SplitType.EQUAL, mapOf("marta" to 1L, "ana" to 1L, "sebas" to 1L))
         val shares = ok(ShareCalculator.shares(1000, split, listOf(marta, sebas, ana)))
         assertEquals(mapOf("ana" to 334L, "sebas" to 333L, "marta" to 333L), shares)
