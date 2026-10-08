@@ -47,7 +47,8 @@ Entrada: `amountMinor` del gasto, lista de beneficiarios ordenada por `sortKey` 
 
 - Cada gasto y transferencia guarda `fxRateToBase`: cuántas unidades de la divisa base vale **una unidad mayor** de la divisa del gasto, como decimal escalado `Long` con **escala 10⁹** (p. ej. 1 USD = 0,923456789 EUR → `923456789`).
 - Si la divisa del gasto es la base, `fxRateToBase = 10⁹`.
-- El tipo se **congela** al crear el gasto (fuente: Frankfurter, tipos del BCE, caché de 12 h). El usuario puede editarlo. Si no hay tipo disponible (sin red o divisa no cubierta por el BCE), el usuario debe introducirlo; nunca se usa un tipo inventado.
+- El tipo se **congela** al elegir la divisa del gasto (fuente: Frankfurter, tipos del BCE). El usuario puede editarlo. Si no hay tipo disponible (sin red y sin caché, o divisa no cubierta por el BCE), el usuario debe introducirlo; nunca se usa un tipo inventado.
+- Implementación (`data:fx`, P9b): el tipo se lee como texto y se convierte a punto fijo (nunca pasa por `Double`); caché por par en DataStore durante `FX_CACHE_SECONDS` del perfil (0 en desarrollo, 12 h en staging y producción). Si la red falla se usa el último tipo guardado aunque haya caducado, indicando su fecha.
 - **Conversión de un gasto a la base, sin romper la suma cero**:
   1. Se calcula el **neto por miembro en la divisa del gasto**: `pagado_i − parte_i` (enteros; suman 0).
   2. Cada neto se convierte: `neto_i × rate × 10^(dec_base − dec_gasto) / 10⁹`, redondeado hacia cero.

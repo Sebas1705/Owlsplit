@@ -48,6 +48,7 @@ import es.sebas1705.owlsplit.feature.groups.detail.GroupRoute
 import es.sebas1705.owlsplit.feature.groups.detail.GroupTab
 import es.sebas1705.owlsplit.feature.groups.editor.GroupEditorRoute
 import es.sebas1705.owlsplit.feature.groups.members.MembersRoute
+import es.sebas1705.owlsplit.feature.groups.transfer.TransferRoute
 import es.sebas1705.owlsplit.feature.home.HomeNavigation
 import es.sebas1705.owlsplit.feature.home.HomeRoute
 import es.sebas1705.owlsplit.feature.onboarding.OnboardingRoute
@@ -87,6 +88,9 @@ private data class GroupEditorDest(val id: String? = null)
 
 @Serializable
 private data class MembersDest(val groupId: String)
+
+@Serializable
+private data class TransferDest(val groupId: String)
 
 /** [expenseId] null creates an expense. */
 @Serializable
@@ -197,6 +201,9 @@ private fun NavGraphBuilder.groupScreens(nav: NavController) {
         val route = backStack.toRoute<ExpenseDest>()
         ExpenseEditorRoute(route.groupId, route.expenseId, onClose = { nav.popBackStack() })
     }
+    composable<TransferDest> { backStack ->
+        TransferRoute(backStack.toRoute<TransferDest>().groupId, onClose = { nav.popBackStack() })
+    }
 }
 
 private fun homeNavigation(nav: NavController) = HomeNavigation(
@@ -213,6 +220,7 @@ private fun groupNavigation(nav: NavController, groupId: String) = GroupNavigati
     edit = { nav.navigate(GroupEditorDest(groupId)) },
     addExpense = { nav.navigate(ExpenseDest(groupId)) },
     openExpense = { nav.navigate(ExpenseDest(groupId, it)) },
+    recordPayment = { nav.navigate(TransferDest(groupId)) },
 )
 
 private fun NavController.navigateToTab(route: Any) = navigate(route) {

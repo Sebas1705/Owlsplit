@@ -1,6 +1,7 @@
 package es.sebas1705.owlsplit.di
 
 import es.sebas1705.owlsplit.core.datastore.AppPreferences
+import es.sebas1705.owlsplit.core.datastore.KeyValueCache
 import es.sebas1705.owlsplit.core.datastore.LinkNudgeSettings
 import es.sebas1705.owlsplit.core.datastore.ThemeSettings
 import es.sebas1705.owlsplit.core.datastore.createDataStore
@@ -45,7 +46,9 @@ import org.koin.dsl.module
 
 val appModule = module {
     single { SecureStorage() }
-    single { AppPreferences(createDataStore()) } binds arrayOf(ThemeSettings::class, LinkNudgeSettings::class)
+    single {
+        AppPreferences(createDataStore())
+    } binds arrayOf(ThemeSettings::class, LinkNudgeSettings::class, KeyValueCache::class)
     single { createDatabase(get<DatabaseDriverFactory>()) }
 }
 

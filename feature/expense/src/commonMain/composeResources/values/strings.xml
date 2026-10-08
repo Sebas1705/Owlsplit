@@ -37,8 +37,8 @@
     <string name="in_group_currency">≈ %1$s en la divisa del grupo</string>
     <string name="rate_label">Tipo de cambio</string>
     <string name="rate_row">1 %1$s =</string>
-    <string name="rate_ecb">Tipo del BCE del %1$s. Puedes cambiarlo.</string>
-    <string name="rate_stale">Sin conexión: tipo guardado del %1$s.</string>
+    <string name="rate_ecb">Tipo del BCE · %1$s. Puedes cambiarlo.</string>
+    <string name="rate_stale">Sin conexión: tipo guardado · %1$s.</string>
     <string name="rate_manual">Tipo escrito a mano.</string>
     <string name="rate_loading">Buscando el tipo de cambio…</string>
     <string name="rate_missing_hint">No hay tipo disponible para esta divisa: escríbelo.</string>

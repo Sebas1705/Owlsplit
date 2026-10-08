@@ -93,6 +93,7 @@ kotlin {
             implementation(project(":data:remote"))
             implementation(project(":domain:usecases"))
             implementation(project(":data:repository"))
+            implementation(project(":data:fx"))
             implementation(project(":feature:onboarding"))
             implementation(project(":feature:profile"))
             implementation(project(":feature:home"))
