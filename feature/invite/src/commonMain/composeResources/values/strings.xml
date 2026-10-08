@@ -3,7 +3,8 @@
     <string name="back">Atrás</string>
     <!-- Invite -->
     <string name="invite_title">Invitar al grupo</string>
-    <string name="invite_body">Comparte el enlace o di el código: quien lo abra podrá unirse y elegir quién es en el grupo.</string>
+    <string name="invite_body">Que escaneen el QR, comparte el enlace o di el código: quien entre podrá unirse y elegir quién es en el grupo.</string>
+    <string name="qr_description">Código QR para unirse a «%1$s»</string>
     <string name="code_label">Código</string>
     <string name="share_link">Compartir enlace</string>
     <string name="copy_code">Copiar código</string>
@@ -20,7 +21,8 @@
     <string name="failed">No se pudo preparar la invitación.</string>
     <!-- Join -->
     <string name="join_title">Unirse a un grupo</string>
-    <string name="join_body">Escribe el código de 8 letras o pega el enlace que te han pasado.</string>
+    <string name="join_body">Escanea el QR, escribe el código de 8 letras o pega el enlace que te han pasado.</string>
+    <string name="scan_qr">Escanear QR</string>
     <string name="code_placeholder">ABCD EFGH</string>
     <string name="search">Buscar grupo</string>
     <string name="searching">Buscando…</string>

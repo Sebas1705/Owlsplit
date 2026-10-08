@@ -38,6 +38,9 @@ data class JoinState(
 sealed interface JoinIntent : MVIBaseIntent {
     data class CodeChanged(val text: String) : JoinIntent
     data object Search : JoinIntent
+
+    /** What the camera read: a link or a code. */
+    data class Scanned(val text: String) : JoinIntent
     data object Join : JoinIntent
     data object Back : JoinIntent
 
@@ -76,10 +79,17 @@ class JoinViewModel(
                 if (it.step == JoinStep.ENTER) it.copy(code = intent.text, error = null) else it
             }
             JoinIntent.Search -> if (uiState.value.canSearch) search()
+            is JoinIntent.Scanned -> scanned(intent.text)
             JoinIntent.Back -> updateState { it.copy(step = JoinStep.ENTER, preview = null, error = null) }
             JoinIntent.Join -> join()
             is JoinIntent.Pick -> pick(intent.memberId)
         }
+    }
+
+    private suspend fun scanned(text: String) {
+        if (uiState.value.step != JoinStep.ENTER) return
+        updateState { it.copy(code = InviteCodes.display(InviteCodes.normalize(text)), error = null) }
+        if (uiState.value.canSearch) search() else updateState { it.copy(error = JoinError.NOT_FOUND) }
     }
 
     private suspend fun search() {

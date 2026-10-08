@@ -12,6 +12,7 @@ kotlin {
             implementation(libs.compose.icons.tabler)
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
+            implementation(libs.qrose)
             api(project(":core:money"))
             api(libs.kotlinx.datetime)
         }

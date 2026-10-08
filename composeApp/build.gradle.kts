@@ -35,6 +35,8 @@ val inviteBaseUrlByEnv = mapOf(
 android {
     defaultConfig {
         applicationIdSuffix = applicationIdSuffixByEnv.getValue(appEnvironment).ifEmpty { null }
+        // App Links: the invite host of this environment opens `/j/<code>` in the app.
+        manifestPlaceholders["inviteHost"] = inviteBaseUrlByEnv.getValue(appEnvironment).substringAfter("://")
     }
 }
 
@@ -120,6 +122,7 @@ kotlin {
             implementation(libs.androidx.credentials)
             implementation(libs.androidx.credentials.play)
             implementation(libs.google.identity.googleid)
+            implementation(libs.play.services.code.scanner)
         }
     }
 }

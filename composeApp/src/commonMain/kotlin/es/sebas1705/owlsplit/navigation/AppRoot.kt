@@ -148,13 +148,21 @@ private fun Tabs(modifier: Modifier, startChoice: StartChoice?, onStartHandled: 
     val nav = rememberNavController()
     val entry by nav.currentBackStackEntryAsState()
     val current = Tab.entries.firstOrNull { tab -> entry?.destination?.hasRoute(tab.route::class) == true }
+    val inviteLink by IncomingInvites.link.collectAsState()
     LaunchedEffect(startChoice) {
         when (startChoice) {
             StartChoice.CREATE_GROUP -> nav.navigate(GroupEditorDest())
-            StartChoice.JOIN_GROUP -> nav.navigate(JoinDest())
+            // An invite link that brought the user here opens Join by itself (below).
+            StartChoice.JOIN_GROUP -> if (inviteLink == null) nav.navigate(JoinDest())
             else -> Unit
         }
         if (startChoice != null) onStartHandled()
+    }
+    LaunchedEffect(inviteLink) {
+        inviteLink?.let {
+            nav.navigate(JoinDest(it)) { launchSingleTop = true }
+            IncomingInvites.consume()
+        }
     }
     Scaffold(
         modifier = modifier,

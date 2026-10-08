@@ -22,6 +22,8 @@ updates:
         versions: [">= 2.11.0"]
       - dependency-name: "io.coil-kt.coil3*"
         versions: [">= 3.6.0"]
+      - dependency-name: "io.github.alexzhirkevich:qrose*"
+        versions: [">= 1.2.0"]
       - dependency-name: "io.ktor*"
         versions: [">= 3.6.0"]
       # AGP 8.x uses a Gradle internal API removed in Gradle 9.6.

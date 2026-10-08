@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Únete en Owlsplit</title>
+  <meta name="description" content="Te han invitado a un grupo de gastos compartidos.">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main>
+  <div class="brand">owlsplit</div>
+  <h1 id="title">Te han invitado a un grupo</h1>
+  <p id="lead">Ábrelo en la app para ver el grupo y unirte.</p>
+  <div class="card" id="card">
+    <div class="label">Código</div>
+    <div class="code" id="code"></div>
+  </div>
+  <a class="button" id="open" href="#">Abrir en Owlsplit</a>
+  <button class="button link-button" id="copy" type="button">Copiar código</button>
+  <div>
+    <p><strong>¿No tienes la app?</strong></p>
+    <ol>
+      <li>Instala Owlsplit en tu móvil.</li>
+      <li>En Inicio pulsa <strong>Unirme</strong> y escribe el código.</li>
+    </ol>
+  </div>
+</main>
+<script>
+  // The app lives at /j/<code>: links open it directly once App Links are verified.
+  // This page is the fallback (app not installed, or a browser that does not hand links over).
+  (function () {
+    var ALPHABET = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}$/;
+    var raw = decodeURIComponent(location.pathname.split('/j/')[1] || '');
+    var code = raw.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+    var valid = ALPHABET.test(code);
+    var shown = code.slice(0, 4) + ' ' + code.slice(4);
+
+    if (!valid) {
+      document.getElementById('title').textContent = 'Este enlace no es válido';
+      document.getElementById('lead').textContent = 'Pide a quien te invitó un enlace nuevo.';
+      ['card', 'open', 'copy'].forEach(function (id) { document.getElementById(id).classList.add('hidden'); });
+      return;
+    }
+    document.getElementById('code').textContent = shown;
+    document.title = 'Únete con el código ' + shown + ' · Owlsplit';
+
+    // Each Hosting site belongs to one environment; its app has its own package.
+    var packages = { 'owlsplit-dev.web.app': 'es.sebas1705.owlsplit.dev', 'owlsplit.web.app': 'es.sebas1705.owlsplit' };
+    var pkg = packages[location.hostname];
+    var open = document.getElementById('open');
+    if (/Android/i.test(navigator.userAgent) && pkg) {
+      // Opens the app even when the link was not handed over; the browser stays here if it is missing.
+      open.href = 'intent://' + location.host + '/j/' + code + '#Intent;scheme=https;package=' + pkg + ';end';
+    } else {
+      open.classList.add('hidden');
+    }
+
+    var copy = document.getElementById('copy');
+    copy.addEventListener('click', function () {
+      if (!navigator.clipboard) return;
+      navigator.clipboard.writeText(code).then(function () {
+        copy.textContent = 'Copiado';
+        setTimeout(function () { copy.textContent = 'Copiar código'; }, 2000);
+      });
+    });
+  })();
+</script>
+</body>
+</html>
