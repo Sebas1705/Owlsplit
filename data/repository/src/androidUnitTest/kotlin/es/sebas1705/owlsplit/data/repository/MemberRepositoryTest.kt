@@ -5,6 +5,8 @@ import es.sebas1705.owlsplit.data.models.MemberInput
 import es.sebas1705.owlsplit.data.models.GroupInput
 import es.sebas1705.owlsplit.data.models.ExpenseCategory
 import es.sebas1705.owlsplit.data.models.SplitType
+import es.sebas1705.owlsplit.data.models.ChangeAction
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
@@ -47,5 +49,32 @@ class MemberRepositoryTest {
         val members = env.members.observeMembersOnce(g)
         assertEquals(listOf("Ana", "Luis"), members.map { it.name })
         assertFalse(members.first { it.id == luis }.active)
+    }
+
+    @Test
+    fun `joining someone claims a ghost or adds a new member, both logged as joined`() = runTest {
+        val env = TestEnv(this)
+        val g = env.groups.create(GroupInput("Ibiza", "plane", "BLUE", "EUR"), "Ana")
+        val ghost = env.members.add(g, MemberInput("Luis"))
+        env.uid = "uid-luis"
+        env.members.claim(ghost)
+        val luis = env.members.observeMembersOnce(g).first { it.id == ghost }
+        assertEquals("uid-luis", luis.userUid)
+
+        env.uid = "uid-marta"
+        val marta = env.members.addMe(g, "Marta", null)
+        assertEquals("uid-marta", env.members.observeMembersOnce(g).first { it.id == marta }.userUid)
+        val joined = env.changeLog.observe(g).first().filter { it.action == ChangeAction.JOINED }
+        assertEquals(setOf("uid-marta", "uid-luis"), joined.map { it.authorUid }.toSet())
+    }
+
+    @Test
+    fun `regenerating the invite code queues the group without history`() = runTest {
+        val env = TestEnv(this)
+        val g = env.groups.create(GroupInput("Ibiza", "plane", "BLUE", "EUR"), "Ana")
+        val before = env.changeLog.observe(g).first().size
+        env.groups.regenerateInviteCode(g)
+        assertEquals("CODE1", env.groups.observeGroup(g).first()!!.inviteCode)
+        assertEquals(before, env.changeLog.observe(g).first().size)
     }
 }

@@ -71,6 +71,8 @@ class InMemoryLedger(var uid: String = "uid-ana") {
             it.copy(archivedBy = if (archived) it.archivedBy + uid else it.archivedBy - uid)
         }
 
+        override suspend fun regenerateInviteCode(id: String) = editGroup(id) { it.copy(inviteCode = "CODE${++next}") }
+
         override suspend fun leave(id: String) {
             val mine = { m: Member -> m.groupId == id && m.userUid == uid }
             memberList.update { list -> list.map { if (mine(it)) it.copy(userUid = null) else it } }
@@ -94,6 +96,15 @@ class InMemoryLedger(var uid: String = "uid-ana") {
             editMember(id) { it.copy(name = input.name, avatar = input.avatar, defaultWeight = input.defaultWeight) }
 
         override suspend fun setActive(id: String, active: Boolean) = editMember(id) { it.copy(active = active) }
+
+        override suspend fun claim(id: String) = editMember(id) { it.copy(userUid = uid, active = true) }
+
+        override suspend fun addMe(groupId: String, name: String, avatar: String?): String {
+            val sortKey = memberList.value.count { it.groupId == groupId }.toLong()
+            val member = Member(id("m"), groupId, name, avatar, 1, uid, true, sortKey, meta())
+            memberList.update { it + member }
+            return member.id
+        }
 
         override suspend fun deleteIfUnused(id: String): Boolean {
             val used = expenseList.value.any { id in it.payers || id in it.splitValues } ||

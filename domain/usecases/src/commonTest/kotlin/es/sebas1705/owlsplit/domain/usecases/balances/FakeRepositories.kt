@@ -24,6 +24,7 @@ class FakeGroups(val group: MutableStateFlow<Group?>) : GroupRepository {
     override suspend fun update(id: String, input: GroupInput) = error("unused")
     override suspend fun setArchived(id: String, archived: Boolean) = error("unused")
     override suspend fun leave(id: String) = error("unused")
+    override suspend fun regenerateInviteCode(id: String) = error("unused")
 }
 
 class FakeMembers(val members: MutableStateFlow<List<Member>>) : MemberRepository {
@@ -32,6 +33,8 @@ class FakeMembers(val members: MutableStateFlow<List<Member>>) : MemberRepositor
     override suspend fun update(id: String, input: MemberInput) = error("unused")
     override suspend fun setActive(id: String, active: Boolean) = error("unused")
     override suspend fun deleteIfUnused(id: String): Boolean = error("unused")
+    override suspend fun claim(id: String) = error("unused")
+    override suspend fun addMe(groupId: String, name: String, avatar: String?): String = error("unused")
 }
 
 class FakeExpenses(val expenses: MutableStateFlow<List<Expense>>) : ExpenseRepository {
