@@ -51,7 +51,7 @@ private fun String.folded(): String = lowercase().map { ACCENTS[it] ?: it }.join
 data class HistoryItem(
     val entry: ChangeLogEntry,
     val groupName: String,
-    /** Name of the member who did it; null when they are no longer in the group. */
+    /** Name of the member who did it, also after they left; null only when nothing says who. */
     val author: String?,
     val byMe: Boolean,
     /** What it was about: expense title, member or group name, "Ana → Luis" for payments. */
@@ -61,6 +61,8 @@ data class HistoryItem(
     val canRestore: Boolean,
     /** Set on a conflict entry while that conflict is unresolved. */
     val conflictId: Long?,
+    /** A member that stopped being someone's account: they left the group or deleted it. */
+    val leftGroup: Boolean = false,
 )
 
 /** A group's documents, including deleted expenses, to describe its history. */
@@ -69,17 +71,38 @@ internal data class GroupIndex(
     val members: List<Member>,
     val expenses: List<Expense>,
     val transfers: List<Transfer>,
-)
+    /** Every account that was a member of the group, uid → member id, from its history. */
+    val accounts: Map<String, String> = emptyMap(),
+) {
+    /** The member [uid] is or was. */
+    fun memberOf(uid: String): Member? =
+        members.firstOrNull { it.userUid == uid } ?: accounts[uid]?.let { id -> members.firstOrNull { it.id == id } }
+}
+
+private const val USER_UID = "userUid"
+
+/** uid → member id: joins, and the account links recorded in member changes. */
+private fun accountsOf(entries: List<ChangeLogEntry>): Map<String, String> = buildMap {
+    entries.filter { it.entityType == EntityType.MEMBER }.sortedBy { it.createdAt }.forEach { entry ->
+        if (entry.action == ChangeAction.JOINED) put(entry.authorUid, entry.entityId)
+        entry.diff.firstOrNull { it.field == USER_UID }?.let { change ->
+            change.before?.let { put(it, entry.entityId) }
+            change.after?.let { put(it, entry.entityId) }
+        }
+    }
+}
 
 private const val RESTORE_DAYS = 30L
 private const val DAY_MILLIS = 24 * 60 * 60 * 1_000L
 
 /** Turns history entries into [HistoryItem]s; shared by a group's history and Actividad. */
+@Suppress("LongParameterList") // The group's five sources, one per document type.
 class HistoryDescriber(
     private val groups: GroupRepository,
     private val members: MemberRepository,
     private val expenses: ExpenseRepository,
     private val transfers: TransferRepository,
+    private val changeLog: ChangeLogRepository,
     private val clock: Clock = Clock.System,
 ) {
     internal fun index(groupId: String): Flow<GroupIndex> = combine(
@@ -87,8 +110,10 @@ class HistoryDescriber(
         members.observeMembers(groupId),
         expenses.observeExpenses(groupId, includeDeleted = true),
         transfers.observeTransfers(groupId),
-        ::GroupIndex,
-    )
+        changeLog.observe(groupId),
+    ) { group, memberList, expenseList, transferList, entries ->
+        GroupIndex(group, memberList, expenseList, transferList, accountsOf(entries))
+    }
 
     internal fun describe(entry: ChangeLogEntry, index: GroupIndex, uid: String?, conflicts: List<Conflict>): HistoryItem {
         val name = { id: String -> index.members.firstOrNull { it.id == id }?.name }
@@ -104,7 +129,7 @@ class HistoryDescriber(
         return HistoryItem(
             entry = entry,
             groupName = index.group?.name.orEmpty(),
-            author = index.members.firstOrNull { it.userUid == entry.authorUid }?.name,
+            author = index.memberOf(entry.authorUid)?.name,
             byMe = entry.authorUid == uid,
             subject = subject,
             currency = expense?.currency ?: index.group?.baseCurrency ?: "EUR",
@@ -114,7 +139,22 @@ class HistoryDescriber(
             } else {
                 null
             },
+            leftGroup = leftGroup(entry, index),
         )
+    }
+
+    /**
+     * A member edit that released the account. Entries written before the link was recorded
+     * show it as an edit with no changes that a member made to themselves.
+     */
+    private fun leftGroup(entry: ChangeLogEntry, index: GroupIndex): Boolean {
+        if (entry.entityType != EntityType.MEMBER || entry.action != ChangeAction.UPDATED) return false
+        val link = entry.diff.firstOrNull { it.field == USER_UID }
+        return if (link != null) {
+            link.before != null && link.after == null
+        } else {
+            entry.diff.isEmpty() && index.memberOf(entry.authorUid)?.id == entry.entityId
+        }
     }
 }
 

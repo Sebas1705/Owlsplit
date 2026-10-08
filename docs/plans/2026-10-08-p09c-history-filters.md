@@ -19,7 +19,7 @@
 
 1. **Filtros**: búsqueda por concepto (sin distinguir mayúsculas ni tildes), persona (pagó o participa) y categoría; se combinan. Viven en el ViewModel del grupo (no se guardan).
 2. **Texto de cada entrada**: "Ana añadió «Cena» · 60,00 €", "Luis cambió «Cena»: importe 12,40 € → 14,40 €; concepto «Cena» → «Cena larga»", "Ana borró «Taxi»", "Marta se unió", "Conflicto en «Cena»". Los campos que no se resumen bien (pagadores, reparto, icono, color) aparecen solo por su nombre ("reparto cambiado").
-3. **Autor**: el miembro del grupo con ese `userUid`; si ya no está, "Alguien". Mis entradas dicen "Tú".
+3. **Autor**: el miembro del grupo con ese `userUid`; si ya no está, "Alguien". Mis entradas dicen "Tú". *Actualizado el 2026-10-09:* el historial recuerda qué miembro fue cada cuenta (las entradas de unirse y el vínculo `userUid` que ahora guardan los cambios de miembros), así que quien salió del grupo o borró su cuenta conserva su nombre, y su salida se lee "Luis salió del grupo". "Alguien" queda solo si nada indica quién fue.
 4. **Restaurar**: en entradas de borrado de gastos, si el gasto sigue borrado y el borrado tiene menos de 30 días.
 5. **Conflictos**: en la entrada de conflicto, "Reaplicar mi cambio" (vuelve a escribir mi versión encima de la ganadora, con nueva versión) y "Descartar". Mientras haya conflictos sin resolver, Actividad los muestra arriba.
 6. **Actividad**: últimas 200 entradas de todos mis grupos, con el nombre del grupo.

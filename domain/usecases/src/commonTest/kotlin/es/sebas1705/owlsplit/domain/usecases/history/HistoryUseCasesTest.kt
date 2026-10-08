@@ -1,5 +1,6 @@
 package es.sebas1705.owlsplit.domain.usecases.history
 
+import es.sebas1705.owlsplit.data.models.FieldChange
 import es.sebas1705.owlsplit.core.testing.account.FakeAccounts
 import es.sebas1705.owlsplit.core.testing.ledger.FakeConflicts
 import es.sebas1705.owlsplit.core.testing.ledger.InMemoryLedger
@@ -31,7 +32,8 @@ class HistoryUseCasesTest {
     private val clock = object : Clock {
         override fun now() = Instant.fromEpochMilliseconds(now)
     }
-    private val describer = HistoryDescriber(ledger.groups, ledger.members, ledger.expenses, ledger.transfers, clock)
+    private val describer =
+        HistoryDescriber(ledger.groups, ledger.members, ledger.expenses, ledger.transfers, ledger.changeLog, clock)
 
     private fun expense(title: String, category: ExpenseCategory, payer: String, others: List<String>) = ExpenseInput(
         title, category, null, LocalDate(2026, 10, 8), "USD", 1_000, 1_000_000_000, mapOf(payer to 1_000L),
@@ -64,6 +66,41 @@ class HistoryUseCasesTest {
     }
 
     @Test
+    fun peopleWhoLeftKeepTheirNameAndLeavingReadsAsSuch() = runTest {
+        val g = ledger.groups.create(GroupInput("Ibiza", "plane", "BLUE", "EUR"), "Ana")
+        // Both are members without an account now: Luis left, Marta deleted hers.
+        val luis = ledger.members.add(g, MemberInput("Luis"))
+        val marta = ledger.members.add(g, MemberInput("Marta"))
+        val e = ledger.expenses.create(g, expense("Bus", ExpenseCategory.TRANSPORT, luis, emptyList()))
+        val unlink = listOf(FieldChange("userUid", "uid-luis", null))
+        ledger.log.value = listOf(
+            // Written before the account link was recorded: an empty edit of herself.
+            entry("m2", g, EntityType.MEMBER, marta, ChangeAction.UPDATED, 6, "uid-marta"),
+            entry("m1", g, EntityType.MEMBER, marta, ChangeAction.JOINED, 5, "uid-marta"),
+            ChangeLogEntry("l1", g, EntityType.MEMBER, luis, ChangeAction.UPDATED, "uid-luis", unlink, 4),
+            ChangeLogEntry(
+                "r1", g, EntityType.MEMBER, luis, ChangeAction.UPDATED, "uid-ana",
+                listOf(FieldChange("name", "Lu", "Luis")), 3,
+            ),
+            entry("x1", g, EntityType.EXPENSE, e, ChangeAction.CREATED, 2, "uid-luis"),
+            entry("j1", g, EntityType.MEMBER, luis, ChangeAction.JOINED, 1, "uid-luis"),
+        )
+
+        val items = ObserveHistory(
+            describer,
+            ledger.changeLog,
+            conflicts,
+            accounts
+        )(g).first().associateBy { it.entry.id }
+        assertEquals("Luis", items.getValue("x1").author)
+        assertTrue(items.getValue("l1").leftGroup)
+        assertEquals("Luis", items.getValue("l1").author)
+        assertTrue(items.getValue("m2").leftGroup)
+        assertEquals("Marta", items.getValue("m2").author)
+        assertFalse(items.getValue("r1").leftGroup) // a rename is an edit
+    }
+
+    @Test
     fun entriesSayWhoDidWhatAndWhatCanBeUndone() = runTest {
         val g = ledger.groups.create(GroupInput("Ibiza", "plane", "BLUE", "EUR"), "Ana")
         val luis = ledger.members.add(g, MemberInput("Luis"))
@@ -84,7 +121,7 @@ class HistoryUseCasesTest {
         assertEquals("Ana", deleted.author)
         assertEquals("Taxi", created.subject)
         assertEquals("USD", created.currency)
-        assertNull(created.author) // Luis has no account here
+        assertNull(created.author) // Luis never had an account: nothing says who
         assertFalse(created.canRestore)
 
         ResolveConflict(conflicts).reapply(7)

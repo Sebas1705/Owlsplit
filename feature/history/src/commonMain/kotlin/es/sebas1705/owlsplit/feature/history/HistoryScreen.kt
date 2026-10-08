@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import compose.icons.TablerIcons
+import compose.icons.tablericons.UserMinus
 import compose.icons.tablericons.AlertTriangle
 import compose.icons.tablericons.ArrowBackUp
 import compose.icons.tablericons.ArrowLeft
@@ -166,7 +167,7 @@ private fun Entry(
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                iconOf(item.entry.action),
+                if (item.leftGroup) TablerIcons.UserMinus else iconOf(item.entry.action),
                 null,
                 tint = if (conflict) colors.warning else colors.accentText,
                 modifier = Modifier.size(18.dp),

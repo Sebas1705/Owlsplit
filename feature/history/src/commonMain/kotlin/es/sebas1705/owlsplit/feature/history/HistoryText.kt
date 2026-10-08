@@ -42,6 +42,8 @@ import es.sebas1705.owlsplit.feature.history.resources.field_title
 import es.sebas1705.owlsplit.feature.history.resources.field_weight
 import es.sebas1705.owlsplit.feature.history.resources.joined
 import es.sebas1705.owlsplit.feature.history.resources.joined_me
+import es.sebas1705.owlsplit.feature.history.resources.left
+import es.sebas1705.owlsplit.feature.history.resources.left_me
 import es.sebas1705.owlsplit.feature.history.resources.no
 import es.sebas1705.owlsplit.feature.history.resources.none
 import es.sebas1705.owlsplit.feature.history.resources.quoted
@@ -65,6 +67,14 @@ internal fun headline(item: HistoryItem): String {
         if (entry.entityType == EntityType.TRANSFER || entry.entityType == EntityType.MEMBER) it else stringResource(Res.string.quoted, it)
     } ?: stringResource(Res.string.unknown_subject)
     val who = item.author ?: stringResource(Res.string.someone)
+    // Leaving (or deleting the account) is said of the member, not as an edit of them.
+    if (item.leftGroup) {
+        return if (item.byMe) {
+            stringResource(Res.string.left_me)
+        } else {
+            stringResource(Res.string.left, item.subject ?: who)
+        }
+    }
     val (mine, theirs) = when (entry.action) {
         ChangeAction.CREATED -> when (entry.entityType) {
             EntityType.GROUP -> Res.string.created_group_me to Res.string.created_group
@@ -84,8 +94,9 @@ internal fun headline(item: HistoryItem): String {
 /** The fields an edit changed, readable: "importe 12,40 € → 14,40 €; reparto cambiado". */
 @Composable
 internal fun changes(item: HistoryItem, format: MoneyFormat, today: LocalDate): String? {
-    if (item.entry.action != ChangeAction.UPDATED) return null
-    return item.entry.diff.map {
+    if (item.entry.action != ChangeAction.UPDATED || item.leftGroup) return null
+    // The account link is how the history knows who someone was, not something to read.
+    return item.entry.diff.filter { it.field != "userUid" }.map {
         change(
             it,
             item.currency,

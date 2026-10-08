@@ -49,7 +49,7 @@ val groupsModule = module {
     }
     factory { GetFxRate(get()) }
     factory { ConvertTotal(get()) }
-    factory { HistoryDescriber(get(), get(), get(), get()) }
+    factory { HistoryDescriber(get(), get(), get(), get(), get()) }
     factory { ObserveHistory(get(), get(), get(), get()) }
     factory { ObserveActivity(get(), get(), get(), get()) }
     factory { RestoreExpense(get()) }
