@@ -19,7 +19,13 @@ interface ThemeSettings {
     suspend fun setThemeMode(mode: ThemeMode)
 }
 
-class AppPreferences(private val dataStore: DataStore<Preferences>) : ThemeSettings {
+/** Whether the "protect your groups" suggestion was dismissed. */
+interface LinkNudgeSettings {
+    val linkNudgeDismissed: Flow<Boolean>
+    suspend fun dismissLinkNudge()
+}
+
+class AppPreferences(private val dataStore: DataStore<Preferences>) : ThemeSettings, LinkNudgeSettings {
 
     // ── Theme ─────────────────────────────────────────────────────────────────
     override val themeMode: Flow<ThemeMode> = dataStore.data.map { prefs ->
@@ -45,8 +51,8 @@ class AppPreferences(private val dataStore: DataStore<Preferences>) : ThemeSetti
     }
 
     // ── Link nudge ────────────────────────────────────────────────────────────
-    val linkNudgeDismissed: Flow<Boolean> = dataStore.data.map { it[Keys.LINK_NUDGE_DISMISSED] ?: false }
-    suspend fun dismissLinkNudge() { dataStore.edit { it[Keys.LINK_NUDGE_DISMISSED] = true } }
+    override val linkNudgeDismissed: Flow<Boolean> = dataStore.data.map { it[Keys.LINK_NUDGE_DISMISSED] ?: false }
+    override suspend fun dismissLinkNudge() { dataStore.edit { it[Keys.LINK_NUDGE_DISMISSED] = true } }
 
     /** Back to a fresh install (sign out, account deletion). */
     suspend fun clear() { dataStore.edit { it.clear() } }

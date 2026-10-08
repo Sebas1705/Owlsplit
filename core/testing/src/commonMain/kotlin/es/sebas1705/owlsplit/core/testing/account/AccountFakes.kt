@@ -87,6 +87,8 @@ class FakeGoogle(
 }
 
 class FakeSync(var online: Boolean = true) : SyncControl {
+    override val pendingCount = MutableStateFlow(0L)
+
     override suspend fun flush() = online
 
     override fun isAccessLost(groupId: String) = false

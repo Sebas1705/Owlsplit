@@ -40,6 +40,7 @@ class AccountUseCasesTest {
     }
 
     private inner class Sync(var online: Boolean = true, val lost: Set<String> = emptySet()) : SyncControl {
+        override val pendingCount = MutableStateFlow(0L)
         override suspend fun flush(): Boolean = online.also { log += "flush" }
         override fun isAccessLost(groupId: String) = groupId in lost
     }

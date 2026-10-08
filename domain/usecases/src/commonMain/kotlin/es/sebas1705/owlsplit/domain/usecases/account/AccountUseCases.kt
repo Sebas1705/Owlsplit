@@ -6,6 +6,7 @@ import es.sebas1705.owlsplit.data.models.AccountResult
 import es.sebas1705.owlsplit.data.repository.account.AccountService
 import es.sebas1705.owlsplit.data.repository.account.ProfileRemote
 import es.sebas1705.owlsplit.data.repository.sync.SyncControl
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 
 /** Wipes this device back to a fresh install: local database and preferences. */
@@ -65,4 +66,9 @@ class SignOut(
 object ShouldSuggestLinking {
     operator fun invoke(session: Session?, groupCount: Int, dismissed: Boolean): Boolean =
         session != null && session.isAnonymous && !dismissed && groupCount >= 1
+}
+
+/** Writes still waiting to reach the server (the sync chip: "Sincronizado" or "N cambios pendientes"). */
+class ObservePendingChanges(private val sync: SyncControl) {
+    operator fun invoke(): Flow<Long> = sync.pendingCount
 }

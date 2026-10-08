@@ -9,7 +9,7 @@
 **Architecture:**
 - Los tipos de entrada (`GroupInput`, `MemberInput`, `ExpenseInput`, `TransferInput`) pasan a `data:models`: las features no pueden ver `data:repository`.
 - `domain:usecases`: paquete `groups` (`ObserveHome`, `ObserveGroupDetail`, `GroupActions`, `MemberActions`, `SettleUp`) y `expenses` (`ExpenseDraft` con validación en vivo sobre `ShareCalculator`, `SaveExpense`).
-- Tres módulos nuevos: `feature:home` (Inicio), `feature:group` (pantalla de grupo, editor de grupo, miembros) y `feature:expense` (editor de gasto y de reparto). Navegación en `composeApp`.
+- Tres módulos nuevos: `feature:home` (Inicio), `feature:groups` (pantalla de grupo, editor de grupo, miembros) y `feature:expense` (editor de gasto y de reparto). Navegación en `composeApp`.
 - `core:ui`: catálogo de iconos de grupo (`GroupIcons`) y de categorías (`CategoryIcons`), fila de gasto (`ExpenseRow`).
 
 **Tech Stack:** Compose Multiplatform 1.11.1, Navigation Compose 2.9.2 (rutas tipadas), Koin, Roborazzi.
@@ -47,7 +47,7 @@
 - [ ] ViewModel + pantalla + capturas (vacío, con grupos, claro/oscuro). Aviso para vincular (de P8) movido aquí.
 - [ ] Commit.
 
-### Task 4: `feature:group`
+### Task 4: `feature:groups`
 - [ ] Editor de grupo, pantalla de grupo (Gastos · Saldos · Saldar), miembros. ViewModels con tests; capturas.
 - [ ] Commit.
 
