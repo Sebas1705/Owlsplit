@@ -34,7 +34,12 @@ node -e '
   const fs = require("fs");
   const [release, debug, out] = process.argv.slice(1);
   const merged = JSON.parse(fs.readFileSync(release));
-  merged.client.push(...JSON.parse(fs.readFileSync(debug)).client);
+  // Each download may already list every Android app of the project: keep one client per package.
+  const seen = new Set();
+  merged.client = [...merged.client, ...JSON.parse(fs.readFileSync(debug)).client].filter((c) => {
+    const pkg = c.client_info.android_client_info.package_name;
+    return !seen.has(pkg) && seen.add(pkg);
+  });
   fs.writeFileSync(out, JSON.stringify(merged, null, 2) + "\n");
 ' "$TMP/release.json" "$TMP/debug.json" "$TMP/google-services.json"
 

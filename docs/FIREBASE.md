@@ -8,7 +8,7 @@ Un solo proyecto Firebase, **`owlsplit`** (decisión del 2026-10-08: hasta que h
 
 | Proyecto | Estado | Firestore | Apps |
 |---|---|---|---|
-| `owlsplit` | Creado 2026-10-08 (P11b); **Authentication pendiente de activar en consola** | `(default)`, `eur3` | Android `1:596963610720:android:44ad7ca230b5953346f305` (`es.sebas1705.owlsplit`, builds de release: testers y usuarios) · Android `1:596963610720:android:61aa6038a2186e6a46f305` (`es.sebas1705.owlsplit.debug`, builds de depuración en local) · iOS `1:596963610720:ios:c3a61a92a48f3cd446f305` (`es.sebas1705.owlsplit`) |
+| `owlsplit` | Creado 2026-10-08 (P11b); Authentication activo (Anónimo, Google) | `(default)`, `eur3` | Android `1:596963610720:android:44ad7ca230b5953346f305` (`es.sebas1705.owlsplit`, builds de release: testers y usuarios) · Android `1:596963610720:android:61aa6038a2186e6a46f305` (`es.sebas1705.owlsplit.debug`, builds de depuración en local) · iOS `1:596963610720:ios:c3a61a92a48f3cd446f305` (`es.sebas1705.owlsplit`) |
 
 Las builds de depuración son otra app del mismo proyecto para instalarse junto a la de los testers (la firma es distinta) y no mandar sus fallos a Crashlytics; comparten base de datos, así que en local se prueba con grupos de prueba identificables. Los proyectos `owlsplit-dev` (P2–P11a) y `owlsplit-stg` (P11b) se borraron.
 

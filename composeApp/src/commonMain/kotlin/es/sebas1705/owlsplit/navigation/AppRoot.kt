@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -129,6 +130,8 @@ fun AppRoot(modifier: Modifier = Modifier) {
     var startChoice by rememberSaveable { mutableStateOf<StartChoice?>(null) }
     // Onboarding saves the profile before it reports the choice: stay on it until it says it is done.
     var onboarding by rememberSaveable { mutableStateOf(false) }
+    // Each onboarding (first launch, after signing out or deleting the account) starts afresh.
+    var onboardingRun by rememberSaveable { mutableIntStateOf(0) }
     LaunchedEffect(root) { if (root == RootState.Onboarding) onboarding = true }
     when {
         root == RootState.Loading -> Spacer(modifier.fillMaxSize().background(Owlsplit.colors.background))
@@ -136,8 +139,10 @@ fun AppRoot(modifier: Modifier = Modifier) {
             onFinished = {
                 startChoice = it
                 onboarding = false
+                onboardingRun++
             },
             modifier = modifier.safeDrawingPadding(),
+            runKey = "onboarding-$onboardingRun",
         )
         else -> Tabs(modifier, startChoice) { startChoice = null }
     }

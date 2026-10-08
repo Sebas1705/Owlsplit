@@ -158,12 +158,13 @@ private fun IconGrid(state: GroupEditorState, onSelect: (String) -> Unit) {
             Row(Modifier.fillMaxWidth()) {
                 row.forEach { (key, icon) ->
                     val selected = key == state.icon
+                    val name = GroupIcons.name(key)
                     Box(
                         Modifier
                             .weight(1f)
                             .heightIn(min = Sizes.touchTarget)
                             .selectable(selected, role = Role.RadioButton) { onSelect(key) }
-                            .semantics { contentDescription = key },
+                            .semantics { contentDescription = name },
                         contentAlignment = Alignment.Center,
                     ) {
                         Box(
