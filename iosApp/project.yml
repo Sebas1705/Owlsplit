@@ -14,11 +14,17 @@ packages:
     url: https://github.com/firebase/firebase-ios-sdk
     # The version GitLive 2.7.0 is built against (firebase-cocoapods in its catalog).
     exactVersion: 11.8.0
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: 8.0.0
 
 settings:
   base:
     MARKETING_VERSION: "1.0.0"
     CURRENT_PROJECT_VERSION: "1"
+    # REVERSED_CLIENT_ID of GoogleService-Info.plist once Google is enabled in Firebase; with this
+    # placeholder the app hides Google sign-in (GoogleSignIn.swift, isConfigured).
+    GOOGLE_REVERSED_CLIENT_ID: com.googleusercontent.apps.pending
 
 targets:
   Owlsplit:
@@ -42,6 +48,8 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         CADisableMinimumFrameDurationOnPhone: true
         NSCameraUsageDescription: Owlsplit uses the camera to scan invite QR codes.
+        CFBundleURLTypes:
+          - CFBundleURLSchemes: [$(GOOGLE_REVERSED_CLIENT_ID)]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: es.sebas1705.owlsplit
@@ -66,3 +74,5 @@ targets:
         product: FirebaseFirestore
       - package: Firebase
         product: FirebaseCrashlytics
+      - package: GoogleSignIn
+        product: GoogleSignIn

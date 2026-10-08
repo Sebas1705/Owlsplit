@@ -51,9 +51,9 @@ class AccountUseCasesTest {
         override val session: Flow<Session?> = MutableStateFlow(current)
         override fun currentSession() = current
         override suspend fun signInAnonymously() = AccountResult.Done
-        override suspend fun linkGoogle(idToken: String) = AccountResult.Done
-        override suspend fun signInWithGoogle(idToken: String) = AccountResult.Done
-        override suspend fun reauthenticateGoogle(idToken: String) = AccountResult.Done
+        override suspend fun linkGoogle(idToken: String, accessToken: String?) = AccountResult.Done
+        override suspend fun signInWithGoogle(idToken: String, accessToken: String?) = AccountResult.Done
+        override suspend fun reauthenticateGoogle(idToken: String, accessToken: String?) = AccountResult.Done
         override suspend fun signOut() {
             log += "signOut"
         }

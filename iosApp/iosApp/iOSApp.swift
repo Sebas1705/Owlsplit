@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseCore
+import GoogleSignIn
 import ComposeApp
 
 @main
@@ -17,7 +18,10 @@ struct iOSApp: App {
             ContentView()
                 // Universal Links (https://owlsplit.web.app/j/<code>) and any URL the app is opened with.
                 .onOpenURL { url in
-                    MainViewControllerKt.handleIncomingLink(url: url.absoluteString)
+                    // Google sign-in returns through its URL scheme; anything else may be an invite.
+                    if !GIDSignIn.sharedInstance.handle(url) {
+                        MainViewControllerKt.handleIncomingLink(url: url.absoluteString)
+                    }
                 }
                 .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
                     if let url = activity.webpageURL {

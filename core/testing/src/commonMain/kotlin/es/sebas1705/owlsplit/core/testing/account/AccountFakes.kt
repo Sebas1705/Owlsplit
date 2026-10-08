@@ -32,19 +32,19 @@ class FakeAccounts(initial: Session? = ANONYMOUS) : AccountService {
         return AccountResult.Done
     }
 
-    override suspend fun linkGoogle(idToken: String): AccountResult {
+    override suspend fun linkGoogle(idToken: String, accessToken: String?): AccountResult {
         calls += "linkGoogle $idToken"
         if (linkResult == AccountResult.Done) session.value = session.value?.copy(isAnonymous = false, providers = GOOGLE)
         return linkResult
     }
 
-    override suspend fun signInWithGoogle(idToken: String): AccountResult {
+    override suspend fun signInWithGoogle(idToken: String, accessToken: String?): AccountResult {
         calls += "signInWithGoogle $idToken"
         if (signInResult == AccountResult.Done) session.value = Session("uid-google", false, GOOGLE)
         return signInResult
     }
 
-    override suspend fun reauthenticateGoogle(idToken: String): AccountResult {
+    override suspend fun reauthenticateGoogle(idToken: String, accessToken: String?): AccountResult {
         calls += "reauthenticateGoogle $idToken"
         if (deleteResult == AccountResult.RecentLoginRequired) deleteResult = AccountResult.Done
         return AccountResult.Done
