@@ -11,6 +11,7 @@
     <!-- Someone else did it -->
     <string name="created">%1$s añadió %2$s</string>
     <string name="created_group">%1$s creó el grupo</string>
+    <string name="created_member">%1$s añadió a %2$s</string>
     <string name="created_payment">%1$s registró un pago: %2$s</string>
     <string name="updated">%1$s cambió %2$s</string>
     <string name="deleted">%1$s borró %2$s</string>
@@ -19,6 +20,7 @@
     <!-- I did it -->
     <string name="created_me">Añadiste %1$s</string>
     <string name="created_group_me">Creaste el grupo</string>
+    <string name="created_member_me">Añadiste a %1$s</string>
     <string name="created_payment_me">Registraste un pago: %1$s</string>
     <string name="updated_me">Cambiaste %1$s</string>
     <string name="deleted_me">Borraste %1$s</string>

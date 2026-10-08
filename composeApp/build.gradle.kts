@@ -99,6 +99,7 @@ kotlin {
             implementation(project(":feature:home"))
             implementation(project(":feature:groups"))
             implementation(project(":feature:expense"))
+            implementation(project(":feature:history"))
             implementation(libs.compose.icons.tabler)
         }
         androidMain.dependencies {

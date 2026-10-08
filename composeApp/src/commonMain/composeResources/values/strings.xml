@@ -3,8 +3,6 @@
     <string name="tab_home">Inicio</string>
     <string name="tab_activity">Actividad</string>
     <string name="tab_profile">Perfil</string>
-    <string name="activity_empty_title">Sin actividad todavía</string>
-    <string name="activity_empty_body">Aquí verás los gastos y cambios de todos tus grupos.</string>
     <string name="firebase_missing">Falta la configuración de Firebase de este entorno (google-services.json).</string>
     <string name="back">Atrás</string>
 </resources>

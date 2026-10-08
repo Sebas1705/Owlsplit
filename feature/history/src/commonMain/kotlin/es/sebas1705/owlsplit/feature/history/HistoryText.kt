@@ -18,6 +18,8 @@ import es.sebas1705.owlsplit.feature.history.resources.created
 import es.sebas1705.owlsplit.feature.history.resources.created_group
 import es.sebas1705.owlsplit.feature.history.resources.created_group_me
 import es.sebas1705.owlsplit.feature.history.resources.created_me
+import es.sebas1705.owlsplit.feature.history.resources.created_member
+import es.sebas1705.owlsplit.feature.history.resources.created_member_me
 import es.sebas1705.owlsplit.feature.history.resources.created_payment
 import es.sebas1705.owlsplit.feature.history.resources.created_payment_me
 import es.sebas1705.owlsplit.feature.history.resources.deleted
@@ -59,13 +61,15 @@ import org.jetbrains.compose.resources.stringResource
 internal fun headline(item: HistoryItem): String {
     val entry = item.entry
     val subject = item.subject?.let {
-        if (entry.entityType == EntityType.TRANSFER) it else stringResource(Res.string.quoted, it)
+        // People and payments read better without quotes.
+        if (entry.entityType == EntityType.TRANSFER || entry.entityType == EntityType.MEMBER) it else stringResource(Res.string.quoted, it)
     } ?: stringResource(Res.string.unknown_subject)
     val who = item.author ?: stringResource(Res.string.someone)
     val (mine, theirs) = when (entry.action) {
         ChangeAction.CREATED -> when (entry.entityType) {
             EntityType.GROUP -> Res.string.created_group_me to Res.string.created_group
             EntityType.TRANSFER -> Res.string.created_payment_me to Res.string.created_payment
+            EntityType.MEMBER -> Res.string.created_member_me to Res.string.created_member
             else -> Res.string.created_me to Res.string.created
         }
         ChangeAction.UPDATED -> Res.string.updated_me to Res.string.updated

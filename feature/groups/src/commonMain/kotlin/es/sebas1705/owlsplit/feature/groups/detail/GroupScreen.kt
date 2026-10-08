@@ -69,6 +69,7 @@ import es.sebas1705.owlsplit.feature.groups.resources.leave
 import es.sebas1705.owlsplit.feature.groups.resources.leave_body
 import es.sebas1705.owlsplit.feature.groups.resources.leave_confirm
 import es.sebas1705.owlsplit.feature.groups.resources.leave_title
+import es.sebas1705.owlsplit.feature.groups.resources.history
 import es.sebas1705.owlsplit.feature.groups.resources.members
 import es.sebas1705.owlsplit.feature.groups.resources.more
 import es.sebas1705.owlsplit.feature.groups.resources.no_expenses_body
@@ -168,6 +169,13 @@ private fun Actions(detail: GroupDetail, onEvent: (GroupIntent) -> Unit, navigat
             Icon(TablerIcons.DotsVertical, stringResource(Res.string.more), tint = Owlsplit.colors.textPrimary)
         }
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(Res.string.history)) },
+                onClick = {
+                    menu = false
+                    navigation.history()
+                },
+            )
             DropdownMenuItem(
                 text = { Text(stringResource(if (detail.archivedByMe) Res.string.unarchive else Res.string.archive)) },
                 onClick = {

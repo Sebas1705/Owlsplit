@@ -39,7 +39,6 @@ import compose.icons.tablericons.Home
 import compose.icons.tablericons.User
 import es.sebas1705.owlsplit.config.AppConfig
 import es.sebas1705.owlsplit.core.ui.catalog.DesignCatalog
-import es.sebas1705.owlsplit.core.ui.components.EmptyState
 import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
 import es.sebas1705.owlsplit.domain.usecases.account.ObserveAccount
 import es.sebas1705.owlsplit.feature.expense.ExpenseEditorRoute
@@ -49,14 +48,13 @@ import es.sebas1705.owlsplit.feature.groups.detail.GroupTab
 import es.sebas1705.owlsplit.feature.groups.editor.GroupEditorRoute
 import es.sebas1705.owlsplit.feature.groups.members.MembersRoute
 import es.sebas1705.owlsplit.feature.groups.transfer.TransferRoute
+import es.sebas1705.owlsplit.feature.history.HistoryRoute
 import es.sebas1705.owlsplit.feature.home.HomeNavigation
 import es.sebas1705.owlsplit.feature.home.HomeRoute
 import es.sebas1705.owlsplit.feature.onboarding.OnboardingRoute
 import es.sebas1705.owlsplit.feature.onboarding.StartChoice
 import es.sebas1705.owlsplit.feature.profile.ProfileRoute
 import es.sebas1705.owlsplit.resources.Res
-import es.sebas1705.owlsplit.resources.activity_empty_body
-import es.sebas1705.owlsplit.resources.activity_empty_title
 import es.sebas1705.owlsplit.resources.back
 import es.sebas1705.owlsplit.resources.tab_activity
 import es.sebas1705.owlsplit.resources.tab_home
@@ -91,6 +89,9 @@ private data class MembersDest(val groupId: String)
 
 @Serializable
 private data class TransferDest(val groupId: String)
+
+@Serializable
+private data class HistoryDest(val groupId: String)
 
 /** [expenseId] null creates an expense. */
 @Serializable
@@ -150,12 +151,7 @@ private fun Tabs(modifier: Modifier, startChoice: StartChoice?, onStartHandled: 
     ) { padding ->
         NavHost(nav, startDestination = HomeTab, modifier = Modifier.padding(padding)) {
             composable<HomeTab> { HomeRoute(homeNavigation(nav)) }
-            composable<ActivityTab> {
-                EmptyState(
-                    stringResource(Res.string.activity_empty_title),
-                    stringResource(Res.string.activity_empty_body)
-                )
-            }
+            composable<ActivityTab> { HistoryRoute(groupId = null, onBack = null) }
             composable<ProfileTab> {
                 val catalog = if (AppConfig.ENVIRONMENT == "development") ({ nav.navigate(CatalogRoute) }) else null
                 ProfileRoute(onOpenCatalog = catalog)
@@ -204,6 +200,9 @@ private fun NavGraphBuilder.groupScreens(nav: NavController) {
     composable<TransferDest> { backStack ->
         TransferRoute(backStack.toRoute<TransferDest>().groupId, onClose = { nav.popBackStack() })
     }
+    composable<HistoryDest> { backStack ->
+        HistoryRoute(backStack.toRoute<HistoryDest>().groupId, onBack = { nav.popBackStack() })
+    }
 }
 
 private fun homeNavigation(nav: NavController) = HomeNavigation(
@@ -221,6 +220,7 @@ private fun groupNavigation(nav: NavController, groupId: String) = GroupNavigati
     addExpense = { nav.navigate(ExpenseDest(groupId)) },
     openExpense = { nav.navigate(ExpenseDest(groupId, it)) },
     recordPayment = { nav.navigate(TransferDest(groupId)) },
+    history = { nav.navigate(HistoryDest(groupId)) },
 )
 
 private fun NavController.navigateToTab(route: Any) = navigate(route) {

@@ -103,3 +103,7 @@ Motor en `data:repository`, paquete `sync`: `RemoteStore` (puerto hacia el servi
 - **Arranque**: sin `google-services.json` no se arranca nada. Con él, sesión anónima (reintentos con espera si no hay red; el onboarding real es P8) y `SyncEngine.start` con el uid de cada estado de sesión. En Android, WorkManager (`SyncWorker`, con red, trabajo único `KEEP`) sube lo pendiente aunque se cierre la app. En iOS el disparador en segundo plano llega en P11.
 - **Resuelto en P8**: el onboarding no termina sin sesión, así que nada se crea sin `createdBy`. El motor de cada usuario vive en su propio ámbito: al cambiar de sesión se cancela el anterior.
 - **Pruebas**: `FirestoreSyncEmulatorTest` (dos dispositivos con los emuladores de Firestore y Auth y las reglas reales: unión con código, cambios en ambos sentidos, edición concurrente → un único conflicto). Se lanza con `scripts/run-sync-emulator-test.sh` con un emulador Android conectado; no está en CI.
+
+## Conflictos en la interfaz (P9c)
+
+La entrada de conflicto del historial (y la sección "Cambios por revisar" de Actividad) ofrece **Reaplicar mi cambio** y **Descartar**. Reaplicar lee la versión perdedora guardada en `conflict` y la escribe con los repositorios normales (`ConflictRepositoryImpl`): es una edición más, con nueva versión encima de la ganadora, que se sube, se registra en el historial y puede volver a chocar. Descartar solo borra la fila de `conflict`. Los gastos borrados se pueden restaurar desde el historial durante 30 días.
