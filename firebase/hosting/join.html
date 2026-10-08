@@ -46,9 +46,8 @@
     document.getElementById('code').textContent = shown;
     document.title = 'Únete con el código ' + shown + ' · Owlsplit';
 
-    // Each Hosting site belongs to one environment; its app has its own package.
-    var packages = { 'owlsplit-dev.web.app': 'es.sebas1705.owlsplit.dev', 'owlsplit.web.app': 'es.sebas1705.owlsplit' };
-    var pkg = packages[location.hostname];
+    // The app people install (debug builds open the links through App Links, not this button).
+    var pkg = 'es.sebas1705.owlsplit';
     var open = document.getElementById('open');
     if (/Android/i.test(navigator.userAgent) && pkg) {
       // Opens the app even when the link was not handed over; the browser stays here if it is missing.

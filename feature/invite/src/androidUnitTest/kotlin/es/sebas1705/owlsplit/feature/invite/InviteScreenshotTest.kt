@@ -28,7 +28,7 @@ class InviteScreenshotTest {
     private val ready = InviteState(
         status = InviteStatus.READY,
         groupName = "Ibiza 2026",
-        link = InviteLink("K7MP2QXR", "https://owlsplit-dev.web.app/j/K7MP2QXR"),
+        link = InviteLink("K7MP2QXR", "https://owlsplit.web.app/j/K7MP2QXR"),
     )
     private val preview = JoinState(
         code = "K7MP 2QXR",

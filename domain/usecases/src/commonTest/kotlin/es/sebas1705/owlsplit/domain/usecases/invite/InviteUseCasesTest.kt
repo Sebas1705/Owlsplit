@@ -25,12 +25,12 @@ class InviteUseCasesTest {
     private val accounts = FakeAccounts()
 
     private val server = FakeInvites(ledger)
-    private val share = ShareInvite(ledger.groups, ledger.members, server, sync, "https://owlsplit-dev.web.app")
+    private val share = ShareInvite(ledger.groups, ledger.members, server, sync, "https://owlsplit.web.app")
 
     @Test
     fun codesAreNormalisedFromWhateverWasPasted() {
         assertEquals("ABCD2345", InviteCodes.normalize(" abcd-2345 "))
-        assertEquals("ABCD2345", InviteCodes.normalize("https://owlsplit-dev.web.app/j/ABCD2345"))
+        assertEquals("ABCD2345", InviteCodes.normalize("https://owlsplit.web.app/j/ABCD2345"))
         assertTrue(InviteCodes.isValid("ABCD2345"))
         assertFalse(InviteCodes.isValid("ABCD0O1I")) // ambiguous characters are never generated
         assertEquals("ABCD 2345", InviteCodes.display("ABCD2345"))
@@ -43,7 +43,7 @@ class InviteUseCasesTest {
         assertEquals(InviteResult.Offline, share(g))
         sync.online = true
         val ready = share(g) as InviteResult.Ready
-        assertEquals("https://owlsplit-dev.web.app/j/ABCDEFGH", ready.link.url)
+        assertEquals("https://owlsplit.web.app/j/ABCDEFGH", ready.link.url)
 
         val regenerated = RegenerateInvite(ledger.groups, server, sync, share)(g) as InviteResult.Ready
         assertTrue(regenerated.link.code != "ABCDEFGH")

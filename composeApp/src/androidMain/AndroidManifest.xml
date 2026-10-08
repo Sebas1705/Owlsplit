@@ -13,6 +13,10 @@
         android:theme="@android:style/Theme.Material.NoActionBar"
         android:allowBackup="true"
         android:supportsRtl="true">
+        <!-- On in staging and production only (composeApp/build.gradle.kts, crashReporting). -->
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="${crashlyticsEnabled}" />
         <!-- singleTask: an invite link opens the running app (onNewIntent) instead of a second copy. -->
         <activity
             android:name=".MainActivity"

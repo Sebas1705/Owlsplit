@@ -12,21 +12,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 /**
- * Wraps the app and overlays the active profile's name.
- *
- * Hidden in production — a badge that is always visible stops being
- * information. `AppConfig` is generated at build time into `commonMain`, so
- * this works identically on Android, iOS, Desktop and Web without a single
- * platform-specific source file.
+ * Wraps the app and marks debug builds with a small "debug" badge, so a screenshot or a
+ * phone in hand says which app it is. Release builds (testers and users) show nothing.
  */
 @Composable
-fun EnvironmentBadge(
+fun DebugBadge(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         content()
-        if (AppConfig.ENVIRONMENT != "production") {
+        if (isDebugBuild) {
             Surface(
                 modifier = Modifier
                     // In the status bar strip: over the content it would cover real controls.
@@ -35,7 +31,7 @@ fun EnvironmentBadge(
                 color = MaterialTheme.colorScheme.secondaryContainer,
             ) {
                 Text(
-                    text = AppConfig.ENVIRONMENT,
+                    text = "debug",
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                 )

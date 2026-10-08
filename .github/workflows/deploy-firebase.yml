@@ -1,0 +1,39 @@
+name: Deploy Firebase (production)
+
+# What `main` says about the backend is what production runs: Firestore rules and indexes and the
+# Hosting site (invite pages, assetlinks.json). The rules are tested on every PR (ci.yml) before
+# they get here. Credentials: FIREBASE_SERVICE_ACCOUNT_JSON (owlsplit-ci, least roles) from
+# Doppler owlsplit/prd. There is one project: this is its only deploy path besides a manual `firebase deploy`.
+on:
+  push:
+    branches: [main]
+    paths: ["firebase/firebase.json", "firebase/firestore.rules", "firebase/firestore.indexes.json", "firebase/hosting/**"]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-firebase
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dopplerhq/cli-action@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Deploy rules, indexes and Hosting to owlsplit
+        working-directory: firebase
+        run: |
+          # Until scripts/setup-ci-access.mjs has run there is nothing to deploy with: skip, do not fail.
+          [ -n "$DOPPLER_TOKEN" ] || { echo "::warning::No DOPPLER_TOKEN secret yet: production deploy skipped"; exit 0; }
+          doppler run -- bash -c '
+            umask 077
+            printf "%s" "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-sa.json"
+            export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json"
+            npx --yes firebase-tools@15.32.1 deploy --only firestore,hosting --project owlsplit --non-interactive'
+      - name: Remove credentials from the runner
+        if: always()
+        run: rm -f "$RUNNER_TEMP/firebase-sa.json"

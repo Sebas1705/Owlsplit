@@ -2,21 +2,15 @@
 
 Decisión en [ADR 0002](adr/0002-firebase-gitlive.md). SDK KMP: `dev.gitlive:firebase-*`.
 
-## Proyectos
+## Proyecto
 
-| Perfil | Proyecto Firebase | Doppler | Uso |
+Un solo proyecto Firebase, **`owlsplit`** (decisión del 2026-10-08: hasta que haya usuarios reales, separar desarrollo, staging y producción no compensa el triple de configuración). Doppler: `owlsplit/prd`. Hosting: `owlsplit.web.app`.
+
+| Proyecto | Estado | Firestore | Apps |
 |---|---|---|---|
-| development | `owlsplit-dev` | `owlsplit/dev` | Desarrollo local y emuladores |
-| staging | `owlsplit-stg` | `owlsplit/stg` | Pruebas internas (App Distribution) |
-| production | `owlsplit-prd` | `owlsplit/prd` | Tiendas |
+| `owlsplit` | Creado 2026-10-08 (P11b); **Authentication pendiente de activar en consola** | `(default)`, `eur3` | Android `1:596963610720:android:44ad7ca230b5953346f305` (`es.sebas1705.owlsplit`, builds de release: testers y usuarios) · Android `1:596963610720:android:61aa6038a2186e6a46f305` (`es.sebas1705.owlsplit.debug`, builds de depuración en local) · iOS `1:596963610720:ios:c3a61a92a48f3cd446f305` (`es.sebas1705.owlsplit`) |
 
-Los ids definitivos se fijan al crearlos (si los nombres están cogidos, se añade sufijo) y se anotan aquí. Una app Android y una iOS por proyecto.
-
-| Proyecto | Estado | Firestore | App Android | App iOS |
-|---|---|---|---|---|
-| `owlsplit-dev` | Creado 2026-10-07 (P2); Auth anónimo activo | `(default)`, `eur3` | `1:217818479934:android:046eb4b90d7880ae2f406f` (`es.sebas1705.owlsplit.dev`) | `1:217818479934:ios:7d3e0b78a8f438342f406f` (`es.sebas1705.owlsplit.dev`) |
-| `owlsplit-stg` | Pendiente (P11) | — | — | — |
-| `owlsplit-prd` | Pendiente (P11) | — | — | — |
+Las builds de depuración son otra app del mismo proyecto para instalarse junto a la de los testers (la firma es distinta) y no mandar sus fallos a Crashlytics; comparten base de datos, así que en local se prueba con grupos de prueba identificables. Los proyectos `owlsplit-dev` (P2–P11a) y `owlsplit-stg` (P11b) se borraron.
 
 Notas de creación: un proyecto nuevo trae desactivada la API de Firestore (se activa antes de crear la base de datos), y Authentication solo se inicializa desde la consola (*Comenzar*); por API exige Identity Platform con facturación. Plan **Spark** (gratuito) durante el MVP: no se usan Cloud Functions ni Storage (Storage exige Blaze para buckets nuevos; llegará con el escaneo de tickets).
 
@@ -97,8 +91,8 @@ cd firebase && npx firebase-tools emulators:exec --only firestore --project demo
 
 - Implementado en `FirebaseAccountService` y los casos de uso de `domain:usecases/account`. La app inicia sesión anónima sola (`SyncStarter`) y el onboarding no termina sin sesión.
 - **Google en Android**: Credential Manager (`AndroidGoogleCredentials`) con el *Web client id* `default_web_client_id`, que el plugin de Google Services genera desde `google-services.json` **solo cuando Google está activado** en Authentication. Sin él, la app oculta "Ya tengo cuenta" y muestra "Vincular estará disponible pronto".
-  - Huella SHA‑1 de la clave de depuración ya registrada en la app Android de `owlsplit-dev` (2026-10-07). La de la clave de publicación se añadirá en P11.
-  - Para activarlo: consola de Firebase → Authentication → Sign-in method → Google → Activar (correo de soporte); después volver a descargar `google-services.json` a Doppler y ejecutar `scripts/doppler-sync-local.sh`.
+  - Huellas registradas: la de depuración en la app `.debug` y la de publicación en la de release (2026-10-08).
+  - Para activarlo: consola de Firebase → Authentication → Sign-in method → Google → Activar (correo de soporte); después `scripts/setup-firebase-env.sh` y `scripts/doppler-sync-local.sh`.
 - **"Ya tengo cuenta"** (instalación nueva): `signInWithCredential` y se recupera el perfil de `users/{uid}`.
 - **La credencial ya pertenece a otra cuenta**: por ahora se informa y no se cambia nada; el traspaso de grupos descrito arriba necesita unirse por código (P10).
 - **Apple e iOS**: aplazados a P11 (falta el proyecto Xcode); obligatorio para publicar en App Store si se ofrece Google.
@@ -106,26 +100,19 @@ cd firebase && npx firebase-tools emulators:exec --only firestore --project demo
 ### Estado (P10a)
 
 - `FirestoreInviteService`: al abrir Invitar se vacía el outbox y se escribe `invites/{code}`; al regenerar se borra el anterior. Unirse escribe en `groups/{id}` solo `memberUids` (`arrayUnion`), `lastJoinCode`, `version` (`increment`), `updatedAt` y `updatedBy`, que la regla `join()` comprueba contra el código vigente.
-- Probado contra `owlsplit-dev` (2026-10-08): invitar, borrar los datos de la app (usuario anónimo nuevo), unirse con el código y reclamar un miembro sin cuenta.
+- Probado contra el antiguo `owlsplit-dev` (2026-10-08): invitar, borrar los datos de la app (usuario anónimo nuevo), unirse con el código y reclamar un miembro sin cuenta.
 
 ### Hosting y App Links (P10b)
 
-- `firebase/hosting` se sirve en `https://owlsplit-dev.web.app`: `/j/<código>` → `join.html` (código, abrir la app, pasos si no está instalada), `/` página de inicio y `/.well-known/assetlinks.json`. `firebase.json` define su propio `ignore` porque el de por defecto excluye los ficheros que empiezan por punto (`.well-known`).
-- Desplegar (sesión del usuario en firebase-tools):
+- `firebase/hosting` se sirve en `https://owlsplit.web.app`: `/j/<código>` → `join.html` (código, abrir la app, pasos si no está instalada), `/` página de inicio y `/.well-known/assetlinks.json`. `firebase.json` define su propio `ignore` porque el de por defecto excluye los ficheros que empiezan por punto (`.well-known`).
+- `assetlinks.json` declara `es.sebas1705.owlsplit` con la SHA‑256 de la clave de publicación (`99:0B:…:18:C3`) y `es.sebas1705.owlsplit.debug` con la de depuración de SEBAS-PC (`B3:DD:…:CE:F5`). Otra clave de depuración (otro PC) necesita su huella aquí y en la app de depuración. Comprobar en el dispositivo:
 
   ```sh
-  cd firebase && npx firebase-tools deploy --only hosting --project dev
+  adb shell pm verify-app-links --re-verify es.sebas1705.owlsplit.debug
+  adb shell pm get-app-links es.sebas1705.owlsplit.debug
   ```
 
-- `assetlinks.json` declara `es.sebas1705.owlsplit.dev` con la huella SHA‑256 de la clave de depuración (`B3:DD:…:CE:F5`). Si cambia la clave (otro PC, firma de App Distribution), añadir su huella y volver a desplegar. Comprobar en el dispositivo:
-
-  ```sh
-  adb shell pm verify-app-links --re-verify es.sebas1705.owlsplit.dev
-  adb shell pm get-app-links es.sebas1705.owlsplit.dev
-  ```
-
-- Verificado el 2026-10-08: dominio `verified`, el enlace abre Unirse con el código con la app cerrada y abierta.
-- Pendiente (P11): sitio de producción `owlsplit.web.app` con la huella de la clave de publicación, y `apple-app-site-association` para Universal Links (necesita el Team ID de Apple).
+- Pendiente (P11c): `apple-app-site-association` para Universal Links (necesita el Team ID de Apple).
 
 ## Borrado de cuenta
 
@@ -139,5 +126,16 @@ Los nombres que el usuario escribió en gastos de grupos ajenos se quedan (son d
 
 ## Secretos y configuración
 
-- `google-services.json` y `GoogleService-Info.plist` en Doppler por perfil; un script los sincroniza en local (como en YouKnow).
-- Cuenta de servicio de CI para App Distribution con permisos mínimos; otra para desplegar reglas.
+Doppler `owlsplit/prd` guarda todo: `GOOGLE_SERVICES_JSON` (las dos apps Android en un fichero), `GOOGLE_SERVICE_INFO_PLIST`, `FIREBASE_PROJECT_ID`, `FIREBASE_ANDROID_APP_ID` (la de release, para App Distribution), `FIREBASE_IOS_APP_ID`, `FIREBASE_API_KEY`, la firma (`SIGNING_*`) y la cuenta de servicio de CI (`FIREBASE_SERVICE_ACCOUNT_JSON`). GitHub solo tiene `DOPPLER_TOKEN`, de solo lectura.
+
+- `scripts/doppler-sync-local.sh`: escribe `google-services.json` y `GoogleService-Info.plist` en `composeApp/` e `iosApp/` (git-ignored).
+- `scripts/setup-firebase-env.sh`: descarga la configuración de las apps y la guarda en Doppler. Volver a ejecutarlo tras activar Google o registrar huellas: cambia `google-services.json`.
+- `scripts/setup-release-keystore.sh`: crea la clave de publicación (una sola vez; ya hecho), la guarda en Doppler y registra sus huellas. La copia del `.jks` queda en `Documentsowlsplit-release.jks`.
+- `node scripts/setup-ci-access.mjs [correos de testers]`: cuenta de servicio `owlsplit-ci@owlsplit` con permisos mínimos (App Distribution, reglas, Hosting, índices), su clave en Doppler, `DOPPLER_TOKEN` en GitHub y el grupo `testers`. Volver a ejecutarlo rota la clave y añade testers.
+
+Distribución a testers: [RELEASE.md](RELEASE.md).
+
+## Despliegues
+
+- Cada push a `main` que toque `firebase/` despliega reglas, índices y Hosting (`.github/workflows/deploy-firebase.yml`, cuenta `owlsplit-ci`). Las reglas ya pasaron sus tests en el PR. A mano: `cd firebase && npx firebase-tools deploy --only firestore,hosting`.
+- **Crashlytics**: activo en las builds de release (manifiesto, `firebase_crashlytics_collection_enabled`), apagado en las de depuración. Los errores inesperados de las pantallas se registran como no fatales y la app muestra un mensaje genérico.

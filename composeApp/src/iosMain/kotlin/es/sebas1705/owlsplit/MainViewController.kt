@@ -8,6 +8,7 @@ import es.sebas1705.owlsplit.core.ui.components.TextSharer
 import es.sebas1705.owlsplit.data.local.DatabaseDriverFactory
 import es.sebas1705.owlsplit.data.models.GoogleTokenResult
 import es.sebas1705.owlsplit.di.FirebaseStatus
+import es.sebas1705.owlsplit.errors.CrashReporting
 import es.sebas1705.owlsplit.di.accountModule
 import es.sebas1705.owlsplit.di.appModule
 import es.sebas1705.owlsplit.di.dataModule
@@ -36,6 +37,7 @@ private object UnavailableGoogleCredentials : GoogleCredentials {
 fun MainViewController() = ComposeUIViewController(
     configure = {
         val firebase = FirebaseStatus(configured = Firebase.apps().isNotEmpty())
+        CrashReporting.start(firebase.configured)
         val koin = startKoin {
             modules(
                 appModule,

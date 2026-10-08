@@ -45,7 +45,7 @@ class InviteViewModelsTest {
     private val balances = ObserveGroupBalances(ledger.groups, ledger.members, ledger.expenses, ledger.transfers)
     private val detail =
         ObserveGroupDetail(ledger.groups, ledger.members, ledger.expenses, ledger.transfers, balances, accounts)
-    private val share = ShareInvite(ledger.groups, ledger.members, server, sync, "https://owlsplit-dev.web.app")
+    private val share = ShareInvite(ledger.groups, ledger.members, server, sync, "https://owlsplit.web.app")
 
     private fun inviteVm(groupId: String) =
         InviteViewModel(groupId, detail, share, RegenerateInvite(ledger.groups, server, sync, share))
@@ -75,7 +75,7 @@ class InviteViewModelsTest {
         val vm = inviteVm(g)
         assertEquals(InviteStatus.READY, vm.uiState.value.status)
         assertEquals("Ibiza", vm.uiState.value.groupName)
-        assertEquals("https://owlsplit-dev.web.app/j/ABCDEFGH", vm.uiState.value.link?.url)
+        assertEquals("https://owlsplit.web.app/j/ABCDEFGH", vm.uiState.value.link?.url)
 
         vm.onEvent(InviteIntent.AskRegenerate)
         assertEquals(true, vm.uiState.value.confirmRegenerate)
@@ -120,7 +120,7 @@ class InviteViewModelsTest {
     @Test
     fun aLinkSearchesByItselfAndANewMemberCanBeAdded() = runTest {
         val (g, _) = sharedGroupAsLuis()
-        val vm = joinVm("https://owlsplit-dev.web.app/j/ABCDEFGH")
+        val vm = joinVm("https://owlsplit.web.app/j/ABCDEFGH")
         assertEquals("ABCD EFGH", vm.uiState.value.code)
         assertEquals(JoinStep.PREVIEW, vm.uiState.value.step)
         vm.onEvent(JoinIntent.Join)
@@ -137,7 +137,7 @@ class InviteViewModelsTest {
         val vm = joinVm()
         vm.onEvent(JoinIntent.Scanned("https://example.com/menu"))
         assertEquals(JoinError.NOT_FOUND, vm.uiState.value.error)
-        vm.onEvent(JoinIntent.Scanned("https://owlsplit-dev.web.app/j/ABCDEFGH"))
+        vm.onEvent(JoinIntent.Scanned("https://owlsplit.web.app/j/ABCDEFGH"))
         assertEquals("ABCD EFGH", vm.uiState.value.code)
         assertEquals(JoinStep.PREVIEW, vm.uiState.value.step)
     }

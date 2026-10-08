@@ -2,8 +2,8 @@
 
 | Módulo | Contenido | Plan que lo amplía |
 |---|---|---|
-| `composeApp` | Entrada Android/iOS, DI raíz, `AppConfig` por entorno, idioma de la app (`LocalAppLocale`), navegación (onboarding → pestañas Inicio · Actividad · Perfil), `SyncStarter`, Google con Credential Manager, `TextSharer` (hoja de compartir), `AndroidQrScanner`, App Links (`IncomingInvites`) | P9 |
-| `core:common` | MVI base, `AppResult`, utilidades | — |
+| `composeApp` | Entrada Android/iOS, DI raíz, `AppConfig` e `isDebugBuild`, Crashlytics (`CrashReporting`), idioma de la app (`LocalAppLocale`), navegación (onboarding → pestañas Inicio · Actividad · Perfil), `SyncStarter`, Google con Credential Manager, `TextSharer` (hoja de compartir), `AndroidQrScanner`, App Links (`IncomingInvites`) | P9 |
+| `core:common` | MVI base (los errores de `execute` van a `UnexpectedErrors`), `AppResult`, utilidades | — |
 | `core:ui` | `OwlsplitTheme` (tokens, Inter, formas), `MoneyFormat` y `LocalMoneyFormat`, componentes (incluidos `QrCode` y `SwitchRow`) y `DesignCatalog`; capturas Roborazzi | P9 |
 | `core:security` | `SecureStorage` | — |
 | `core:network` | Cliente Ktor por plataforma | P9 (tipos de cambio) |
