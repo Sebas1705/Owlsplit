@@ -167,3 +167,49 @@ fun SettleSuggestionRow(
         }
     }
 }
+
+/** An expense or transfer in a group list: category icon, title, who paid, amount and your part. */
+@Composable
+fun ExpenseRow(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    amountMinor: Long,
+    currency: Currency,
+    format: MoneyFormat,
+    detail: String?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = Owlsplit.colors
+    Row(
+        modifier
+            .fillMaxWidth()
+            .heightIn(min = Sizes.rowMinHeight)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = Spacing.m, vertical = Spacing.s),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.m),
+    ) {
+        Box(
+            Modifier.size(Sizes.iconTile).background(colors.surfaceVariant, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(18.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(
+                title,
+                style = Owlsplit.type.bodyStrong,
+                color = colors.textPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(subtitle, style = Owlsplit.type.caption, color = colors.textSecondary, maxLines = 1)
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text(format.format(amountMinor, currency), style = Owlsplit.type.bodyStrong, color = colors.textPrimary)
+            if (detail != null) Text(detail, style = Owlsplit.type.caption, color = colors.textSecondary, maxLines = 1)
+        }
+    }
+}

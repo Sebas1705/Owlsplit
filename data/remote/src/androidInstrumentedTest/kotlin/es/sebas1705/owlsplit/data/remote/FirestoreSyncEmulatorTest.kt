@@ -1,5 +1,7 @@
 package es.sebas1705.owlsplit.data.remote
 
+import es.sebas1705.owlsplit.data.models.ExpenseInput
+import es.sebas1705.owlsplit.data.models.GroupInput
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -15,9 +17,7 @@ import dev.gitlive.firebase.initialize
 import es.sebas1705.owlsplit.data.local.db.AppDatabase
 import es.sebas1705.owlsplit.data.models.ExpenseCategory
 import es.sebas1705.owlsplit.data.models.SplitType
-import es.sebas1705.owlsplit.data.repository.ExpenseInput
 import es.sebas1705.owlsplit.data.repository.ExpenseRepositoryImpl
-import es.sebas1705.owlsplit.data.repository.GroupInput
 import es.sebas1705.owlsplit.data.repository.GroupRepositoryImpl
 import es.sebas1705.owlsplit.data.repository.MemberRepositoryImpl
 import es.sebas1705.owlsplit.data.repository.RepositoryContext

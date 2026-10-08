@@ -1,11 +1,11 @@
 package es.sebas1705.owlsplit.data.repository.sync
 
+import es.sebas1705.owlsplit.data.models.ExpenseInput
+import es.sebas1705.owlsplit.data.models.GroupInput
 import es.sebas1705.owlsplit.data.models.ExpenseCategory
 import es.sebas1705.owlsplit.data.models.OutboxType
 import es.sebas1705.owlsplit.data.models.SplitType
 import es.sebas1705.owlsplit.data.models.SyncState
-import es.sebas1705.owlsplit.data.repository.ExpenseInput
-import es.sebas1705.owlsplit.data.repository.GroupInput
 import es.sebas1705.owlsplit.data.repository.TestEnv
 import es.sebas1705.owlsplit.data.repository.observeMembersOnce
 import kotlinx.coroutines.flow.first
