@@ -16,7 +16,7 @@ Los planes se escriben en detalle (código completo, comandos exactos) **justo a
 | P6 | Motor de sincronización: [P6a motor](2026-10-07-p06a-sync-engine.md) · [P6b Firestore](2026-10-07-p06b-firestore-adapter.md) | `data:remote` + `data:sync`: outbox, subida con backoff, listeners incrementales, conflictos, acceso perdido; tests con Firestore falso | P4, P5 | Hecho |
 | P7 | [Sistema de diseño](2026-10-07-p07-design-system.md) | `OwlsplitTheme`, tokens, Inter, iconos Tabler, componentes de `core:ui` con previews y capturas claro/oscuro | P1 | Hecho |
 | P8 | [Cuentas y onboarding](2026-10-07-p08-accounts-onboarding.md) | Auth anónima, onboarding, perfil, vincular Google/Apple, borrar cuenta | P6, P7 | Hecho (Google pendiente de activar en consola; Apple en P11) |
-| P9 | Grupos, gastos y saldos (pantallas) | Inicio, grupo (gastos, saldos, saldar), editor de gasto y de reparto, transferencias, historial, multidivisa con Frankfurter | P6, P7, P8 | Pendiente |
+| P9 | Grupos, gastos y saldos (pantallas): [P9a](2026-10-08-p09a-groups-expenses.md) · P9b | Inicio, grupo (gastos, saldos, saldar), editor de gasto y de reparto, transferencias, historial, multidivisa con Frankfurter | P6, P7, P8 | P9a hecho |
 | P10 | Invitaciones | Códigos, QR, App Links / Universal Links con Firebase Hosting, unirse y reclamar miembro | P9 | Pendiente |
 | P11 | Pulido y entrega | i18n es/en, accesibilidad, Crashlytics, proyectos stg/prd, firma, pipeline de release a App Distribution, checklist de criterios de aceptación | P10 | Pendiente |
 
