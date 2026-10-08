@@ -12,7 +12,9 @@ CREATE TABLE member_entity (
     updated_at INTEGER,
     updated_by TEXT NOT NULL,
     deleted INTEGER NOT NULL,
-    sync_state TEXT NOT NULL
+    sync_state TEXT NOT NULL,
+    -- PayMethods as JSON; added in schema 2.
+    pay_methods TEXT
 );
 
 CREATE INDEX member_by_group ON member_entity(group_id);
@@ -22,6 +24,9 @@ INSERT OR REPLACE INTO member_entity VALUES ?;
 
 selectVisibleByGroup:
 SELECT * FROM member_entity WHERE group_id = ? AND deleted = 0 ORDER BY sort_key, id;
+
+selectByUser:
+SELECT * FROM member_entity WHERE user_uid = ? AND deleted = 0;
 
 selectById:
 SELECT * FROM member_entity WHERE id = ?;

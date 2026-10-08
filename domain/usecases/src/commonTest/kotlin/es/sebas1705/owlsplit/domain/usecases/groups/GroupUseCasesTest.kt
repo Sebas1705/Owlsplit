@@ -27,7 +27,7 @@ class GroupUseCasesTest {
     private val accounts = FakeAccounts()
     private val profiles = FakeProfiles(UserProfile("Ana", "accent:BLUE", "EUR"))
     private val balances = ObserveGroupBalances(ledger.groups, ledger.members, ledger.expenses, ledger.transfers)
-    private val actions = GroupActions(ledger.groups, profiles)
+    private val actions = GroupActions(ledger.groups, profiles, ledger.members)
     private val memberActions = MemberActions(ledger.members)
     private val today = Today { LocalDate(2026, 10, 8) }
     private val save = SaveExpense(ledger.expenses, today)

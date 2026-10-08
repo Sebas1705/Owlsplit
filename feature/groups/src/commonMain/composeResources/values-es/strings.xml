@@ -86,4 +86,12 @@
     <string name="decrease">Menos</string>
     <string name="increase">Más</string>
     <string name="you_suffix">%1$s (tú)</string>
+    <string name="pay_with">Pagar con %1$s</string>
+    <string name="pay_bizum_copied">Teléfono %1$s copiado. Envía %2$s a %3$s por Bizum desde tu banco y vuelve para marcarlo como pagado.</string>
+    <string name="pay_request_action">Pedir el pago</string>
+    <string name="pay_hint_add_yours">Añade tu Bizum, PayPal o Revolut en el perfil para pedir el pago con un mensaje.</string>
+    <string name="pay_request">Hola, %1$s: te toca pagarme %2$s en «%3$s». Puedes hacerlo por:</string>
+    <string name="pay_request_line_bizum">Bizum: %1$s</string>
+    <string name="pay_request_line_paypal">PayPal: %1$s</string>
+    <string name="pay_request_line_revolut">Revolut: %1$s</string>
 </resources>

@@ -38,7 +38,7 @@ val groupsModule = module {
     factory { ObserveHome(get(), get(), get(), get(), get(), get(), get()) }
     factory { ObserveGroupDetail(get(), get(), get(), get(), get(), get()) }
     factory { ObservePendingChanges(get()) }
-    factory { GroupActions(get(), get()) }
+    factory { GroupActions(get(), get(), get()) }
     factory { MemberActions(get()) }
     factory { SettleUp(get()) }
     factory { SaveExpense(get()) }

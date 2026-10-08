@@ -6,12 +6,14 @@ import es.sebas1705.owlsplit.data.models.GroupInput
 import es.sebas1705.owlsplit.data.models.ExpenseCategory
 import es.sebas1705.owlsplit.data.models.SplitType
 import es.sebas1705.owlsplit.data.models.ChangeAction
+import es.sebas1705.owlsplit.data.models.PayMethods
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class MemberRepositoryTest {
@@ -66,6 +68,28 @@ class MemberRepositoryTest {
         assertEquals("uid-marta", env.members.observeMembersOnce(g).first { it.id == marta }.userUid)
         val joined = env.changeLog.observe(g).first().filter { it.action == ChangeAction.JOINED }
         assertEquals(setOf("uid-marta", "uid-luis"), joined.map { it.authorUid }.toSet())
+    }
+
+    @Test
+    fun `pay handles reach my members in every group, stay out of the history and leave with me`() = runTest {
+        val env = TestEnv(this)
+        val ibiza = env.groups.create(GroupInput("Ibiza", "plane", "BLUE", "EUR"), "Ana")
+        val piso = env.groups.create(GroupInput("Piso", "home", "GREEN", "EUR"), "Ana")
+        val luis = env.members.add(ibiza, MemberInput("Luis"))
+        val historyBefore = env.changeLog.observe(ibiza).first().size
+        val pay = PayMethods(bizum = "600111222")
+
+        env.members.publishMyPayMethods(pay)
+
+        suspend fun mine(g: String) = env.members.observeMembersOnce(g).first { it.userUid == env.uid }
+        assertEquals(pay, mine(ibiza).payMethods)
+        assertEquals(pay, mine(piso).payMethods)
+        assertNull(env.members.observeMembersOnce(ibiza).first { it.id == luis }.payMethods)
+        assertEquals(historyBefore, env.changeLog.observe(ibiza).first().size)
+
+        env.groups.leave(ibiza)
+        assertNull(env.members.observeMembersOnce(ibiza).first { it.name == "Ana" }.payMethods)
+        assertEquals(pay, mine(piso).payMethods)
     }
 
     @Test

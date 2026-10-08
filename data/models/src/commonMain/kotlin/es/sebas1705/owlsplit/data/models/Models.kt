@@ -49,6 +49,8 @@ data class Member(
     val active: Boolean,
     val sortKey: Long,
     val meta: SyncMeta,
+    /** How the person behind this member wants to be paid; only they set it (from their profile). */
+    val payMethods: PayMethods? = null,
 )
 
 enum class ExpenseCategory {

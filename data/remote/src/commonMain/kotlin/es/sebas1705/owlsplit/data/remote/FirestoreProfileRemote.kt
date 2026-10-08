@@ -4,6 +4,7 @@ import dev.gitlive.firebase.firestore.BaseTimestamp
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import dev.gitlive.firebase.firestore.FirebaseFirestoreException
 import dev.gitlive.firebase.firestore.Timestamp
+import es.sebas1705.owlsplit.data.models.PayMethods
 import es.sebas1705.owlsplit.data.models.Session
 import es.sebas1705.owlsplit.data.models.UserProfile
 import es.sebas1705.owlsplit.data.models.AccountResult
@@ -20,6 +21,7 @@ internal data class UserDto(
     val preferredCurrency: String,
     val linkedProviders: List<String>,
     val updatedAt: BaseTimestamp,
+    val payMethods: PayMethods,
 )
 
 /** `users/{uid}`: only its owner reads and writes it. */
@@ -29,7 +31,14 @@ class FirestoreProfileRemote(
 ) : ProfileRemote {
 
     override suspend fun save(session: Session, profile: UserProfile): AccountResult = call {
-        val dto = UserDto(profile.name, profile.avatar, profile.currency, session.providers, Timestamp.ServerTimestamp)
+        val dto = UserDto(
+            profile.name,
+            profile.avatar,
+            profile.currency,
+            session.providers,
+            Timestamp.ServerTimestamp,
+            profile.payMethods,
+        )
         firestore.collection(USERS).document(session.uid).set(UserDto.serializer(), dto, merge = true)
     }
 
@@ -43,7 +52,7 @@ class FirestoreProfileRemote(
             val snapshot = firestore.collection(USERS).document(uid).get()
             if (!snapshot.exists) return@withTimeoutOrNull null
             val dto = snapshot.data(UserReadDto.serializer())
-            UserProfile(dto.displayName, dto.avatar, dto.preferredCurrency)
+            UserProfile(dto.displayName, dto.avatar, dto.preferredCurrency, dto.payMethods)
         }
     } catch (e: FirebaseFirestoreException) {
         null
@@ -62,4 +71,9 @@ class FirestoreProfileRemote(
 }
 
 @Serializable
-internal data class UserReadDto(val displayName: String, val avatar: String = "", val preferredCurrency: String = "EUR")
+internal data class UserReadDto(
+    val displayName: String,
+    val avatar: String = "",
+    val preferredCurrency: String = "EUR",
+    val payMethods: PayMethods = PayMethods(),
+)

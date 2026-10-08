@@ -89,11 +89,12 @@ class GroupRepositoryImpl(
     override suspend fun leave(id: String) = withContext(io) {
         db.transaction {
             val me = writer.uid()
-            // First release my member (it stays as a ghost, the accounts do not change)...
+            // First release my member (it stays as a ghost, the accounts do not change, and how to pay
+            // me goes with me)...
             db.memberEntityQueries.selectVisibleByGroup(id).executeAsList().map { it.toModel() }
                 .filter { it.userUid == me }
                 .forEach { old ->
-                    val new = old.copy(userUid = null, meta = writer.editedMeta(old.meta))
+                    val new = old.copy(userUid = null, payMethods = null, meta = writer.editedMeta(old.meta))
                     MemberRepositoryImpl.save(db, writer, new, old, ChangeAction.UPDATED)
                 }
             // ...then leave. No history entry: once out, the group can no longer be written.

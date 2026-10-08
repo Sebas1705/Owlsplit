@@ -12,6 +12,7 @@ import es.sebas1705.owlsplit.core.ui.theme.GroupAccent
 import es.sebas1705.owlsplit.core.ui.theme.avatarAccent
 import es.sebas1705.owlsplit.core.ui.theme.toAvatar
 import es.sebas1705.owlsplit.data.models.AccountResult
+import es.sebas1705.owlsplit.data.models.PayMethods
 import es.sebas1705.owlsplit.data.models.UserProfile
 import es.sebas1705.owlsplit.domain.usecases.account.DeleteAccount
 import es.sebas1705.owlsplit.domain.usecases.account.GoogleOutcome
@@ -20,6 +21,8 @@ import es.sebas1705.owlsplit.domain.usecases.account.ObserveAccount
 import es.sebas1705.owlsplit.domain.usecases.account.ReauthenticateGoogle
 import es.sebas1705.owlsplit.domain.usecases.account.SaveProfile
 import es.sebas1705.owlsplit.domain.usecases.account.SignOut
+import es.sebas1705.owlsplit.domain.usecases.pay.PayLinks
+import es.sebas1705.owlsplit.domain.usecases.pay.PayMethod
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -38,6 +41,8 @@ data class ProfileState(
     val saved: UserProfile? = null,
     val name: String = "",
     val accent: GroupAccent = GroupAccent.BLUE,
+    /** How I want to be paid, as typed. */
+    val pay: PayMethods = PayMethods(),
     val currency: String = AppPreferences.DEFAULT_CURRENCY,
     val theme: ThemeMode = ThemeMode.SYSTEM,
     val language: AppLanguage = AppLanguage.SYSTEM,
@@ -46,13 +51,20 @@ data class ProfileState(
     val message: ProfileMessage? = null,
 ) : MVIBaseState {
     val dirty: Boolean
-        get() = saved != null && (name.trim() != saved.name || accent.toAvatar() != saved.avatar)
+        get() = saved != null &&
+            (name.trim() != saved.name || accent.toAvatar() != saved.avatar || payDirty)
+    private val payDirty: Boolean get() = saved != null && pay.trimmed() != saved.payMethods.trimmed()
     val nameValid: Boolean get() = name.isNotBlank()
+
+    /** Pay fields filled in with something that cannot be used. */
+    val invalidPay: Set<PayMethod> get() = PayLinks.invalid(pay)
+    val canSave: Boolean get() = nameValid && invalidPay.isEmpty()
 }
 
 sealed interface ProfileIntent : MVIBaseIntent {
     data class NameChanged(val name: String) : ProfileIntent
     data class AccentChanged(val accent: GroupAccent) : ProfileIntent
+    data class PayChanged(val method: PayMethod, val value: String) : ProfileIntent
     data object Save : ProfileIntent
     data class CurrencyChanged(val code: String) : ProfileIntent
     data class ThemeChanged(val mode: ThemeMode) : ProfileIntent
@@ -65,6 +77,10 @@ sealed interface ProfileIntent : MVIBaseIntent {
     data object DismissDialog : ProfileIntent
     data object DismissMessage : ProfileIntent
 }
+
+/** Blank fields as null, so a saved profile and an untouched form compare equal. */
+private fun PayMethods.trimmed() =
+    PayMethods(bizum?.trim()?.ifEmpty { null }, paypal?.trim()?.ifEmpty { null }, revolut?.trim()?.ifEmpty { null })
 
 /** Account and preferences. Signing out and deleting reset the device: the app returns to onboarding. */
 @Suppress("LongParameterList") // One use case per action keeps each one testable on its own.
@@ -101,6 +117,7 @@ class ProfileViewModel(
                         saved = profile,
                         name = if (untouched) profile?.name.orEmpty() else state.name,
                         accent = if (untouched) avatarAccent(profile?.avatar) else state.accent,
+                        pay = if (untouched) profile?.payMethods ?: PayMethods() else state.pay,
                         currency = profile?.currency ?: state.currency,
                         theme = theme,
                         language = language,
@@ -114,6 +131,7 @@ class ProfileViewModel(
         when (intent) {
             is ProfileIntent.NameChanged -> updateState { it.copy(name = intent.name.take(MAX_NAME)) }
             is ProfileIntent.AccentChanged -> updateState { it.copy(accent = intent.accent) }
+            is ProfileIntent.PayChanged -> updateState { it.copy(pay = it.pay.with(intent.method, intent.value)) }
             ProfileIntent.Save -> save()
             is ProfileIntent.CurrencyChanged -> currentState.saved?.let { saveProfile(it.copy(currency = intent.code)) }
             is ProfileIntent.ThemeChanged -> display.setThemeMode(intent.mode)
@@ -131,8 +149,10 @@ class ProfileViewModel(
     private suspend fun save() {
         val state = currentState
         val saved = state.saved ?: return
-        if (!state.nameValid) return
-        saveProfile(saved.copy(name = state.name.trim(), avatar = state.accent.toAvatar()))
+        if (!state.canSave) return
+        saveProfile(saved.copy(name = state.name.trim(), avatar = state.accent.toAvatar(), payMethods = state.pay))
+        // Show the cleaned-up handles ("@ana" → "ana").
+        updateState { it.copy(pay = PayLinks.normalise(it.pay)) }
         updateState { it.copy(message = ProfileMessage.SAVED) }
     }
 
@@ -180,8 +200,18 @@ class ProfileViewModel(
         }
     }
 
+    private fun PayMethods.with(method: PayMethod, value: String): PayMethods {
+        val text = value.take(MAX_HANDLE)
+        return when (method) {
+            PayMethod.BIZUM -> copy(bizum = text)
+            PayMethod.PAYPAL -> copy(paypal = text)
+            PayMethod.REVOLUT -> copy(revolut = text)
+        }
+    }
+
     private companion object {
         const val MAX_NAME = 40
+        const val MAX_HANDLE = 60
         const val GOOGLE = "google.com"
     }
 }

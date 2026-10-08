@@ -13,6 +13,7 @@ import es.sebas1705.owlsplit.data.models.ExpenseCategory
 import es.sebas1705.owlsplit.data.models.FieldChange
 import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.data.models.Member
+import es.sebas1705.owlsplit.data.models.PayMethods
 import es.sebas1705.owlsplit.data.models.SplitType
 import es.sebas1705.owlsplit.data.models.SyncMeta
 import es.sebas1705.owlsplit.data.models.SyncState
@@ -58,6 +59,7 @@ internal fun Member_entity.toModel() = Member(
     id = id, groupId = group_id, name = name, avatar = avatar, defaultWeight = default_weight, userUid = user_uid,
     active = active.asFlag(), sortKey = sort_key,
     meta = meta(version, server_version, updated_at, updated_by, deleted, sync_state),
+    payMethods = pay_methods?.let { json.decodeFromString(PayMethods.serializer(), it) },
 )
 
 internal fun Member.toRow() = Member_entity(
@@ -65,6 +67,7 @@ internal fun Member.toRow() = Member_entity(
     active = active.asInt(), sort_key = sortKey, version = meta.version, server_version = meta.serverVersion,
     updated_at = meta.updatedAt, updated_by = meta.updatedBy, deleted = meta.deleted.asInt(),
     sync_state = meta.syncState.name,
+    pay_methods = payMethods?.let { json.encodeToString(PayMethods.serializer(), it) },
 )
 
 internal fun Expense_entity.toModel(payers: Map<String, Long>, splitValues: Map<String, Long>) = Expense(

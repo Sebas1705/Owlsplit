@@ -1,13 +1,21 @@
 package es.sebas1705.owlsplit.data.models
 
+import kotlinx.serialization.Serializable
+
 /** The signed-in user. [providers] are linked sign-in methods ("google.com"); empty while anonymous. */
 data class Session(val uid: String, val isAnonymous: Boolean, val providers: List<String>)
 
 /**
  * The user's own profile (not a group member). [avatar] is `accent:<GroupAccent>` for an initials
- * avatar on that colour; [currency] is the preferred ISO code for new groups.
+ * avatar on that colour; [currency] is the preferred ISO code for new groups; [payMethods] are copied
+ * to my members in every group.
  */
-data class UserProfile(val name: String, val avatar: String, val currency: String)
+data class UserProfile(
+    val name: String,
+    val avatar: String,
+    val currency: String,
+    val payMethods: PayMethods = PayMethods(),
+)
 
 /** Outcome of an account operation, as the UI needs to tell them apart. */
 sealed interface AccountResult {
@@ -31,4 +39,16 @@ sealed interface GoogleTokenResult {
     data class Token(val idToken: String, val accessToken: String? = null) : GoogleTokenResult
     data object Cancelled : GoogleTokenResult
     data class Failed(val reason: String) : GoogleTokenResult
+}
+
+/**
+ * How someone wants to be paid, shown to the people in their groups when they owe them.
+ * [bizum]: phone number; [paypal]: PayPal.me name; [revolut]: Revolut tag. Blank means not set.
+ */
+@Serializable
+data class PayMethods(val bizum: String? = null, val paypal: String? = null, val revolut: String? = null) {
+    val isEmpty: Boolean get() = bizum.isNullOrBlank() && paypal.isNullOrBlank() && revolut.isNullOrBlank()
+
+    /** Null when nothing is set: that is what members store. */
+    fun orNull(): PayMethods? = takeUnless { it.isEmpty }
 }

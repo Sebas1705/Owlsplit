@@ -37,6 +37,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import compose.icons.TablerIcons
@@ -79,6 +80,14 @@ import es.sebas1705.owlsplit.feature.profile.resources.msg_linked
 import es.sebas1705.owlsplit.feature.profile.resources.msg_offline
 import es.sebas1705.owlsplit.feature.profile.resources.msg_saved
 import es.sebas1705.owlsplit.feature.profile.resources.name_label
+import es.sebas1705.owlsplit.feature.profile.resources.pay_bizum
+import es.sebas1705.owlsplit.feature.profile.resources.pay_bizum_invalid
+import es.sebas1705.owlsplit.feature.profile.resources.pay_body
+import es.sebas1705.owlsplit.feature.profile.resources.pay_paypal
+import es.sebas1705.owlsplit.feature.profile.resources.pay_paypal_invalid
+import es.sebas1705.owlsplit.feature.profile.resources.pay_revolut
+import es.sebas1705.owlsplit.feature.profile.resources.pay_revolut_invalid
+import es.sebas1705.owlsplit.feature.profile.resources.pay_title
 import es.sebas1705.owlsplit.feature.profile.resources.preferences
 import es.sebas1705.owlsplit.feature.profile.resources.protect_body
 import es.sebas1705.owlsplit.feature.profile.resources.protect_title
@@ -96,7 +105,9 @@ import es.sebas1705.owlsplit.feature.profile.resources.theme_light
 import es.sebas1705.owlsplit.feature.profile.resources.theme_system
 import es.sebas1705.owlsplit.feature.profile.resources.title
 import es.sebas1705.owlsplit.feature.profile.resources.your_profile
+import es.sebas1705.owlsplit.domain.usecases.pay.PayMethod
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -143,6 +154,10 @@ fun ProfileScreen(
         Header(state)
         Message(state.message)
         EditProfile(state, onEvent)
+        PayMethodsEditor(state, onEvent)
+        if (state.dirty) {
+            PrimaryPillButton(stringResource(Res.string.save), { onEvent(ProfileIntent.Save) }, enabled = state.canSave)
+        }
         if (state.isAnonymous) Protect(state, onEvent)
         Preferences(state, onEvent)
         Session(state, onEvent)
@@ -210,15 +225,49 @@ private fun EditProfile(state: ProfileState, onEvent: (ProfileIntent) -> Unit) {
                 color = Owlsplit.colors.textSecondary
             )
             AccentPicker(state.accent, { onEvent(ProfileIntent.AccentChanged(it)) }, names = { accentName(it) })
-            if (state.dirty) {
-                PrimaryPillButton(
-                    stringResource(Res.string.save),
-                    { onEvent(ProfileIntent.Save) },
-                    enabled = state.nameValid
-                )
-            }
         }
     }
+}
+
+/** Optional: shown to whoever owes me money in my groups, so they can pay me with a tap. */
+@Composable
+private fun PayMethodsEditor(state: ProfileState, onEvent: (ProfileIntent) -> Unit) {
+    OwlsplitContainer(title = stringResource(Res.string.pay_title)) {
+        Column(
+            Modifier.padding(horizontal = Spacing.m, vertical = Spacing.s),
+            verticalArrangement = Arrangement.spacedBy(Spacing.m)
+        ) {
+            Text(stringResource(Res.string.pay_body), style = Owlsplit.type.body, color = Owlsplit.colors.textSecondary)
+            PayField(state, PayMethod.BIZUM, state.pay.bizum, Res.string.pay_bizum, "600 000 000", onEvent)
+            PayField(state, PayMethod.PAYPAL, state.pay.paypal, Res.string.pay_paypal, "paypal.me/…", onEvent)
+            PayField(state, PayMethod.REVOLUT, state.pay.revolut, Res.string.pay_revolut, "@revtag", onEvent)
+        }
+    }
+}
+
+@Composable
+private fun PayField(
+    state: ProfileState,
+    method: PayMethod,
+    value: String?,
+    label: StringResource,
+    placeholder: String,
+    onEvent: (ProfileIntent) -> Unit,
+) {
+    val error = when (method) {
+        PayMethod.BIZUM -> Res.string.pay_bizum_invalid
+        PayMethod.PAYPAL -> Res.string.pay_paypal_invalid
+        PayMethod.REVOLUT -> Res.string.pay_revolut_invalid
+    }
+    OwlsplitTextField(
+        value = value.orEmpty(),
+        onValueChange = { onEvent(ProfileIntent.PayChanged(method, it)) },
+        label = stringResource(label),
+        placeholder = placeholder,
+        error = if (method in state.invalidPay) stringResource(error) else null,
+        capitalization = KeyboardCapitalization.None,
+        keyboardType = if (method == PayMethod.BIZUM) KeyboardType.Phone else KeyboardType.Text,
+    )
 }
 
 @Composable

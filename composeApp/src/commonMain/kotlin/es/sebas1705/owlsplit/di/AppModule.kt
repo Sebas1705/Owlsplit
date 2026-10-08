@@ -79,7 +79,7 @@ val accountModule = module {
     }
 
     factory { ObserveAccount(get(), get()) }
-    factory { SaveProfile(get()) }
+    factory { SaveProfile(get(), get()) }
     factory { CompleteOnboarding(get(), get()) }
     factory { SignInWithGoogle(get(), get(), get()) }
     factory { LinkGoogle(get(), get(), get()) }

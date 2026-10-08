@@ -36,4 +36,12 @@
     <string name="msg_offline">Sin conexión. Inténtalo cuando tengas red; no se ha borrado nada.</string>
     <string name="msg_failed">Algo ha fallado. Inténtalo de nuevo.</string>
     <string name="msg_saved">Perfil guardado.</string>
+    <string name="pay_title">Cómo te pagan</string>
+    <string name="pay_body">Opcional. Quien te deba dinero en tus grupos los verá para pagarte con un toque.</string>
+    <string name="pay_bizum">Bizum (teléfono)</string>
+    <string name="pay_paypal">PayPal.me</string>
+    <string name="pay_revolut">Revolut (Revtag)</string>
+    <string name="pay_bizum_invalid">Escribe un teléfono de 9 a 15 cifras</string>
+    <string name="pay_paypal_invalid">Escribe tu nombre de PayPal.me: letras y números, sin espacios</string>
+    <string name="pay_revolut_invalid">Escribe tu Revtag: al menos 3 letras o números</string>
 </resources>

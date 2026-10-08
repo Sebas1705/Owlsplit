@@ -53,7 +53,7 @@ class GroupsViewModelsTest {
     private val balances = ObserveGroupBalances(ledger.groups, ledger.members, ledger.expenses, ledger.transfers)
     private val detail =
         ObserveGroupDetail(ledger.groups, ledger.members, ledger.expenses, ledger.transfers, balances, accounts)
-    private val actions = GroupActions(ledger.groups, profiles)
+    private val actions = GroupActions(ledger.groups, profiles, ledger.members)
     private val memberActions = MemberActions(ledger.members)
 
     /** Ana and Luis; Ana paid 30,00 for both. */

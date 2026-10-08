@@ -5,7 +5,9 @@ import es.sebas1705.owlsplit.data.models.GoogleTokenResult
 import es.sebas1705.owlsplit.data.models.Session
 import es.sebas1705.owlsplit.data.models.UserProfile
 import es.sebas1705.owlsplit.data.repository.account.AccountService
+import es.sebas1705.owlsplit.data.repository.MemberRepository
 import es.sebas1705.owlsplit.data.repository.account.ProfileRepository
+import es.sebas1705.owlsplit.domain.usecases.pay.PayLinks
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
@@ -48,8 +50,13 @@ class ObserveAccount(private val accounts: AccountService, private val profiles:
     operator fun invoke(): Flow<AccountState> = combine(accounts.session, profiles.profile, ::AccountState)
 }
 
-class SaveProfile(private val profiles: ProfileRepository) {
-    suspend operator fun invoke(profile: UserProfile) = profiles.save(profile)
+/** Saves the profile; how I want to be paid is cleaned up and copied to my member in every group. */
+class SaveProfile(private val profiles: ProfileRepository, private val members: MemberRepository) {
+    suspend operator fun invoke(profile: UserProfile) {
+        val pay = PayLinks.normalise(profile.payMethods)
+        profiles.save(profile.copy(payMethods = pay))
+        members.publishMyPayMethods(pay.orNull())
+    }
 }
 
 /**

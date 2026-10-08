@@ -3,6 +3,7 @@ package es.sebas1705.owlsplit.data.repository.account
 import es.sebas1705.owlsplit.core.datastore.AppPreferences
 import es.sebas1705.owlsplit.core.datastore.StoredProfile
 import es.sebas1705.owlsplit.data.models.AccountResult
+import es.sebas1705.owlsplit.data.models.PayMethods
 import es.sebas1705.owlsplit.data.models.UserProfile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -32,10 +33,15 @@ class ProfileRepositoryImpl(
     private val scope: CoroutineScope,
 ) : ProfileRepository {
     override val profile: Flow<UserProfile?> =
-        prefs.profile.map { it?.let { p -> UserProfile(p.name, p.avatar, p.currency) } }
+        prefs.profile.map {
+            it?.let { p -> UserProfile(p.name, p.avatar, p.currency, PayMethods(p.bizum, p.paypal, p.revolut)) }
+        }
 
     override suspend fun save(profile: UserProfile) {
-        prefs.setProfile(StoredProfile(profile.name, profile.avatar, profile.currency))
+        val pay = profile.payMethods
+        prefs.setProfile(
+            StoredProfile(profile.name, profile.avatar, profile.currency, pay.bizum, pay.paypal, pay.revolut)
+        )
         scope.launch { uploadCurrent() }
     }
 
