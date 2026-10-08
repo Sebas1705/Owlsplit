@@ -65,3 +65,7 @@ secrets.properties
 
 node_modules/
 firebase/*-debug.log
+
+# XcodeGen output (iosApp/project.yml is the source)
+iosApp/*.xcodeproj/
+iosApp/iosApp/Info.plist

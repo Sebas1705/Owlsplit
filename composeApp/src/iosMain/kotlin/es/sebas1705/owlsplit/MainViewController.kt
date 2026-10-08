@@ -15,19 +15,15 @@ import es.sebas1705.owlsplit.di.dataModule
 import es.sebas1705.owlsplit.di.groupsModule
 import es.sebas1705.owlsplit.di.inviteModule
 import es.sebas1705.owlsplit.domain.usecases.account.GoogleCredentials
+import es.sebas1705.owlsplit.navigation.IncomingInvites
+import es.sebas1705.owlsplit.platform.IosQrScanner
+import es.sebas1705.owlsplit.platform.IosTextSharer
 import es.sebas1705.owlsplit.sync.SyncStarter
 import es.sebas1705.owlsplit.sync.syncModule
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
 
-/** Google (and Apple) sign-in on iOS arrive with P11, together with the Xcode project. */
-/** Scanning on iOS (AVFoundation) arrives with P11; Join hides the option meanwhile. */
-private object UnavailableQrScanner : QrScanner {
-    override val isAvailable = false
-
-    override suspend fun scan(): String? = null
-}
-
+/** Google sign-in on iOS needs the Google Sign-In SDK and a URL scheme; pending (docs/plans, P11c). */
 private object UnavailableGoogleCredentials : GoogleCredentials {
     override val isAvailable = false
 
@@ -50,9 +46,8 @@ fun MainViewController() = ComposeUIViewController(
                     single { DatabaseDriverFactory() }
                     single { firebase }
                     single<GoogleCredentials> { UnavailableGoogleCredentials }
-                    // The iOS share sheet arrives with P11; until then the screen copies the text.
-                    single<TextSharer> { TextSharer { false } }
-                    single<QrScanner> { UnavailableQrScanner }
+                    single<TextSharer> { IosTextSharer() }
+                    single<QrScanner> { IosQrScanner() }
                 },
             )
         }.koin
@@ -60,3 +55,11 @@ fun MainViewController() = ComposeUIViewController(
         if (firebase.configured) koin.get<SyncStarter>().start(koin.get())
     }
 ) { App() }
+
+/**
+ * Called by the Swift app with the URLs it is opened with (Universal Links of `owlsplit.web.app`,
+ * once the Apple Team ID is in apple-app-site-association): `/j/<code>` opens Join.
+ */
+fun handleIncomingLink(url: String) {
+    if ("/j/" in url) IncomingInvites.offer(url)
+}
