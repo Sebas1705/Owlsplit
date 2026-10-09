@@ -9,6 +9,7 @@ import es.sebas1705.owlsplit.domain.usecases.balances.ObserveGroupBalances
 import es.sebas1705.owlsplit.domain.usecases.expenses.DeleteExpense
 import es.sebas1705.owlsplit.domain.usecases.expenses.SaveExpense
 import es.sebas1705.owlsplit.domain.usecases.groups.GroupActions
+import es.sebas1705.owlsplit.domain.usecases.importer.ImportGroup
 import es.sebas1705.owlsplit.domain.usecases.groups.MemberActions
 import es.sebas1705.owlsplit.domain.usecases.groups.ObserveGroupDetail
 import es.sebas1705.owlsplit.domain.usecases.groups.ObserveHome
@@ -26,6 +27,7 @@ import es.sebas1705.owlsplit.feature.groups.detail.GroupTab
 import es.sebas1705.owlsplit.feature.groups.detail.GroupViewModel
 import es.sebas1705.owlsplit.feature.groups.editor.GroupEditorViewModel
 import es.sebas1705.owlsplit.feature.groups.members.MembersViewModel
+import es.sebas1705.owlsplit.feature.groups.importer.ImportViewModel
 import es.sebas1705.owlsplit.feature.groups.stats.StatsViewModel
 import es.sebas1705.owlsplit.feature.groups.transfer.TransferViewModel
 import es.sebas1705.owlsplit.feature.history.HistoryViewModel
@@ -40,6 +42,7 @@ val groupsModule = module {
     factory { ObserveGroupDetail(get(), get(), get(), get(), get(), get()) }
     factory { ObservePendingChanges(get()) }
     factory { GroupActions(get(), get(), get()) }
+    factory { ImportGroup(get(), get(), get(), get(), get()) }
     factory { MemberActions(get()) }
     factory { SettleUp(get()) }
     factory { SaveExpense(get()) }
@@ -62,6 +65,7 @@ val groupsModule = module {
     viewModel { (groupId: String) -> MembersViewModel(groupId, get(), get()) }
     viewModel { (groupId: String) -> TransferViewModel(groupId, get(), get()) }
     viewModel { (groupId: String) -> StatsViewModel(groupId, get()) }
+    viewModel { ImportViewModel(get(), get(), get()) }
     viewModel { (groupId: String?) -> HistoryViewModel(groupId, get(), get(), get(), get()) }
     viewModel { (groupId: String, expenseId: String?, separator: Char) ->
         ExpenseEditorViewModel(groupId, expenseId, get(), get(), get(), get(), separator)

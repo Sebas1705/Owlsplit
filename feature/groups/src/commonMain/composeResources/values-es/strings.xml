@@ -118,4 +118,20 @@
     <string name="report_transfer">Pago</string>
     <string name="report_transfer_title">Pago de %1$s a %2$s</string>
     <string name="report_footer">Hecho con Owlsplit</string>
+    <string name="import_entry">¿Vienes de Splitwise? Importa un grupo</string>
+    <string name="import_title">Importar de Splitwise</string>
+    <string name="import_intro">Trae un grupo con sus gastos, pagos y personas. Los saldos quedan igual que en Splitwise.</string>
+    <string name="import_how">1. En Splitwise, abre el grupo.
+2. Toca Ajustes (⚙) y «Exportar como hoja de cálculo».
+3. Guarda el archivo y elígelo aquí.</string>
+    <string name="import_choose">Elegir archivo</string>
+    <string name="import_not_splitwise">Ese archivo no parece una exportación de un grupo de Splitwise.</string>
+    <string name="import_nothing">El archivo no tiene gastos que importar.</string>
+    <string name="import_summary">Gastos: %1$d · Pagos: %2$d · Moneda: %3$s</string>
+    <string name="import_skipped">%1$d filas no se pueden leer y se quedarán fuera.</string>
+    <string name="import_missing_rates">Sin conexión no hay tipo de cambio para %1$s: esos movimientos se quedarán fuera. Conéctate y vuelve a elegir el archivo para incluirlos.</string>
+    <string name="import_who">¿Quién eres tú?</string>
+    <string name="import_none">Ninguno: entro con mi nombre</string>
+    <string name="import_run">Importar grupo</string>
+    <string name="import_another">Elegir otro archivo</string>
 </resources>

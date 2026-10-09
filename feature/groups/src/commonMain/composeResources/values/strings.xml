@@ -118,4 +118,20 @@
     <string name="report_transfer">Payment</string>
     <string name="report_transfer_title">Payment from %1$s to %2$s</string>
     <string name="report_footer">Made with Owlsplit</string>
+    <string name="import_entry">Coming from Splitwise? Import a group</string>
+    <string name="import_title">Import from Splitwise</string>
+    <string name="import_intro">Bring a group with its expenses, payments and people. Balances stay exactly as in Splitwise.</string>
+    <string name="import_how">1. In Splitwise, open the group.
+2. Tap Settings (⚙) and “Export as spreadsheet”.
+3. Save the file and choose it here.</string>
+    <string name="import_choose">Choose file</string>
+    <string name="import_not_splitwise">That file does not look like a Splitwise group export.</string>
+    <string name="import_nothing">The file has no expenses to import.</string>
+    <string name="import_summary">Expenses: %1$d · Payments: %2$d · Currency: %3$s</string>
+    <string name="import_skipped">%1$d rows cannot be read and will be left out.</string>
+    <string name="import_missing_rates">Offline there is no exchange rate for %1$s: those movements will be left out. Go online and choose the file again to include them.</string>
+    <string name="import_who">Which one are you?</string>
+    <string name="import_none">None: I join with my name</string>
+    <string name="import_run">Import group</string>
+    <string name="import_another">Choose another file</string>
 </resources>

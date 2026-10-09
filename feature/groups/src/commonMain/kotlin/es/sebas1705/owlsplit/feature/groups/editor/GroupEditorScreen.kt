@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -64,6 +65,7 @@ import es.sebas1705.owlsplit.feature.groups.resources.date_to
 import es.sebas1705.owlsplit.feature.groups.resources.dates_invalid
 import es.sebas1705.owlsplit.feature.groups.resources.edit_group
 import es.sebas1705.owlsplit.feature.groups.resources.icon_label
+import es.sebas1705.owlsplit.feature.groups.resources.import_entry
 import es.sebas1705.owlsplit.feature.groups.resources.name_label
 import es.sebas1705.owlsplit.feature.groups.resources.name_placeholder
 import es.sebas1705.owlsplit.feature.groups.resources.new_group
@@ -79,11 +81,17 @@ private const val ICONS_PER_ROW = 6
 
 /** [onSaved] receives the group id (new or edited). */
 @Composable
-fun GroupEditorRoute(groupId: String?, onBack: () -> Unit, onSaved: (String) -> Unit, modifier: Modifier = Modifier) {
+fun GroupEditorRoute(
+    groupId: String?,
+    onBack: () -> Unit,
+    onSaved: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    onImport: (() -> Unit)? = null,
+) {
     val viewModel = koinViewModel<GroupEditorViewModel>(key = "group-editor-$groupId") { parametersOf(groupId) }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(state.savedGroupId) { state.savedGroupId?.let(onSaved) }
-    GroupEditorScreen(state, viewModel::onEvent, onBack, modifier)
+    GroupEditorScreen(state, viewModel::onEvent, onBack, modifier, onImport)
 }
 
 @Composable
@@ -92,6 +100,8 @@ fun GroupEditorScreen(
     onEvent: (GroupEditorIntent) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    /** New groups only: bring one from Splitwise instead. */
+    onImport: (() -> Unit)? = null,
 ) {
     Column(modifier.fillMaxSize().background(Owlsplit.colors.background).imePadding()) {
         TopBar(stringResource(if (state.editing) Res.string.edit_group else Res.string.new_group), onBack)
@@ -135,6 +145,10 @@ fun GroupEditorScreen(
                 )
             }
             TripDates(state, onEvent)
+            if (!state.editing && onImport != null) {
+                // Pulled back by the button padding: the label lines up with the fields.
+                TextActionButton(stringResource(Res.string.import_entry), onImport, Modifier.offset(x = -Spacing.m))
+            }
         }
         PrimaryPillButton(
             stringResource(if (state.editing) Res.string.save else Res.string.create),
