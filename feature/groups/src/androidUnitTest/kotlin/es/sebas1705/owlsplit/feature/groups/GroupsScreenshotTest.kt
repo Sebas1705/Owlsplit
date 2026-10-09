@@ -88,7 +88,7 @@ class GroupsScreenshotTest {
     )
     private val state =
         GroupState(loaded = true, detail = detail, myShares = mapOf("e1" to 3_120L, "e2" to 1_200L, "e3" to 14_000L))
-    private val navigation = GroupNavigation({}, {}, {}, {}, {}, {}, {}, {})
+    private val navigation = GroupNavigation({}, {}, {}, {}, {}, {}, {}, {}, {})
 
     private fun group(name: String, tab: GroupTab, dark: Boolean = false) {
         compose.setContent {

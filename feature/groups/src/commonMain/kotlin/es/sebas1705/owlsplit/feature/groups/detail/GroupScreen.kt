@@ -84,6 +84,7 @@ import es.sebas1705.owlsplit.feature.groups.resources.no_match
 import es.sebas1705.owlsplit.feature.groups.resources.paid_by
 import es.sebas1705.owlsplit.feature.groups.resources.record_payment
 import es.sebas1705.owlsplit.feature.groups.resources.settle
+import es.sebas1705.owlsplit.feature.groups.resources.stats_title
 import es.sebas1705.owlsplit.feature.groups.resources.suggestion_pays
 import es.sebas1705.owlsplit.feature.groups.resources.suggestion_pays_you
 import es.sebas1705.owlsplit.feature.groups.resources.suggestion_step
@@ -179,6 +180,13 @@ private fun Actions(detail: GroupDetail, onEvent: (GroupIntent) -> Unit, navigat
                 onClick = {
                     menu = false
                     navigation.invite()
+                },
+            )
+            OwlsplitMenuItem(
+                stringResource(Res.string.stats_title),
+                onClick = {
+                    menu = false
+                    navigation.stats()
                 },
             )
             OwlsplitMenuItem(

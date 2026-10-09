@@ -49,6 +49,7 @@ import es.sebas1705.owlsplit.feature.groups.detail.GroupTab
 import es.sebas1705.owlsplit.feature.groups.editor.GroupEditorRoute
 import es.sebas1705.owlsplit.feature.groups.members.MembersRoute
 import es.sebas1705.owlsplit.feature.groups.transfer.TransferRoute
+import es.sebas1705.owlsplit.feature.groups.stats.StatsRoute
 import es.sebas1705.owlsplit.feature.history.HistoryRoute
 import es.sebas1705.owlsplit.feature.home.HomeNavigation
 import es.sebas1705.owlsplit.feature.home.HomeRoute
@@ -95,6 +96,9 @@ private data class TransferDest(val groupId: String)
 
 @Serializable
 private data class HistoryDest(val groupId: String)
+
+@Serializable
+private data class StatsDest(val groupId: String)
 
 @Serializable
 private data class InviteDest(val groupId: String)
@@ -235,6 +239,9 @@ private fun NavGraphBuilder.groupScreens(nav: NavController) {
             onJoined = { id -> nav.navigate(GroupDest(id)) { popUpTo<JoinDest> { inclusive = true } } },
         )
     }
+    composable<StatsDest> { backStack ->
+        StatsRoute(backStack.toRoute<StatsDest>().groupId, onBack = { nav.popBackStack() })
+    }
     composable<HistoryDest> { backStack ->
         HistoryRoute(backStack.toRoute<HistoryDest>().groupId, onBack = { nav.popBackStack() })
     }
@@ -257,6 +264,7 @@ private fun groupNavigation(nav: NavController, groupId: String) = GroupNavigati
     openExpense = { nav.navigate(ExpenseDest(groupId, it)) },
     recordPayment = { nav.navigate(TransferDest(groupId)) },
     history = { nav.navigate(HistoryDest(groupId)) },
+    stats = { nav.navigate(StatsDest(groupId)) },
     invite = { nav.navigate(InviteDest(groupId)) },
 )
 

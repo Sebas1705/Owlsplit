@@ -26,6 +26,7 @@ import es.sebas1705.owlsplit.feature.groups.detail.GroupTab
 import es.sebas1705.owlsplit.feature.groups.detail.GroupViewModel
 import es.sebas1705.owlsplit.feature.groups.editor.GroupEditorViewModel
 import es.sebas1705.owlsplit.feature.groups.members.MembersViewModel
+import es.sebas1705.owlsplit.feature.groups.stats.StatsViewModel
 import es.sebas1705.owlsplit.feature.groups.transfer.TransferViewModel
 import es.sebas1705.owlsplit.feature.history.HistoryViewModel
 import es.sebas1705.owlsplit.feature.home.HomeViewModel
@@ -60,6 +61,7 @@ val groupsModule = module {
     viewModel { (groupId: String, tab: GroupTab) -> GroupViewModel(groupId, tab, get(), get(), get()) }
     viewModel { (groupId: String) -> MembersViewModel(groupId, get(), get()) }
     viewModel { (groupId: String) -> TransferViewModel(groupId, get(), get()) }
+    viewModel { (groupId: String) -> StatsViewModel(groupId, get()) }
     viewModel { (groupId: String?) -> HistoryViewModel(groupId, get(), get(), get(), get()) }
     viewModel { (groupId: String, expenseId: String?, separator: Char) ->
         ExpenseEditorViewModel(groupId, expenseId, get(), get(), get(), get(), separator)

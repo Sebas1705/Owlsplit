@@ -4,6 +4,7 @@ import androidx.compose.ui.window.ComposeUIViewController
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.apps
 import es.sebas1705.owlsplit.core.ui.components.QrScanner
+import es.sebas1705.owlsplit.core.ui.components.FileSharer
 import es.sebas1705.owlsplit.core.ui.components.TextSharer
 import es.sebas1705.owlsplit.data.local.DatabaseDriverFactory
 import es.sebas1705.owlsplit.di.FirebaseStatus
@@ -18,6 +19,7 @@ import es.sebas1705.owlsplit.navigation.IncomingInvites
 import es.sebas1705.owlsplit.platform.GoogleSignInBridge
 import es.sebas1705.owlsplit.platform.IosGoogleCredentials
 import es.sebas1705.owlsplit.platform.IosQrScanner
+import es.sebas1705.owlsplit.platform.IosFileSharer
 import es.sebas1705.owlsplit.platform.IosTextSharer
 import es.sebas1705.owlsplit.sync.SyncStarter
 import es.sebas1705.owlsplit.sync.syncModule
@@ -42,6 +44,7 @@ fun MainViewController(googleSignIn: GoogleSignInBridge?) = ComposeUIViewControl
                     single { firebase }
                     single<GoogleCredentials> { IosGoogleCredentials(googleSignIn) }
                     single<TextSharer> { IosTextSharer() }
+                    single<FileSharer> { IosFileSharer() }
                     single<QrScanner> { IosQrScanner() }
                 },
             )
