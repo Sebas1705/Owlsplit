@@ -4,14 +4,50 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Owlsplit</title>
-  <meta name="description" content="Gastos compartidos, cuentas claras.">
+  <meta name="description" content="Gastos compartidos, cuentas claras. Descarga Owlsplit para Android.">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 <main>
   <div class="brand">owlsplit</div>
   <h1>Gastos compartidos, cuentas claras</h1>
-  <p>Apunta lo que paga cada uno y Owlsplit te dice quién debe a quién. Sin registrarte.</p>
+  <p>Apunta lo que paga cada uno y Owlsplit te dice quién debe a quién. Sin registrarte, sin anuncios y también sin conexión.</p>
+
+  <!-- Filled from /download/latest.json, which deploy-firebase.yml writes from the latest release. -->
+  <div class="card left hidden" id="download">
+    <div class="label">Android</div>
+    <div class="version" id="version"></div>
+    <a class="button" id="apk" href="/download/owlsplit.apk" download>Descargar APK</a>
+    <p class="small" id="details"></p>
+  </div>
+  <p class="hidden" id="none">La descarga estará disponible con la primera versión publicada.</p>
+
+  <div>
+    <p><strong>Cómo instalarla</strong></p>
+    <ol>
+      <li>Descarga el APK desde el móvil.</li>
+      <li>Ábrelo y, si Android lo pide, permite instalar apps de tu navegador.</li>
+      <li>Para actualizar, vuelve aquí y descarga la nueva versión: se instala encima y conserva tus grupos.</li>
+    </ol>
+  </div>
+  <p class="small">iPhone: próximamente.</p>
 </main>
+<script>
+  (function () {
+    fetch('/download/latest.json', { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (info) {
+        document.getElementById('version').textContent = 'Versión ' + info.version;
+        var mb = (info.size / 1048576).toFixed(1).replace('.', ',');
+        var day = new Date(info.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+        document.getElementById('details').textContent =
+          mb + ' MB · publicada el ' + day + ' · SHA-256 ' + info.sha256.slice(0, 16) + '…';
+        document.getElementById('details').title = 'SHA-256 ' + info.sha256;
+        document.getElementById('apk').setAttribute('download', info.file);
+        document.getElementById('download').classList.remove('hidden');
+      })
+      .catch(function () { document.getElementById('none').classList.remove('hidden'); });
+  })();
+</script>
 </body>
 </html>
