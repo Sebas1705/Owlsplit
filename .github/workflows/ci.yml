@@ -59,7 +59,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO -quiet
 
   firestore-rules:
-    name: Firestore rules (emulator)
+    name: Firestore rules (emulator) and brand files
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -73,3 +73,6 @@ jobs:
       - run: npm ci --prefix firebase/rules-test
       - working-directory: firebase
         run: npx --yes firebase-tools@15.32.1 emulators:exec --only firestore --project demo-owlsplit "npm --prefix rules-test test"
+      # Icons, web colours and favicon are generated from brand/tokens.json (docs/BRAND.md).
+      - name: Brand files up to date
+        run: node scripts/brand.mjs --check

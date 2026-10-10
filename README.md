@@ -16,6 +16,7 @@ Inspirada en Settle Up, con un diseño cuidado (estilo fintech limpio) y más fu
 | [Sincronización](docs/SYNC.md) | Motor local-first: outbox, listeners, conflictos y borrados |
 | [Firebase](docs/FIREBASE.md) | Proyectos, colecciones, reglas, autenticación y borrado de cuenta |
 | [Sistema de diseño](docs/DESIGN_SYSTEM.md) | Tokens, tipografía, componentes, movimiento y tono |
+| [Marca](docs/BRAND.md) | Logotipo, colores e iconos desde `brand/tokens.json` (app, web e iconos) |
 | [Decisiones (ADR)](docs/adr/README.md) | Por qué se eligió cada pieza y qué se descartó |
 | [Mockup aprobado](docs/mockups/owlsplit-fintech-v3.html) | Inicio, grupo y editor de gasto |
 
