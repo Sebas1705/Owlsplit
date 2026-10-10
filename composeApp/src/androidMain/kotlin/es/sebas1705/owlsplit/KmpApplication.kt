@@ -7,6 +7,7 @@ import es.sebas1705.owlsplit.account.AndroidGoogleCredentials
 import es.sebas1705.owlsplit.account.ResumedActivity
 import es.sebas1705.owlsplit.core.security.appContext
 import es.sebas1705.owlsplit.core.ui.components.QrScanner
+import es.sebas1705.owlsplit.core.ui.components.FilePicker
 import es.sebas1705.owlsplit.core.ui.components.FileSharer
 import es.sebas1705.owlsplit.core.ui.components.TextSharer
 import es.sebas1705.owlsplit.data.local.DatabaseDriverFactory
@@ -19,6 +20,7 @@ import es.sebas1705.owlsplit.di.groupsModule
 import es.sebas1705.owlsplit.di.inviteModule
 import es.sebas1705.owlsplit.domain.usecases.account.GoogleCredentials
 import es.sebas1705.owlsplit.share.AndroidQrScanner
+import es.sebas1705.owlsplit.share.AndroidFilePicker
 import es.sebas1705.owlsplit.share.AndroidFileSharer
 import es.sebas1705.owlsplit.share.AndroidTextSharer
 import es.sebas1705.owlsplit.sync.SyncStarter
@@ -52,6 +54,7 @@ class KmpApplication : Application() {
                     single<GoogleCredentials> { AndroidGoogleCredentials(this@KmpApplication, activities) }
                     single<TextSharer> { AndroidTextSharer(activities) }
                     single<FileSharer> { AndroidFileSharer(activities) }
+                    single<FilePicker> { AndroidFilePicker(activities) }
                     single<QrScanner> { AndroidQrScanner(this@KmpApplication, activities) }
                 },
             )

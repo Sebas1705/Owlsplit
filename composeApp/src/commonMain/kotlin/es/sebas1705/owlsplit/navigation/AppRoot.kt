@@ -49,6 +49,7 @@ import es.sebas1705.owlsplit.feature.groups.detail.GroupTab
 import es.sebas1705.owlsplit.feature.groups.editor.GroupEditorRoute
 import es.sebas1705.owlsplit.feature.groups.members.MembersRoute
 import es.sebas1705.owlsplit.feature.groups.transfer.TransferRoute
+import es.sebas1705.owlsplit.feature.groups.importer.ImportRoute
 import es.sebas1705.owlsplit.feature.groups.stats.StatsRoute
 import es.sebas1705.owlsplit.feature.history.HistoryRoute
 import es.sebas1705.owlsplit.feature.home.HomeNavigation
@@ -99,6 +100,9 @@ private data class HistoryDest(val groupId: String)
 
 @Serializable
 private data class StatsDest(val groupId: String)
+
+@Serializable
+private data object ImportDest
 
 @Serializable
 private data class InviteDest(val groupId: String)
@@ -217,6 +221,7 @@ private fun NavGraphBuilder.groupScreens(nav: NavController) {
                     nav.popBackStack()
                 }
             },
+            onImport = if (route.id == null) ({ nav.navigate(ImportDest) }) else null,
         )
     }
     composable<MembersDest> { backStack ->
@@ -237,6 +242,13 @@ private fun NavGraphBuilder.groupScreens(nav: NavController) {
             backStack.toRoute<JoinDest>().code,
             onBack = { nav.popBackStack() },
             onJoined = { id -> nav.navigate(GroupDest(id)) { popUpTo<JoinDest> { inclusive = true } } },
+        )
+    }
+    composable<ImportDest> {
+        ImportRoute(
+            onBack = { nav.popBackStack() },
+            // The imported group replaces the new-group screens.
+            onImported = { id -> nav.navigate(GroupDest(id)) { popUpTo<GroupEditorDest> { inclusive = true } } },
         )
     }
     composable<StatsDest> { backStack ->

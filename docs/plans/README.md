@@ -20,6 +20,7 @@ Los planes se escriben en detalle (código completo, comandos exactos) **justo a
 | P10 | Invitaciones: [P10a](2026-10-08-p10a-invites.md) · [P10b](2026-10-08-p10b-qr-links.md) | Códigos, QR, App Links / Universal Links con Firebase Hosting, unirse y reclamar miembro | P9 | Hecho (Universal Links de iOS en P11) |
 | P11 | Pulido y entrega: [P11a idiomas y accesibilidad](2026-10-08-p11a-i18n-a11y.md) · [P11b entrega](2026-10-08-p11b-release.md) · [P11c iOS](2026-10-08-p11c-ios.md) · [P11d aceptación](../ACCEPTANCE.md) | i18n es/en, accesibilidad, Crashlytics, un proyecto Firebase, firma, distribución por App Distribution, iOS (proyecto Xcode, Apple, Universal Links), checklist de criterios de aceptación | P10 | P11a–c hechos; P11d (aceptación) con pruebas manuales pendientes de Authentication y de la cuenta de Apple |
 | P12 | Tras la beta ([estudio de mercado](../research/2026-10-09-estudio-de-mercado.md)): [P12a saldar con un toque](2026-10-09-p12a-settle-links.md) · [P12b resumen y exportar](2026-10-09-p12b-stats-export.md) | Cobrar por Bizum, PayPal o Revolut desde el saldo; resumen del grupo y exportación a CSV y PDF | P11 | Hecho |
+| P13 | Cambiarse y pisos: [P13a importar de Splitwise](2026-10-10-p13a-splitwise-import.md) · P13b gastos recurrentes | Traer un grupo de Splitwise con los mismos saldos; gastos que se repiten solos (alquiler, suscripciones) | P12 | P13a hecho; P13b en curso |
 
 ## Dependencias y paralelismo
 
