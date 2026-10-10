@@ -17,6 +17,7 @@ import es.sebas1705.owlsplit.domain.usecases.expenses.DraftCheck
 import es.sebas1705.owlsplit.domain.usecases.expenses.ExpenseDraft
 import es.sebas1705.owlsplit.domain.usecases.expenses.ExpenseDrafts
 import es.sebas1705.owlsplit.domain.usecases.expenses.ExpensePayers
+import es.sebas1705.owlsplit.domain.usecases.expenses.RepeatUnit
 import es.sebas1705.owlsplit.domain.usecases.expenses.SaveExpense
 import es.sebas1705.owlsplit.domain.usecases.fx.GetFxRate
 import es.sebas1705.owlsplit.domain.usecases.groups.ObserveGroupDetail
@@ -82,6 +83,7 @@ sealed interface ExpenseEditorIntent : MVIBaseIntent {
     data class ValueChanged(val memberId: String, val text: String) : ExpenseEditorIntent
     data class DateChanged(val date: LocalDate) : ExpenseEditorIntent
     data class NoteChanged(val note: String) : ExpenseEditorIntent
+    data class RepeatChanged(val repeat: RepeatUnit?) : ExpenseEditorIntent
     data object Save : ExpenseEditorIntent
     data object AskDelete : ExpenseEditorIntent
     data object ConfirmDelete : ExpenseEditorIntent
@@ -152,6 +154,7 @@ class ExpenseEditorViewModel(
             is ExpenseEditorIntent.Toggle -> toggle(intent.memberId)
             is ExpenseEditorIntent.ValueChanged -> changeValue(intent.memberId, intent.text)
             is ExpenseEditorIntent.DateChanged -> updateDraft { it.copy(date = intent.date) }
+            is ExpenseEditorIntent.RepeatChanged -> updateDraft { it.copy(repeat = intent.repeat) }
             is ExpenseEditorIntent.NoteChanged ->
                 updateDraft { it.copy(note = intent.note.take(ExpenseDrafts.MAX_NOTE)) }
             ExpenseEditorIntent.Save -> save()

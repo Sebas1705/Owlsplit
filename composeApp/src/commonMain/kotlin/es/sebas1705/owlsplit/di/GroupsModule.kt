@@ -8,6 +8,7 @@ import es.sebas1705.owlsplit.domain.usecases.account.ObservePendingChanges
 import es.sebas1705.owlsplit.domain.usecases.balances.ObserveGroupBalances
 import es.sebas1705.owlsplit.domain.usecases.expenses.DeleteExpense
 import es.sebas1705.owlsplit.domain.usecases.expenses.SaveExpense
+import es.sebas1705.owlsplit.domain.usecases.expenses.GenerateRecurring
 import es.sebas1705.owlsplit.domain.usecases.groups.GroupActions
 import es.sebas1705.owlsplit.domain.usecases.importer.ImportGroup
 import es.sebas1705.owlsplit.domain.usecases.groups.MemberActions
@@ -46,6 +47,7 @@ val groupsModule = module {
     factory { MemberActions(get()) }
     factory { SettleUp(get()) }
     factory { SaveExpense(get()) }
+    factory { GenerateRecurring(get(), get(), get()) }
     factory { DeleteExpense(get()) }
     factory { RecordTransfer(get()) }
     single<FxRates> {
@@ -59,9 +61,9 @@ val groupsModule = module {
     factory { RestoreExpense(get()) }
     factory { ResolveConflict(get()) }
 
-    viewModel { HomeViewModel(get(), get(), get(), get(), get()) }
+    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { (groupId: String?) -> GroupEditorViewModel(groupId, get(), get(), get()) }
-    viewModel { (groupId: String, tab: GroupTab) -> GroupViewModel(groupId, tab, get(), get(), get()) }
+    viewModel { (groupId: String, tab: GroupTab) -> GroupViewModel(groupId, tab, get(), get(), get(), get()) }
     viewModel { (groupId: String) -> MembersViewModel(groupId, get(), get()) }
     viewModel { (groupId: String) -> TransferViewModel(groupId, get(), get()) }
     viewModel { (groupId: String) -> StatsViewModel(groupId, get()) }

@@ -6,7 +6,7 @@ Owlsplit se construye en subproyectos independientes. Cada uno pasa por **diseñ
 |---|---|---|---|
 | 1 | **Núcleo (MVP)** | Diseño aprobado | — |
 | 2 | Liquidar con un toque y recordatorios | Pendiente | 1 |
-| 3 | Gastos recurrentes | Pendiente | 1 |
+| 3 | Gastos recurrentes | Hecho (P13b) | 1 |
 | 4 | Presupuestos, estadísticas y exportación | Pendiente | 1 |
 | 5 | Escaneo de tickets | Pendiente | 1 (mejor tras 4) |
 
