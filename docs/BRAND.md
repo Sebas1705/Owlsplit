@@ -27,7 +27,7 @@ Iconos de la app:
 
 - **Android 8 y posteriores**: icono adaptativo. El fondo es `accent`, y los ojos y el pico ocupan la zona segura de 66 dp, dibujados a escala 3 en el centro del lienzo de 108 dp. Android 12 lo usa también en la pantalla de arranque.
 - **Android 13 y posteriores**: versión monocroma para los iconos temáticos.
-- **Android 7**: el logotipo redondeado.
+- **PNG en cada densidad** (`mipmap-mdpi` … `xxxhdpi`): el logotipo redondeado. Lo usa Android 7, que no tiene iconos adaptativos, y Firebase App Distribution (App Tester), que no sabe leer los adaptativos: sin los PNG mostraría un icono genérico.
 - **iOS**: `AppIcon` de 1024 px, opaco.
 
 Reglas de uso:
@@ -55,7 +55,7 @@ En la web, `brand.css` define estos colores como variables CSS, por ejemplo `--o
 ## Cambiar la marca
 
 1. Edita `brand/tokens.json`.
-2. Ejecuta `node scripts/brand.mjs` para regenerar la web y los iconos de Android. Con `--png` también regenera el icono de iOS; necesita Edge o Chrome.
+2. Ejecuta `node scripts/brand.mjs --png` para regenerar la web, los iconos de Android (vectoriales y PNG) y el de iOS. Para los PNG necesita Edge o Chrome; sin `--png` solo regenera los archivos de texto.
 3. Si cambiaste colores de la app, actualiza `Tokens.kt`; `BrandTokensTest` te dirá cuáles faltan. Si cambiaste la geometría del logotipo, actualiza `OwlsplitLogo`.
 
 La CI ejecuta `node scripts/brand.mjs --check` y falla si algún archivo generado no está al día.
