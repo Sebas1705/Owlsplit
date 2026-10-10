@@ -21,6 +21,13 @@ git tag v1.0.0 && git push origin v1.0.0
 
 También se puede lanzar a mano desde Actions con la versión (`X.Y.Z-beta.1` crea una prerelease). El AAB queda listo para Google Play.
 
+Cuando termina la Release, `deploy-firebase.yml` vuelve a desplegar Hosting con el APK de esa versión. Así **[owlsplit.web.app](https://owlsplit.web.app)** ofrece siempre la descarga de la última, incluidas las betas:
+
+- el APK está en `/download/owlsplit.apk`;
+- `/download/latest.json` indica la versión, el tamaño, el SHA-256 y la fecha.
+
+El APK no se guarda en el repo: cada despliegue lo descarga de la GitHub Release.
+
 Todos los secretos vienen de Doppler `owlsplit/prd`; GitHub solo guarda `DOPPLER_TOKEN`, un token de solo lectura.
 
 ## Preparación (hecha el 2026-10-08)

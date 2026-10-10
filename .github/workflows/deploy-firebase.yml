@@ -1,14 +1,25 @@
 name: Deploy Firebase (production)
 
 # What `main` says about the backend is what production runs: Firestore rules and indexes and the
-# Hosting site (invite pages, assetlinks.json). The rules are tested on every PR (ci.yml) before
-# they get here. Credentials: FIREBASE_SERVICE_ACCOUNT_JSON (owlsplit-ci, least roles) from
-# Doppler owlsplit/prd. There is one project: this is its only deploy path besides a manual `firebase deploy`.
+# Hosting site (download page, invite pages, assetlinks.json). The rules are tested on every PR
+# (ci.yml) before they get here. Credentials: FIREBASE_SERVICE_ACCOUNT_JSON (owlsplit-ci, least
+# roles) from Doppler owlsplit/prd. There is one project: this is its only deploy path besides a
+# manual `firebase deploy`.
+#
+# The download page serves the APK of the latest release (pre-releases included) at
+# /download/owlsplit.apk, with /download/latest.json describing it. It is not in the repo: every
+# deploy fetches it from the GitHub Release, and a finished Release run deploys again.
 on:
   push:
     branches: [main]
     paths: ["firebase/firebase.json", "firebase/firestore.rules", "firebase/firestore.indexes.json", "firebase/hosting/**"]
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: deploy-firebase
@@ -16,14 +27,31 @@ concurrency:
 
 jobs:
   deploy:
+    # After a release only when it succeeded.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     env:
       DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v7
       - uses: dopplerhq/cli-action@v4
       - uses: actions/setup-node@v6
         with: { node-version: 22 }
+      - name: APK of the latest release for the download page
+        working-directory: firebase/hosting
+        run: |
+          TAG=$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --limit 1 --json tagName -q '.[0].tagName')
+          [ -n "$TAG" ] || { echo "::notice::No release yet: the download page says so"; exit 0; }
+          mkdir -p download
+          FILE="Owlsplit-$TAG.apk"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "$FILE" --output download/owlsplit.apk
+          DATE=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json publishedAt -q .publishedAt)
+          SIZE=$(stat -c %s download/owlsplit.apk)
+          SHA=$(sha256sum download/owlsplit.apk | cut -d' ' -f1)
+          printf '{"version":"%s","tag":"%s","file":"%s","size":%s,"sha256":"%s","date":"%s"}\n' \
+            "${TAG#v}" "$TAG" "$FILE" "$SIZE" "$SHA" "$DATE" > download/latest.json
+          cat download/latest.json
       - name: Deploy rules, indexes and Hosting to owlsplit
         working-directory: firebase
         run: |
