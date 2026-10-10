@@ -1,20 +1,16 @@
-/* Owlsplit web: the app's colours (core/ui OwlsplitTheme), light and dark. */
+/* Owlsplit web. Colours come from brand.css (generated from brand/tokens.json, the same values as
+   the app); these names are what the pages use. */
 :root {
-  --bg: #F2F3F7; --surface: #FFFFFF; --ink: #10131C; --muted: #5A6070; --line: #E1E4EC;
-  --accent: #3B4BF5; --accent-text: #3B4BF5; --accent-soft: #E8EBFF; --accent-glow: rgba(59, 75, 245, .55);
-  --positive: #087A54; --positive-soft: #E3F4EC;
+  --bg: var(--os-background); --surface: var(--os-surface); --ink: var(--os-text-primary);
+  --muted: var(--os-text-secondary); --line: var(--os-divider);
+  --accent: var(--os-accent); --accent-text: var(--os-accent-text); --accent-soft: var(--os-accent-container);
+  --accent-glow: color-mix(in srgb, var(--os-accent) 55%, transparent);
+  --positive: var(--os-positive); --positive-soft: color-mix(in srgb, var(--os-positive-fill) 14%, var(--os-surface));
+  --beak: var(--os-brand-beak);
   --display: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
   --body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0B0C10; --surface: #16181F; --ink: #F1F2F7; --muted: #9A9FAD; --line: #262A35;
-    --accent-text: #8C96FF; --accent-soft: #232750; --accent-glow: rgba(59, 75, 245, .45);
-    --positive: #34C38F; --positive-soft: #10291F;
-    color-scheme: dark;
-  }
+  color-scheme: light dark;
 }
 * { box-sizing: border-box; }
 body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); -webkit-font-smoothing: antialiased; }
@@ -23,7 +19,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--accent-text); o
 
 /* Invite page (join.html): one narrow column. */
 .narrow { max-width: 440px; margin: 0 auto; padding: 40px 16px; display: flex; flex-direction: column; gap: 20px; }
-.narrow .brand { font: 800 22px/1 var(--display); letter-spacing: -0.02em; }
+.narrow .brand { display: inline-flex; align-items: center; gap: 10px; font: 800 22px/1 var(--display); letter-spacing: -0.02em; color: var(--ink); text-decoration: none; }
 .narrow h1 { margin: 0; font: 800 28px/1.15 var(--display); letter-spacing: -0.02em; }
 .narrow p { margin: 0; color: var(--muted); }
 .card { background: var(--surface); border-radius: 20px; padding: 20px; text-align: center; }

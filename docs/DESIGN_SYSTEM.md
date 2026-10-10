@@ -75,7 +75,7 @@ En los importes grandes la parte decimal se muestra al 60 % del tamaño (y en `t
 
 ## Logotipo
 
-Búho geométrico: cuadrado redondeado en `accent` con dos anillos blancos por ojos y un pico en `brandBeak`. Usos: icono de la app, splash, estados vacíos y pantalla de bienvenida. **No** aparece como mascota ilustrada dentro de las pantallas de trabajo.
+Búho geométrico: cuadrado redondeado en `accent` con dos anillos blancos por ojos y un pico en `brandBeak`. Usos: icono de la app, splash, estados vacíos y pantalla de bienvenida. **No** aparece como mascota ilustrada dentro de las pantallas de trabajo. Geometría, archivos e iconos: [BRAND](BRAND.md); los colores de esta página salen de `brand/tokens.json`.
 
 ## Componentes (`core:ui`)
 
