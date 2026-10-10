@@ -23,10 +23,10 @@ También se puede lanzar a mano desde Actions con la versión (`X.Y.Z-beta.1` cr
 
 Cuando termina la Release, `deploy-firebase.yml` vuelve a desplegar Hosting con el APK de esa versión. Así **[owlsplit.web.app](https://owlsplit.web.app)** ofrece siempre la descarga de la última, incluidas las betas:
 
-- el APK está en `/download/owlsplit.apk`;
-- `/download/latest.json` indica la versión, el tamaño, el SHA-256 y la fecha.
+- `owlsplit.web.app/apk` redirige al APK de la última GitHub Release (el repo es público, así que se descarga sin cuenta);
+- `/download/latest.json` indica la versión, el enlace, el tamaño, el SHA-256 y la fecha.
 
-El APK no se guarda en el repo: cada despliegue lo descarga de la GitHub Release.
+El APK no se sube a Hosting porque el plan Spark prohíbe los ejecutables.
 
 Todos los secretos vienen de Doppler `owlsplit/prd`; GitHub solo guarda `DOPPLER_TOKEN`, un token de solo lectura.
 

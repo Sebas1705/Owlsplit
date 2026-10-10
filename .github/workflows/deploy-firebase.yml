@@ -6,9 +6,9 @@ name: Deploy Firebase (production)
 # roles) from Doppler owlsplit/prd. There is one project: this is its only deploy path besides a
 # manual `firebase deploy`.
 #
-# The download page serves the APK of the latest release (pre-releases included) at
-# /download/owlsplit.apk, with /download/latest.json describing it. It is not in the repo: every
-# deploy fetches it from the GitHub Release, and a finished Release run deploys again.
+# The download page links the APK of the latest release (pre-releases included), which stays in
+# the public GitHub Release (Spark forbids executables on Hosting): /download/latest.json describes
+# it and /apk redirects to it. Every deploy rewrites both, and a finished Release run deploys again.
 on:
   push:
     branches: [main]
@@ -38,20 +38,27 @@ jobs:
       - uses: dopplerhq/cli-action@v4
       - uses: actions/setup-node@v6
         with: { node-version: 22 }
-      - name: APK of the latest release for the download page
-        working-directory: firebase/hosting
+      # The Spark plan forbids executables on Hosting: the APK stays in the (public) GitHub Release;
+      # the site only describes it (/download/latest.json) and redirects /apk to it.
+      - name: Latest release for the download page
+        working-directory: firebase
         run: |
           TAG=$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --limit 1 --json tagName -q '.[0].tagName')
           [ -n "$TAG" ] || { echo "::notice::No release yet: the download page says so"; exit 0; }
-          mkdir -p download
           FILE="Owlsplit-$TAG.apk"
-          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "$FILE" --output download/owlsplit.apk
+          URL="https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/$FILE"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "$FILE" --dir "$RUNNER_TEMP"
           DATE=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json publishedAt -q .publishedAt)
-          SIZE=$(stat -c %s download/owlsplit.apk)
-          SHA=$(sha256sum download/owlsplit.apk | cut -d' ' -f1)
-          printf '{"version":"%s","tag":"%s","file":"%s","size":%s,"sha256":"%s","date":"%s"}\n' \
-            "${TAG#v}" "$TAG" "$FILE" "$SIZE" "$SHA" "$DATE" > download/latest.json
-          cat download/latest.json
+          SIZE=$(stat -c %s "$RUNNER_TEMP/$FILE")
+          SHA=$(sha256sum "$RUNNER_TEMP/$FILE" | cut -d' ' -f1)
+          mkdir -p hosting/download
+          jq -n --arg version "${TAG#v}" --arg tag "$TAG" --arg file "$FILE" --arg url "$URL" \
+            --argjson size "$SIZE" --arg sha256 "$SHA" --arg date "$DATE" \
+            '{version: $version, tag: $tag, file: $file, url: $url, size: $size, sha256: $sha256, date: $date}' \
+            > hosting/download/latest.json
+          jq --arg url "$URL" '.hosting.redirects = [{source: "/apk", destination: $url, type: 302}]' \
+            firebase.json > "$RUNNER_TEMP/firebase.json" && mv "$RUNNER_TEMP/firebase.json" firebase.json
+          cat hosting/download/latest.json
       - name: Deploy rules, indexes and Hosting to owlsplit
         working-directory: firebase
         run: |
