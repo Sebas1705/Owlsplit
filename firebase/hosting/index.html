@@ -17,7 +17,7 @@
   <div class="card left hidden" id="download">
     <div class="label">Android</div>
     <div class="version" id="version"></div>
-    <a class="button" id="apk" href="/download/owlsplit.apk" download>Descargar APK</a>
+    <a class="button" id="apk" href="/apk">Descargar APK</a>
     <p class="small" id="details"></p>
   </div>
   <p class="hidden" id="none">La descarga estará disponible con la primera versión publicada.</p>
@@ -43,7 +43,7 @@
         document.getElementById('details').textContent =
           mb + ' MB · publicada el ' + day + ' · SHA-256 ' + info.sha256.slice(0, 16) + '…';
         document.getElementById('details').title = 'SHA-256 ' + info.sha256;
-        document.getElementById('apk').setAttribute('download', info.file);
+        document.getElementById('apk').href = info.url;
         document.getElementById('download').classList.remove('hidden');
       })
       .catch(function () { document.getElementById('none').classList.remove('hidden'); });
