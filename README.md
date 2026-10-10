@@ -41,4 +41,4 @@ iOS: el proyecto de Xcode se genera con XcodeGen (`cd iosApp && xcodegen generat
 
 ## Licencia
 
-Privado. Todos los derechos reservados.
+[MIT](LICENSE). La licencia cubre el código; el nombre y el logo de Owlsplit no están incluidos, así que una copia o derivado debe usar otro nombre.
