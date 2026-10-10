@@ -4,7 +4,8 @@
 //
 //   node scripts/brand.mjs            write every generated file
 //   node scripts/brand.mjs --check    fail if any generated file is out of date (CI)
-//   node scripts/brand.mjs --png      also render the iOS app icon (needs Edge or Chrome)
+//   node scripts/brand.mjs --png      also render the PNG icons: iOS and the Android density folders
+//                                     (needs Edge or Chrome)
 //
 // The app's own colours live in core/ui Tokens.kt; BrandTokensTest checks they match.
 import { execFileSync } from "node:child_process";
@@ -76,11 +77,6 @@ ${body}
 const foreground = vector(108, 108, vectorFace(108, 3, 18, "#FFFFFFFF", "#FF" + light.brandBeak.slice(1)));
 // Themed icons (Android 13+): one colour, the launcher tints it.
 const monochrome = vector(108, 108, vectorFace(108, 3, 18, "#FFFFFFFF", "#FFFFFFFF"));
-// Android 7 has no adaptive icons: the rounded logo itself, 48 dp.
-const legacy = vector(48, L.grid, `    <path
-        android:fillColor="#FF${light.accent.slice(1)}"
-        android:pathData="M${L.corner},0 H${L.grid - L.corner} A${L.corner},${L.corner} 0 0 1 ${L.grid},${L.corner} V${L.grid - L.corner} A${L.corner},${L.corner} 0 0 1 ${L.grid - L.corner},${L.grid} H${L.corner} A${L.corner},${L.corner} 0 0 1 0,${L.grid - L.corner} V${L.corner} A${L.corner},${L.corner} 0 0 1 ${L.corner},0 Z" />
-${vectorFace(L.grid, 1, 0, "#FFFFFFFF", "#FF" + light.brandBeak.slice(1))}`);
 const adaptive = `<?xml version="1.0" encoding="utf-8"?>
 ${header("<!-- % -->")}
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
@@ -104,7 +100,6 @@ const files = {
   "firebase/hosting/favicon.svg": logoSvg,
   [`${res}/drawable/ic_launcher_foreground.xml`]: foreground,
   [`${res}/drawable/ic_launcher_monochrome.xml`]: monochrome,
-  [`${res}/mipmap/ic_launcher.xml`]: legacy,
   [`${res}/mipmap-anydpi-v26/ic_launcher.xml`]: adaptive,
   [`${res}/values/ic_launcher_colors.xml`]: colors,
 };
@@ -131,7 +126,10 @@ if (check) {
   console.log("Brand files up to date");
 }
 
-// ── iOS app icon (PNG, 1024 px, opaque) ───────────────────────────────────────
+// ── PNG icons ─────────────────────────────────────────────────────────────────
+// iOS needs a 1024 px opaque square. Android also gets the rounded logo as PNG in every density
+// folder: Android 7 has no adaptive icons, and Firebase App Distribution (App Tester) cannot read
+// adaptive ones and shows a generic icon without them. Android 8+ still uses the adaptive icon.
 if (process.argv.includes("--png")) {
   const browsers = [
     "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
@@ -141,13 +139,21 @@ if (process.argv.includes("--png")) {
     "/usr/bin/chromium",
   ];
   const browser = browsers.find(existsSync);
-  if (!browser) throw new Error("No Edge or Chrome found to render the PNG");
-  const page = join(tmpdir(), "owlsplit-icon.html");
-  writeFileSync(page, `<!doctype html><html><body style="margin:0">${iconSvg.replace("<svg ", '<svg width="1024" height="1024" ')}</body></html>`);
-  const out = join(root, "iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/AppIcon.png");
-  mkdirSync(dirname(out), { recursive: true });
-  execFileSync(browser, ["--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1",
-    "--window-size=1024,1024", `--screenshot=${out}`, "file:///" + page.replace(/\\/g, "/")], { stdio: "ignore" });
-  rmSync(page);
-  console.log("wrote iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/AppIcon.png");
+  if (!browser) throw new Error("No Edge or Chrome found to render the PNG icons");
+  const render = (source, size, path, transparent) => {
+    const page = join(tmpdir(), "owlsplit-icon.html");
+    writeFileSync(page, `<!doctype html><html><body style="margin:0">${source.replace("<svg ", `<svg width="${size}" height="${size}" `)}</body></html>`);
+    const out = join(root, path);
+    mkdirSync(dirname(out), { recursive: true });
+    execFileSync(browser, ["--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1",
+      ...(transparent ? ["--default-background-color=00000000"] : []),
+      `--window-size=${size},${size}`, `--screenshot=${out}`, "file:///" + page.replaceAll("\\", "/")], { stdio: "ignore" });
+    rmSync(page);
+    console.log("wrote", path);
+  };
+  render(iconSvg, 1024, "iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/AppIcon.png", false);
+  const densities = { mdpi: 48, hdpi: 72, xhdpi: 96, xxhdpi: 144, xxxhdpi: 192 };
+  for (const [density, size] of Object.entries(densities)) {
+    render(logoSvg, size, `${res}/mipmap-${density}/ic_launcher.png`, true);
+  }
 }
