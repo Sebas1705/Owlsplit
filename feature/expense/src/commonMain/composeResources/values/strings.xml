@@ -49,4 +49,10 @@
     <string name="date_label">Date</string>
     <string name="note_label">Note (optional)</string>
     <string name="ok">OK</string>
+    <string name="repeat_label">Repeat</string>
+    <string name="repeat_never">Never</string>
+    <string name="repeat_week">Every week</string>
+    <string name="repeat_month">Every month</string>
+    <string name="repeat_year">Every year</string>
+    <string name="repeat_hint">It is added on its own on each date, with the amount and split of the latest one. To stop it, choose “Never” on any of them.</string>
 </resources>

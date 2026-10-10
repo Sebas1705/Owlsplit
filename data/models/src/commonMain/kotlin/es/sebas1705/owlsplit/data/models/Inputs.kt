@@ -26,6 +26,8 @@ data class ExpenseInput(
     val payers: Map<String, Long>,
     val splitType: SplitType,
     val splitValues: Map<String, Long>,
+    /** The series this expense repeats in (P13b), see Recurrence in the domain. */
+    val recurrenceId: String? = null,
 )
 
 data class TransferInput(

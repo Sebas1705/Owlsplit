@@ -14,6 +14,7 @@ import es.sebas1705.owlsplit.domain.ledger.SplitIssue
 import es.sebas1705.owlsplit.domain.ledger.SplitResult
 import es.sebas1705.owlsplit.domain.ledger.SplitSpec
 import es.sebas1705.owlsplit.domain.usecases.groups.Today
+import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDate
 import es.sebas1705.owlsplit.domain.ledger.SplitType as LedgerSplitType
 
@@ -36,6 +37,8 @@ data class ExpenseDraft(
     val currency: String = "EUR",
     /** Group-currency units per one unit of [currency] (fixed point, 10⁹); null while missing. */
     val fxRateScaled: Long? = FxRate.SCALE,
+    /** How often it repeats; null: once. */
+    val repeat: RepeatUnit? = null,
 ) {
     /** The single payer, when there is one. */
     val payerId: String? get() = if (multiplePayers) null else payers.keys.singleOrNull()
@@ -89,6 +92,7 @@ object ExpenseDrafts {
         note = expense.note,
         currency = expense.currency,
         fxRateScaled = expense.fxRateScaled,
+        repeat = Recurrence.parse(expense.recurrenceId)?.takeUnless { it.stopped }?.unit,
     )
 
     /** Switching type keeps who takes part and fills sensible values for the new type. */
@@ -165,7 +169,11 @@ object ExpensePayers {
 }
 
 /** Saves a draft; false (and nothing saved) if it is not valid. */
-class SaveExpense(private val expenses: ExpenseRepository, private val today: Today = Today.System) {
+class SaveExpense(
+    private val expenses: ExpenseRepository,
+    private val today: Today = Today.System,
+    private val newSeriesId: () -> String = ::randomSeriesId,
+) {
     suspend operator fun invoke(
         groupId: String,
         expenseId: String?,
@@ -187,11 +195,47 @@ class SaveExpense(private val expenses: ExpenseRepository, private val today: To
             payers = if (single != null) mapOf(single to draft.amountMinor) else draft.payers.filterValues { it > 0 },
             splitType = draft.splitType,
             splitValues = draft.values.filterValues { it > 0 },
+            recurrenceId = recurrenceOf(groupId, expenseId, draft.repeat),
         )
         if (expenseId == null) expenses.create(groupId, input) else expenses.update(expenseId, input)
         return true
     }
+
+    /**
+     * The series the saved expense belongs to. Turning repetition off marks this expense as
+     * stopped, which stops its whole series. Choosing another period starts a new series from this
+     * expense and stops the old one on its latest other expense.
+     */
+    private suspend fun recurrenceOf(groupId: String, expenseId: String?, repeat: RepeatUnit?): String? {
+        val old = expenseId?.let { expenses.get(it) }?.recurrenceId?.let(Recurrence::parse)
+        return when {
+            old == null -> repeat?.let { Recurrence(newSeriesId(), it).encode() }
+            repeat == null -> old.copy(stopped = true).encode()
+            !old.stopped && old.unit == repeat -> old.encode()
+            else -> {
+                if (!old.stopped) stopSeries(groupId, old, except = expenseId)
+                Recurrence(newSeriesId(), repeat).encode()
+            }
+        }
+    }
+
+    private suspend fun stopSeries(groupId: String, series: Recurrence, except: String?) {
+        val other = expenses.observeExpenses(groupId, includeDeleted = true).first()
+            .filter { it.id != except && Recurrence.parse(it.recurrenceId)?.seriesId == series.seriesId }
+            .maxByOrNull { it.date } ?: return
+        expenses.update(other.id, other.toInput(recurrenceId = series.copy(stopped = true).encode()))
+    }
 }
+
+@OptIn(kotlin.uuid.ExperimentalUuidApi::class)
+private fun randomSeriesId(): String = kotlin.uuid.Uuid.random().toString()
+
+/** An expense as repository input, to rewrite it (or a copy) with a few changes. */
+internal fun Expense.toInput(date: LocalDate = this.date, recurrenceId: String? = this.recurrenceId) = ExpenseInput(
+    title = title, category = category, note = note, date = date, currency = currency, amountMinor = amountMinor,
+    fxRateScaled = fxRateScaled, payers = payers, splitType = splitType, splitValues = splitValues,
+    recurrenceId = recurrenceId,
+)
 
 class DeleteExpense(private val expenses: ExpenseRepository) {
     suspend operator fun invoke(expenseId: String) = expenses.delete(expenseId)

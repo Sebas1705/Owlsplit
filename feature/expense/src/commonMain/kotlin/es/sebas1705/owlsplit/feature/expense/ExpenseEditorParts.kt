@@ -2,6 +2,7 @@ package es.sebas1705.owlsplit.feature.expense
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +17,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -35,6 +37,8 @@ import es.sebas1705.owlsplit.core.ui.components.SwitchRow
 import es.sebas1705.owlsplit.core.ui.components.CurrencyPicker
 import es.sebas1705.owlsplit.core.ui.components.DateField
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitContainer
+import es.sebas1705.owlsplit.core.ui.components.OwlsplitDropdownMenu
+import es.sebas1705.owlsplit.core.ui.components.OwlsplitMenuItem
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitTextField
 import es.sebas1705.owlsplit.core.ui.format.MoneyFormat
 import es.sebas1705.owlsplit.core.ui.format.dayLabel
@@ -42,6 +46,7 @@ import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
 import es.sebas1705.owlsplit.core.ui.theme.OwlsplitShapes
 import es.sebas1705.owlsplit.core.ui.theme.Sizes
 import es.sebas1705.owlsplit.core.ui.theme.Spacing
+import es.sebas1705.owlsplit.domain.usecases.expenses.RepeatUnit
 import es.sebas1705.owlsplit.domain.usecases.groups.Today
 import es.sebas1705.owlsplit.feature.expense.resources.Res
 import es.sebas1705.owlsplit.feature.expense.resources.cancel
@@ -59,6 +64,12 @@ import es.sebas1705.owlsplit.feature.expense.resources.rate_manual
 import es.sebas1705.owlsplit.feature.expense.resources.rate_missing_hint
 import es.sebas1705.owlsplit.feature.expense.resources.rate_row
 import es.sebas1705.owlsplit.feature.expense.resources.rate_stale
+import es.sebas1705.owlsplit.feature.expense.resources.repeat_hint
+import es.sebas1705.owlsplit.feature.expense.resources.repeat_label
+import es.sebas1705.owlsplit.feature.expense.resources.repeat_month
+import es.sebas1705.owlsplit.feature.expense.resources.repeat_never
+import es.sebas1705.owlsplit.feature.expense.resources.repeat_week
+import es.sebas1705.owlsplit.feature.expense.resources.repeat_year
 import es.sebas1705.owlsplit.feature.expense.resources.several_payers
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
@@ -195,12 +206,72 @@ internal fun DateAndNote(
             cancelLabel = stringResource(Res.string.cancel),
             onChange = { onEvent(ExpenseEditorIntent.DateChanged(it)) },
         )
+        RepeatRow(state.draft.repeat) { onEvent(ExpenseEditorIntent.RepeatChanged(it)) }
+    }
+    if (state.draft.repeat != null) {
+        Text(
+            stringResource(Res.string.repeat_hint),
+            style = Owlsplit.type.caption,
+            color = Owlsplit.colors.textSecondary
+        )
     }
     OwlsplitTextField(
         value = state.draft.note.orEmpty(),
         onValueChange = { onEvent(ExpenseEditorIntent.NoteChanged(it)) },
         label = stringResource(Res.string.note_label),
     )
+}
+
+/** Never, or every week, month or year: the expense is then added again on its own. */
+@Composable
+private fun RepeatRow(selected: RepeatUnit?, onSelect: (RepeatUnit?) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    val label = @Composable { unit: RepeatUnit? ->
+        stringResource(
+            when (unit) {
+                null -> Res.string.repeat_never
+                RepeatUnit.WEEK -> Res.string.repeat_week
+                RepeatUnit.MONTH -> Res.string.repeat_month
+                RepeatUnit.YEAR -> Res.string.repeat_year
+            },
+        )
+    }
+    Box {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = Sizes.rowMinHeight)
+                .clickable(role = Role.DropdownList) { open = true }
+                .padding(horizontal = Spacing.m),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                stringResource(Res.string.repeat_label),
+                style = Owlsplit.type.body,
+                color = Owlsplit.colors.textPrimary,
+                modifier = Modifier.weight(1f),
+            )
+            Text(label(selected), style = Owlsplit.type.bodyStrong, color = Owlsplit.colors.textPrimary)
+            Icon(
+                TablerIcons.ChevronDown,
+                null,
+                tint = Owlsplit.colors.textMuted,
+                modifier = Modifier.padding(start = Spacing.xs).size(18.dp),
+            )
+        }
+        OwlsplitDropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            (listOf(null) + RepeatUnit.entries).forEach { unit ->
+                OwlsplitMenuItem(
+                    label(unit),
+                    onClick = {
+                        open = false
+                        onSelect(unit)
+                    },
+                    selected = unit == selected,
+                )
+            }
+        }
+    }
 }
 
 /** A short decimal field, right-aligned (amounts, rates, weights). */

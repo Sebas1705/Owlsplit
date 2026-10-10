@@ -134,4 +134,5 @@
     <string name="import_none">Ninguno: entro con mi nombre</string>
     <string name="import_run">Importar grupo</string>
     <string name="import_another">Elegir otro archivo</string>
+    <string name="repeats">se repite</string>
 </resources>

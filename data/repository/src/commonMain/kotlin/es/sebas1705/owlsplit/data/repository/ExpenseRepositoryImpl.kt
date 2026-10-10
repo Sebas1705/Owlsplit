@@ -40,13 +40,13 @@ class ExpenseRepositoryImpl(
 
     override suspend fun get(id: String): Expense? = withContext(io) { load(id) }
 
-    override suspend fun create(groupId: String, input: ExpenseInput): String = withContext(io) {
+    override suspend fun create(groupId: String, input: ExpenseInput, id: String?): String = withContext(io) {
         db.transactionWithResult {
             val expense = Expense(
-                id = writer.newId(), groupId = groupId, title = input.title, category = input.category,
+                id = id ?: writer.newId(), groupId = groupId, title = input.title, category = input.category,
                 note = input.note, date = input.date, currency = input.currency, amountMinor = input.amountMinor,
                 fxRateScaled = input.fxRateScaled, payers = input.payers, splitType = input.splitType,
-                splitValues = input.splitValues, receiptUrl = null, recurrenceId = null, createdBy = writer.uid(),
+                splitValues = input.splitValues, receiptUrl = null, recurrenceId = input.recurrenceId, createdBy = writer.uid(),
                 createdAt = writer.now(), meta = writer.createdMeta(),
             )
             save(expense, old = null, action = ChangeAction.CREATED)
@@ -59,7 +59,7 @@ class ExpenseRepositoryImpl(
             title = input.title, category = input.category, note = input.note, date = input.date,
             currency = input.currency, amountMinor = input.amountMinor, fxRateScaled = input.fxRateScaled,
             payers = input.payers, splitType = input.splitType, splitValues = input.splitValues,
-            meta = writer.editedMeta(old.meta),
+            recurrenceId = input.recurrenceId, meta = writer.editedMeta(old.meta),
         )
     }
 

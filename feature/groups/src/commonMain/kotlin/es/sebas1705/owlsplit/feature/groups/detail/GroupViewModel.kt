@@ -9,6 +9,7 @@ import es.sebas1705.owlsplit.data.models.ExpenseCategory
 import es.sebas1705.owlsplit.domain.ledger.SuggestedPayment
 import es.sebas1705.owlsplit.domain.usecases.history.ExpenseFilter
 import es.sebas1705.owlsplit.domain.usecases.expenses.ExpenseDrafts
+import es.sebas1705.owlsplit.domain.usecases.expenses.GenerateRecurring
 import es.sebas1705.owlsplit.domain.usecases.groups.GroupActions
 import es.sebas1705.owlsplit.domain.usecases.groups.GroupDetail
 import es.sebas1705.owlsplit.domain.usecases.groups.ObserveGroupDetail
@@ -54,11 +55,14 @@ class GroupViewModel(
     observeDetail: ObserveGroupDetail,
     private val settleUp: SettleUp,
     private val actions: GroupActions,
+    /** Adds the repeating expenses that are due (null in tests that do not need it). */
+    generateRecurring: GenerateRecurring? = null,
 ) : MVIBaseViewModel<GroupState, GroupIntent>() {
 
     override fun initState() = GroupState(tab = initialTab)
 
     init {
+        generateRecurring?.let { generate -> execute { generate(groupId) } }
         viewModelScope.launch {
             observeDetail(groupId).collect { detail ->
                 val myId = detail?.myMemberId

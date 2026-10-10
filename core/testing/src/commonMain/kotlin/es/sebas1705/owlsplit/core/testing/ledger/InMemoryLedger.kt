@@ -127,11 +127,11 @@ class InMemoryLedger(var uid: String = "uid-ana") {
 
         override suspend fun get(id: String): Expense? = expenseList.value.firstOrNull { it.id == id }
 
-        override suspend fun create(groupId: String, input: ExpenseInput): String {
+        override suspend fun create(groupId: String, input: ExpenseInput, id: String?): String {
             val expense = Expense(
-                id("e"), groupId, input.title, input.category, input.note, input.date, input.currency,
+                id ?: id("e"), groupId, input.title, input.category, input.note, input.date, input.currency,
                 input.amountMinor, input.fxRateScaled, input.payers, input.splitType, input.splitValues,
-                null, null, uid, now(), meta(),
+                null, input.recurrenceId, uid, now(), meta(),
             )
             expenseList.update { it + expense }
             return expense.id
@@ -142,6 +142,7 @@ class InMemoryLedger(var uid: String = "uid-ana") {
                 title = input.title, category = input.category, note = input.note, date = input.date,
                 currency = input.currency, amountMinor = input.amountMinor, fxRateScaled = input.fxRateScaled,
                 payers = input.payers, splitType = input.splitType, splitValues = input.splitValues,
+                recurrenceId = input.recurrenceId,
             )
         }
 

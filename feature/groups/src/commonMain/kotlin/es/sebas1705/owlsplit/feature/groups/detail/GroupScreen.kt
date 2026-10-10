@@ -56,6 +56,7 @@ import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
 import es.sebas1705.owlsplit.core.ui.theme.Spacing
 import es.sebas1705.owlsplit.core.ui.theme.categoryIcon
 import es.sebas1705.owlsplit.domain.ledger.SuggestedPayment
+import es.sebas1705.owlsplit.domain.usecases.expenses.Recurrence
 import es.sebas1705.owlsplit.domain.usecases.groups.GroupDetail
 import es.sebas1705.owlsplit.domain.usecases.groups.Today
 import es.sebas1705.owlsplit.domain.usecases.groups.nameOf
@@ -83,6 +84,7 @@ import es.sebas1705.owlsplit.feature.groups.resources.no_expenses_title
 import es.sebas1705.owlsplit.feature.groups.resources.no_match
 import es.sebas1705.owlsplit.feature.groups.resources.paid_by
 import es.sebas1705.owlsplit.feature.groups.resources.record_payment
+import es.sebas1705.owlsplit.feature.groups.resources.repeats
 import es.sebas1705.owlsplit.feature.groups.resources.settle
 import es.sebas1705.owlsplit.feature.groups.resources.stats_title
 import es.sebas1705.owlsplit.feature.groups.resources.suggestion_pays
@@ -284,9 +286,11 @@ private fun LazyListScope.expenses(
                     val payers = expense.payers.keys.joinToString(", ") { detail.members.nameOf(it) }
                     val share = state.myShares[expense.id] ?: 0
                     val shareText = stringResource(Res.string.your_share, format.format(share, currency))
+                    val repeats = Recurrence.parse(expense.recurrenceId)?.takeUnless { it.stopped } != null
+                    val paidBy = stringResource(Res.string.paid_by, payers)
                     ExpenseRow(
                         title = expense.title,
-                        subtitle = stringResource(Res.string.paid_by, payers),
+                        subtitle = if (repeats) "$paidBy · ${stringResource(Res.string.repeats)}" else paidBy,
                         icon = categoryIcon(expense.category.name),
                         amountMinor = expense.amountMinor,
                         currency = currency,

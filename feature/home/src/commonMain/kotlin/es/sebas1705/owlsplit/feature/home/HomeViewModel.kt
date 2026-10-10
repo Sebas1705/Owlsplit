@@ -1,5 +1,6 @@
 package es.sebas1705.owlsplit.feature.home
 
+import es.sebas1705.owlsplit.domain.usecases.expenses.GenerateRecurring
 import androidx.lifecycle.viewModelScope
 import es.sebas1705.owlsplit.core.common.mvi.MVIBaseIntent
 import es.sebas1705.owlsplit.core.common.mvi.MVIBaseState
@@ -49,11 +50,14 @@ class HomeViewModel(
     observePending: ObservePendingChanges,
     private val convertTotal: ConvertTotal,
     private val nudge: LinkNudgeSettings,
+    /** Adds the repeating expenses that are due in every group (null in tests that do not need it). */
+    generateRecurring: GenerateRecurring? = null,
 ) : MVIBaseViewModel<HomeState, HomeIntent>() {
 
     override fun initState() = HomeState()
 
     init {
+        generateRecurring?.let { generate -> execute { generate.all() } }
         viewModelScope.launch {
             combine(
                 observeHome(),
