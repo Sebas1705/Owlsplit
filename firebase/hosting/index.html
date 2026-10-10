@@ -3,50 +3,173 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Owlsplit</title>
-  <meta name="description" content="Gastos compartidos, cuentas claras. Descarga Owlsplit para Android.">
+  <title>Owlsplit · Gastos compartidos, cuentas claras</title>
+  <meta name="description" content="Apunta quién pagó qué y Owlsplit te dice quién debe a quién. Gratis, sin registro y sin conexión. Descarga la app para Android.">
+  <meta name="theme-color" content="#F2F3F7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0B0C10" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
   <link rel="stylesheet" href="/style.css">
+  <style>
+    /* Page layout: hero (pitch + live split), what it does, how to install, footer. */
+    .page { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+    .top { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; }
+    .wordmark { display: inline-flex; align-items: center; gap: 10px; font: 800 22px/1 var(--display); letter-spacing: -0.02em; color: var(--ink); text-decoration: none; }
+    .wordmark svg { width: 34px; height: 22px; }
+    .top a.quiet { font-weight: 600; font-size: 15px; color: var(--muted); text-decoration: none; }
+    .top a.quiet:hover { color: var(--ink); }
+
+    .hero { display: grid; gap: 48px; align-items: center; padding: 40px 0 72px; }
+    @media (min-width: 880px) { .hero { grid-template-columns: 1.05fr 0.95fr; padding: 64px 0 96px; } }
+    .hero h1 { font: 800 clamp(34px, 9vw, 72px)/0.98 var(--display); letter-spacing: -0.035em; margin: 0; color: var(--ink); text-wrap: balance; }
+    .hero h1 em { font-style: normal; color: var(--accent-text); }
+    .lede { font-size: 19px; line-height: 1.55; color: var(--muted); margin: 22px 0 32px; max-width: 34ch; }
+
+    .get { display: grid; gap: 12px; justify-items: start; }
+    .download {
+      display: inline-flex; align-items: center; gap: 14px; text-decoration: none;
+      background: var(--accent); color: #fff; border-radius: 999px; padding: 18px 30px 18px 22px;
+      font: 700 18px/1 var(--body); box-shadow: 0 10px 30px -12px var(--accent-glow);
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .download:hover { transform: translateY(-1px); box-shadow: 0 14px 34px -12px var(--accent-glow); }
+    .download:active { transform: translateY(0); }
+    .download svg { width: 24px; height: 24px; flex: none; }
+    .download small { display: block; font: 500 13px/1.2 var(--body); opacity: .82; margin-top: 4px; }
+    .get .meta { font-size: 14px; color: var(--muted); }
+    .get .meta a { color: var(--accent-text); font-weight: 600; text-decoration: none; }
+    .get .meta a:hover { text-decoration: underline; }
+
+    /* Signature: an expense being split, the way the app shows it. */
+    .split { margin: 0; background: var(--surface); border-radius: 28px; padding: 26px; box-shadow: 0 30px 60px -40px rgba(16, 19, 28, .45); max-width: 440px; justify-self: center; width: 100%; }
+    .split .head { display: flex; align-items: center; gap: 14px; }
+    .split .cat { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-text); flex: none; }
+    .split .cat svg { width: 22px; height: 22px; }
+    .split .title { font-weight: 700; font-size: 17px; color: var(--ink); }
+    .split .sub { font-size: 14px; color: var(--muted); }
+    .split .total { margin-left: auto; font: 800 26px/1 var(--display); letter-spacing: -0.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+    .shares { list-style: none; margin: 22px 0 0; padding: 18px 0 0; border-top: 1px solid var(--line); display: grid; gap: 14px; }
+    .share { display: grid; grid-template-columns: 36px 1fr auto; align-items: center; gap: 12px; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 15px; }
+    .bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+    .bar i { display: block; height: 100%; width: 100%; border-radius: 4px; transform-origin: left; }
+    .share b { font-variant-numeric: tabular-nums; font-size: 15px; color: var(--ink); }
+    .owe { margin-top: 22px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--positive-soft); border-radius: 18px; padding: 14px 16px; }
+    .owe p { margin: 0; font-weight: 600; color: var(--ink); }
+    .owe p span { color: var(--positive); }
+    .chip { font-size: 13px; font-weight: 700; color: var(--accent-text); background: var(--surface); border-radius: 999px; padding: 8px 12px; white-space: nowrap; }
+    @media (prefers-reduced-motion: no-preference) {
+      .bar i { animation: fill .9s cubic-bezier(.2, .8, .2, 1) both; }
+      .share:nth-child(2) .bar i { animation-delay: .15s; }
+      .share:nth-child(3) .bar i { animation-delay: .3s; }
+      .owe { animation: rise .5s .75s ease-out both; }
+    }
+    @keyframes fill { from { transform: scaleX(0); } }
+    @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+
+    .section { padding: 64px 0; border-top: 1px solid var(--line); }
+    .section h2 { font: 800 clamp(28px, 4vw, 40px)/1.05 var(--display); letter-spacing: -0.03em; margin: 0 0 32px; color: var(--ink); }
+    .facts { display: grid; gap: 28px 40px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); margin: 0; }
+    .facts dt { font-weight: 700; font-size: 17px; color: var(--ink); margin-bottom: 6px; }
+    .facts dd { margin: 0; color: var(--muted); line-height: 1.55; }
+
+    .steps { list-style: none; counter-reset: step; margin: 0; padding: 0; display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+    .steps li { counter-increment: step; background: var(--surface); border-radius: 22px; padding: 22px; color: var(--muted); line-height: 1.55; }
+    .steps li::before { content: counter(step); display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-text); font: 800 16px/1 var(--display); margin-bottom: 14px; }
+    .steps strong { color: var(--ink); }
+
+    .foot { padding: 40px 0 56px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 10px 28px; font-size: 14px; color: var(--muted); }
+    .foot a { color: var(--muted); }
+    .hash { font: 500 12px/1.4 var(--mono); word-break: break-all; }
+  </style>
 </head>
 <body>
-<main>
-  <div class="brand">owlsplit</div>
-  <h1>Gastos compartidos, cuentas claras</h1>
-  <p>Apunta lo que paga cada uno y Owlsplit te dice quién debe a quién. Sin registrarte, sin anuncios y también sin conexión.</p>
+<div class="page">
+  <header class="top">
+    <a class="wordmark" href="/" aria-label="Owlsplit, inicio">
+      <svg viewBox="0 0 34 22" aria-hidden="true"><circle cx="10" cy="11" r="9" fill="var(--accent)"/><circle cx="24" cy="11" r="9" fill="var(--accent)" opacity=".55"/><circle cx="12" cy="11" r="3" fill="#fff"/><circle cx="26" cy="11" r="3" fill="#fff"/></svg>
+      owlsplit
+    </a>
+    <a class="quiet" href="https://github.com/Sebas1705/Owlsplit">Código en GitHub</a>
+  </header>
 
-  <!-- Filled from /download/latest.json, which deploy-firebase.yml writes from the latest release. -->
-  <div class="card left hidden" id="download">
-    <div class="label">Android</div>
-    <div class="version" id="version"></div>
-    <a class="button" id="apk" href="/apk">Descargar APK</a>
-    <p class="small" id="details"></p>
-  </div>
-  <p class="hidden" id="none">La descarga estará disponible con la primera versión publicada.</p>
+  <main>
+    <section class="hero">
+      <div>
+        <h1>Gastos compartidos, <em>cuentas claras.</em></h1>
+        <p class="lede">Apunta quién pagó qué y Owlsplit te dice quién debe a quién. Sin registro, sin anuncios y también sin conexión.</p>
+        <div class="get">
+          <!-- /apk redirects to the APK of the latest release: the button works even without the script. -->
+          <a class="download" id="apk" href="/apk">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
+            <span>Descargar para Android<small id="apk-meta">Archivo APK</small></span>
+          </a>
+          <p class="meta">¿Primera vez instalando un APK? <a href="#instalar">Así se hace</a> · iPhone: próximamente</p>
+        </div>
+      </div>
 
-  <div>
-    <p><strong>Cómo instalarla</strong></p>
-    <ol>
-      <li>Descarga el APK desde el móvil.</li>
-      <li>Ábrelo y, si Android lo pide, permite instalar apps de tu navegador.</li>
-      <li>Para actualizar, vuelve aquí y descarga la nueva versión: se instala encima y conserva tus grupos.</li>
-    </ol>
-  </div>
-  <p class="small">iPhone: próximamente.</p>
-</main>
+      <figure class="split" aria-label="Ejemplo: una cena de 90 euros pagada por Ana y dividida entre tres; Luis le debe 30 euros.">
+        <div class="head">
+          <span class="cat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v8a2 2 0 0 0 2 2v8"/><path d="M5 3v5"/><path d="M9 3v5"/><path d="M17 21V3c-2 1.5-3 4-3 7s1 4 3 4"/></svg></span>
+          <div><div class="title">Cena en el puerto</div><div class="sub">Pagó Ana · entre 3</div></div>
+          <div class="total">90 €</div>
+        </div>
+        <ul class="shares" aria-hidden="true">
+          <li class="share"><span class="avatar" style="background:#E8EBFF;color:#3B4BF5">A</span><span class="bar"><i style="background:#3B4BF5"></i></span><b>30,00 €</b></li>
+          <li class="share"><span class="avatar" style="background:#FBE7F0;color:#B4246A">L</span><span class="bar"><i style="background:#D63A84"></i></span><b>30,00 €</b></li>
+          <li class="share"><span class="avatar" style="background:#E3F4EC;color:#087A54">M</span><span class="bar"><i style="background:#13A06E"></i></span><b>30,00 €</b></li>
+        </ul>
+        <div class="owe" aria-hidden="true">
+          <p>Luis te debe <span>30,00 €</span></p>
+          <span class="chip">Saldar con Bizum</span>
+        </div>
+      </figure>
+    </section>
+
+    <section class="section">
+      <h2>Lo que hace por ti</h2>
+      <dl class="facts">
+        <div><dt>Gratis de verdad</dt><dd>Sin límite de gastos, sin anuncios y sin una versión Pro que esconda lo útil.</dd></div>
+        <div><dt>Sin registro</dt><dd>Abres la app, creas un grupo y compartes un enlace o un QR. Nadie necesita cuenta.</dd></div>
+        <div><dt>Sin conexión</dt><dd>Apunta en el avión o en la montaña: todo se sincroniza al volver la cobertura.</dd></div>
+        <div><dt>Saldar con un toque</dt><dd>Bizum, PayPal o Revolut desde el saldo, y el mensaje para pedir lo que te deben.</dd></div>
+        <div><dt>Varias monedas</dt><dd>Cada gasto en su moneda, con el tipo de cambio del día guardado.</dd></div>
+        <div><dt>Vienes de Splitwise</dt><dd>Importa tu grupo con sus gastos y los mismos saldos. También repite el alquiler cada mes y exporta a PDF o CSV.</dd></div>
+      </dl>
+    </section>
+
+    <section class="section" id="instalar">
+      <h2>Cómo instalarla</h2>
+      <ol class="steps">
+        <li><strong>Descarga el APK</strong> desde el móvil con el botón de arriba.</li>
+        <li><strong>Ábrelo</strong>. Si Android lo pide, permite instalar apps desde tu navegador: solo hace falta la primera vez.</li>
+        <li><strong>Para actualizar</strong>, vuelve aquí y descarga la nueva versión. Se instala encima y conserva tus grupos.</li>
+      </ol>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span id="version">Owlsplit para Android</span>
+    <span class="hash" id="sha"></span>
+    <a href="https://github.com/Sebas1705/Owlsplit">Código abierto (MIT)</a>
+  </footer>
+</div>
 <script>
+  // Adds the version, size and checksum of the latest release; the button works without it.
   (function () {
     fetch('/download/latest.json', { cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (info) {
-        document.getElementById('version').textContent = 'Versión ' + info.version;
         var mb = (info.size / 1048576).toFixed(1).replace('.', ',');
         var day = new Date(info.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
-        document.getElementById('details').textContent =
-          mb + ' MB · publicada el ' + day + ' · SHA-256 ' + info.sha256.slice(0, 16) + '…';
-        document.getElementById('details').title = 'SHA-256 ' + info.sha256;
         document.getElementById('apk').href = info.url;
-        document.getElementById('download').classList.remove('hidden');
+        document.getElementById('apk-meta').textContent = 'Versión ' + info.version + ' · ' + mb + ' MB';
+        document.getElementById('version').textContent = 'Versión ' + info.version + ', publicada el ' + day;
+        document.getElementById('sha').textContent = 'SHA-256 ' + info.sha256;
       })
-      .catch(function () { document.getElementById('none').classList.remove('hidden'); });
+      .catch(function () { /* Keep the plain /apk link. */ });
   })();
 </script>
 </body>
