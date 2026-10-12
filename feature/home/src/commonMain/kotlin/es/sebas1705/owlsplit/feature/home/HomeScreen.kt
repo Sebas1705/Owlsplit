@@ -83,6 +83,11 @@ import es.sebas1705.owlsplit.feature.home.resources.people
 import es.sebas1705.owlsplit.feature.home.resources.pick_group
 import es.sebas1705.owlsplit.feature.home.resources.synced
 import es.sebas1705.owlsplit.feature.home.resources.total_balance
+import es.sebas1705.owlsplit.feature.home.resources.update_action
+import es.sebas1705.owlsplit.feature.home.resources.update_body
+import es.sebas1705.owlsplit.feature.home.resources.update_title
+import androidx.compose.ui.platform.LocalUriHandler
+import es.sebas1705.owlsplit.data.models.LatestRelease
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -119,6 +124,7 @@ fun HomeScreen(
             Text("owlsplit", style = Owlsplit.type.title, color = Owlsplit.colors.textPrimary)
         }
         if (!state.loaded) return@Column
+        state.update?.let { Update(it, onEvent) }
         if (state.groups.isEmpty()) {
             NoGroups(state, navigation)
             return@Column
@@ -282,6 +288,32 @@ private fun Archived(groups: List<Group>, onOpen: (String) -> Unit) {
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+/** A newer release: its APK opens in the browser, which downloads it; "Ahora no" waits for the next one. */
+@Composable
+private fun Update(release: LatestRelease, onEvent: (HomeIntent) -> Unit) {
+    val uri = LocalUriHandler.current
+    OwlsplitContainer(title = stringResource(Res.string.update_title, release.version)) {
+        Column(Modifier.padding(horizontal = Spacing.m), verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
+            Text(
+                stringResource(Res.string.update_body),
+                style = Owlsplit.type.body,
+                color = Owlsplit.colors.textSecondary
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s)
+            ) {
+                TextActionButton(stringResource(Res.string.nudge_dismiss), { onEvent(HomeIntent.DismissUpdate) })
+                PrimaryPillButton(
+                    stringResource(Res.string.update_action),
+                    { uri.openUri(release.url) },
+                    Modifier.weight(1f)
+                )
             }
         }
     }

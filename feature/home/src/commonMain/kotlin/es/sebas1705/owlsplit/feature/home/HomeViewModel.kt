@@ -8,6 +8,9 @@ import es.sebas1705.owlsplit.core.common.mvi.MVIBaseIntent
 import es.sebas1705.owlsplit.core.common.mvi.MVIBaseState
 import es.sebas1705.owlsplit.core.common.mvi.MVIBaseViewModel
 import es.sebas1705.owlsplit.core.datastore.LinkNudgeSettings
+import es.sebas1705.owlsplit.core.datastore.UpdateSettings
+import es.sebas1705.owlsplit.data.models.LatestRelease
+import es.sebas1705.owlsplit.domain.usecases.update.CheckForUpdate
 import es.sebas1705.owlsplit.domain.usecases.account.ObserveAccount
 import es.sebas1705.owlsplit.domain.usecases.account.ObservePendingChanges
 import es.sebas1705.owlsplit.domain.usecases.account.ShouldSuggestLinking
@@ -39,13 +42,25 @@ data class HomeState(
     val suggestLinking: Boolean = false,
     /** Asking which group a quick action is for. */
     val picking: QuickAction? = null,
+    /** A newer release to install, unless the user put it off. */
+    val update: LatestRelease? = null,
 ) : MVIBaseState
 
 sealed interface HomeIntent : MVIBaseIntent {
     data class Pick(val action: QuickAction) : HomeIntent
     data object DismissPicker : HomeIntent
     data object DismissNudge : HomeIntent
+    data object DismissUpdate : HomeIntent
 }
+
+/**
+ * Adds the repeating expenses that are due in every group, and shows my groups whether my account is
+ * linked to Google.
+ */
+class HomeChores(val generateRecurring: GenerateRecurring, val syncMyLinked: SyncMyLinked)
+
+/** Finding a newer release and remembering which one the user put off. */
+class UpdateOffer(val check: CheckForUpdate, val settings: UpdateSettings)
 
 @OptIn(ExperimentalCoroutinesApi::class) // mapLatest
 class HomeViewModel(
@@ -54,17 +69,27 @@ class HomeViewModel(
     observePending: ObservePendingChanges,
     private val convertTotal: ConvertTotal,
     private val nudge: LinkNudgeSettings,
-    /** Adds the repeating expenses that are due in every group (null in tests that do not need it). */
-    generateRecurring: GenerateRecurring? = null,
-    /** Shows my groups whether my account is linked to Google (null in tests that do not need it). */
-    syncMyLinked: SyncMyLinked? = null,
+    /** Work for every group when Inicio opens (null in tests that do not need it). */
+    chores: HomeChores? = null,
+    /** Looks for a newer release once per launch (null in tests that do not need it). */
+    private val updates: UpdateOffer? = null,
 ) : MVIBaseViewModel<HomeState, HomeIntent>() {
 
     override fun initState() = HomeState()
 
     init {
-        generateRecurring?.let { generate -> execute { generate.all() } }
-        syncMyLinked?.let { sync -> execute { sync() } }
+        chores?.let {
+            execute { it.generateRecurring.all() }
+            execute { it.syncMyLinked() }
+        }
+        updates?.let { offer ->
+            viewModelScope.launch {
+                val latest = offer.check() ?: return@launch
+                offer.settings.dismissedUpdate.collect { dismissed ->
+                    updateState { it.copy(update = latest.takeIf { latest.versionCode != dismissed }) }
+                }
+            }
+        }
         viewModelScope.launch {
             combine(
                 observeHome(),
@@ -90,7 +115,7 @@ class HomeViewModel(
                     otherCurrencies = converted.unconverted,
                     approximate = converted.approximate
                 )
-            }.collect { fresh -> updateState { fresh.copy(picking = it.picking) } }
+            }.collect { fresh -> updateState { fresh.copy(picking = it.picking, update = it.update) } }
         }
     }
 
@@ -99,6 +124,7 @@ class HomeViewModel(
             is HomeIntent.Pick -> updateState { it.copy(picking = intent.action) }
             HomeIntent.DismissPicker -> updateState { it.copy(picking = null) }
             HomeIntent.DismissNudge -> nudge.dismissLinkNudge()
+            HomeIntent.DismissUpdate -> currentState.update?.let { updates?.settings?.dismissUpdate(it.versionCode) }
         }
     }
 }

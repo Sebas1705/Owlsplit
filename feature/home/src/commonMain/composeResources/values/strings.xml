@@ -32,4 +32,7 @@
     <string name="balance_spoken_even">You are all settled up</string>
     <string name="archived_show">Show archived (%1$d)</string>
     <string name="archived_hide">Hide archived (%1$d)</string>
+    <string name="update_title">New version: %1$s</string>
+    <string name="update_body">Download it and open it to install it over this one; your groups stay.</string>
+    <string name="update_action">Update</string>
 </resources>

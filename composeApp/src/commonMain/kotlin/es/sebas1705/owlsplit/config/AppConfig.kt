@@ -10,7 +10,16 @@ object AppConfig {
 
     /** Firebase Hosting site that serves the invite links (`/j/<code>`). */
     const val INVITE_BASE_URL: String = "https://owlsplit.web.app"
+
+    /** What the download page says about the latest release (written by deploy-firebase.yml). */
+    const val LATEST_RELEASE_URL: String = "$INVITE_BASE_URL/download/latest.json"
 }
 
 /** A debug build (local development): no crash reports, the design catalog and a "debug" badge. */
 expect val isDebugBuild: Boolean
+
+/**
+ * The versionCode of this build when it can update from the download page (Android release builds);
+ * null otherwise (debug builds, iOS), so the app never offers an APK it cannot use.
+ */
+expect val updatableVersionCode: Long?
