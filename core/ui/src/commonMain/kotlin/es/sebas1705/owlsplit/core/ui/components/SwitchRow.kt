@@ -1,5 +1,11 @@
 package es.sebas1705.owlsplit.core.ui.components
 
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -19,13 +25,24 @@ import es.sebas1705.owlsplit.core.ui.theme.Sizes
  * readers ("Varios pagadores, interruptor, desactivado") and the target is the full row.
  */
 @Composable
-fun SwitchRow(text: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit, modifier: Modifier = Modifier) {
+fun SwitchRow(
+    text: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    /** Side padding inside the press area: in a container the ripple then fills the whole row. */
+    horizontalPadding: Dp = 0.dp,
+    /** The press area's shape: rectangle in a container (which clips it), rounded on its own. */
+    shape: Shape = RectangleShape,
+) {
     val colors = Owlsplit.colors
     Row(
         modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.touchTarget)
-            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange),
+            .clip(shape)
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+            .padding(horizontal = horizontalPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(text, style = Owlsplit.type.body, color = colors.textPrimary, modifier = Modifier.weight(1f))

@@ -1,5 +1,12 @@
 package es.sebas1705.owlsplit.feature.groups.transfer
 
+import es.sebas1705.owlsplit.feature.groups.resources.cancel
+import es.sebas1705.owlsplit.feature.groups.resources.suggestion_pays
+import es.sebas1705.owlsplit.feature.groups.resources.settle_final_confirm
+import es.sebas1705.owlsplit.feature.groups.resources.settle_final_body
+import es.sebas1705.owlsplit.feature.groups.resources.settle_final_title
+import es.sebas1705.owlsplit.core.ui.components.TextActionButton
+import androidx.compose.material3.AlertDialog
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitMenuItem
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitDropdownMenu
 import androidx.compose.foundation.background
@@ -114,6 +121,7 @@ fun TransferScreen(
             enabled = state.canSave,
         )
     }
+    if (state.confirming) ConfirmPayment(state, onEvent)
 }
 
 @Composable
@@ -153,4 +161,41 @@ private fun MemberRow(label: String, selectedId: String?, state: TransferState, 
             }
         }
     }
+}
+
+/** "Has it really been paid?": a recorded payment changes everyone's balance. */
+@Composable
+private fun ConfirmPayment(state: TransferState, onEvent: (TransferIntent) -> Unit) {
+    val name = { id: String? -> state.members.firstOrNull { it.id == id }?.name.orEmpty() }
+    val amount = state.amountText + " " + state.currency
+    AlertDialog(
+        onDismissRequest = { onEvent(TransferIntent.DismissConfirm) },
+        containerColor = Owlsplit.colors.surface,
+        title = {
+            Text(
+                stringResource(Res.string.settle_final_title),
+                style = Owlsplit.type.title,
+                color = Owlsplit.colors.textPrimary
+            )
+        },
+        text = {
+            Text(
+                stringResource(
+                    Res.string.settle_final_body,
+                    stringResource(Res.string.suggestion_pays, name(state.fromId), amount, name(state.toId)),
+                ),
+                style = Owlsplit.type.body,
+                color = Owlsplit.colors.textSecondary,
+            )
+        },
+        confirmButton = {
+            TextActionButton(
+                stringResource(Res.string.settle_final_confirm),
+                { onEvent(TransferIntent.ConfirmSave) }
+            )
+        },
+        dismissButton = {
+            TextActionButton(stringResource(Res.string.cancel), { onEvent(TransferIntent.DismissConfirm) })
+        },
+    )
 }

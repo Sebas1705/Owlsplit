@@ -9,6 +9,7 @@ import es.sebas1705.owlsplit.domain.usecases.balances.ObserveGroupBalances
 import es.sebas1705.owlsplit.domain.usecases.expenses.DeleteExpense
 import es.sebas1705.owlsplit.domain.usecases.expenses.SaveExpense
 import es.sebas1705.owlsplit.domain.usecases.expenses.GenerateRecurring
+import es.sebas1705.owlsplit.domain.usecases.groups.DeleteTransfer
 import es.sebas1705.owlsplit.domain.usecases.groups.GroupActions
 import es.sebas1705.owlsplit.domain.usecases.importer.ImportGroup
 import es.sebas1705.owlsplit.domain.usecases.groups.MemberActions
@@ -46,6 +47,7 @@ val groupsModule = module {
     factory { ImportGroup(get(), get(), get(), get(), get()) }
     factory { MemberActions(get()) }
     factory { SettleUp(get()) }
+    factory { DeleteTransfer(get()) }
     factory { SaveExpense(get()) }
     factory { GenerateRecurring(get(), get(), get()) }
     factory { DeleteExpense(get()) }
@@ -57,13 +59,13 @@ val groupsModule = module {
     factory { ConvertTotal(get()) }
     factory { HistoryDescriber(get(), get(), get(), get(), get()) }
     factory { ObserveHistory(get(), get(), get(), get()) }
-    factory { ObserveActivity(get(), get(), get(), get()) }
-    factory { RestoreExpense(get()) }
+    factory { ObserveActivity(get(), get(), get(), get(), get()) }
+    factory { RestoreExpense(get(), get()) }
     factory { ResolveConflict(get()) }
 
     viewModel { HomeViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { (groupId: String?) -> GroupEditorViewModel(groupId, get(), get(), get()) }
-    viewModel { (groupId: String, tab: GroupTab) -> GroupViewModel(groupId, tab, get(), get(), get(), get()) }
+    viewModel { (groupId: String, tab: GroupTab) -> GroupViewModel(groupId, tab, get(), get(), get(), get(), get()) }
     viewModel { (groupId: String) -> MembersViewModel(groupId, get(), get()) }
     viewModel { (groupId: String) -> TransferViewModel(groupId, get(), get()) }
     viewModel { (groupId: String) -> StatsViewModel(groupId, get()) }

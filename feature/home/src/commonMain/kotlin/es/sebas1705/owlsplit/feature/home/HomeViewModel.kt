@@ -1,5 +1,6 @@
 package es.sebas1705.owlsplit.feature.home
 
+import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.domain.usecases.expenses.GenerateRecurring
 import androidx.lifecycle.viewModelScope
 import es.sebas1705.owlsplit.core.common.mvi.MVIBaseIntent
@@ -25,6 +26,8 @@ enum class QuickAction { EXPENSE, SETTLE }
 data class HomeState(
     val loaded: Boolean = false,
     val groups: List<HomeGroup> = emptyList(),
+    /** Groups I archived: listed apart, collapsed. */
+    val archived: List<Group> = emptyList(),
     val currency: String = "EUR",
     val total: Long = 0,
     /** Balances in currencies without a rate, kept apart. */
@@ -68,6 +71,7 @@ class HomeViewModel(
                 HomeState(
                     loaded = true,
                     groups = home.groups,
+                    archived = home.archived,
                     currency = home.preferredCurrency,
                     total = home.total,
                     otherCurrencies = home.otherCurrencies,

@@ -1,5 +1,6 @@
 package es.sebas1705.owlsplit.feature.groups.members
 
+import es.sebas1705.owlsplit.core.ui.theme.OwlsplitShapes
 import es.sebas1705.owlsplit.core.ui.components.BottomActionBar
 import es.sebas1705.owlsplit.core.ui.components.ProfileAvatar
 import es.sebas1705.owlsplit.core.ui.theme.memberAccent
@@ -147,7 +148,8 @@ private fun MemberDialog(form: MemberForm, onEvent: (MembersIntent) -> Unit) {
                     SwitchRow(
                         stringResource(Res.string.active_label),
                         form.active,
-                        { onEvent(MembersIntent.ActiveChanged(it)) }
+                        { onEvent(MembersIntent.ActiveChanged(it)) },
+                        shape = OwlsplitShapes.control,
                     )
                     if (form.inUse) {
                         Text(

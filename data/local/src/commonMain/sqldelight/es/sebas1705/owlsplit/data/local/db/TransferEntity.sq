@@ -26,6 +26,9 @@ INSERT OR REPLACE INTO transfer_entity VALUES ?;
 selectVisibleByGroup:
 SELECT * FROM transfer_entity WHERE group_id = ? AND deleted = 0 ORDER BY date DESC, created_at DESC, id;
 
+selectAllByGroup:
+SELECT * FROM transfer_entity WHERE group_id = ? ORDER BY date DESC, created_at DESC, id;
+
 selectById:
 SELECT * FROM transfer_entity WHERE id = ?;
 

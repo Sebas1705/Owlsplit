@@ -1,5 +1,7 @@
 package es.sebas1705.owlsplit.feature.groups.detail
 
+import es.sebas1705.owlsplit.core.ui.theme.OwlsplitShapes
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -192,6 +194,7 @@ private fun OptionRow(icon: ImageVector, label: String, onClick: () -> Unit) {
         Modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.rowMinHeight)
+            .clip(OwlsplitShapes.control)
             .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = Spacing.xs),
         verticalAlignment = Alignment.CenterVertically,

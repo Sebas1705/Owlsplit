@@ -135,4 +135,17 @@
     <string name="import_run">Importar grupo</string>
     <string name="import_another">Elegir otro archivo</string>
     <string name="repeats">se repite</string>
+    <string name="settle_final_title">¿Ya está pagado de verdad?</string>
+    <string name="settle_final_body">%1$s. Regístralo solo cuando el dinero ya se haya enviado. Si te equivocas, podrás eliminarlo desde «Pagos registrados».</string>
+    <string name="settle_final_confirm">Sí, ya está pagado</string>
+    <string name="leave_balance_owed">Te deben %1$s en este grupo: si sales, ese saldo se queda en tu miembro sin cuenta y no podrás reclamarlo desde la app.</string>
+    <string name="leave_balance_owes">Debes %1$s en este grupo: si sales, la deuda se queda en tu miembro sin cuenta.</string>
+    <string name="leave_final_title">¿Seguro que quieres salir?</string>
+    <string name="leave_final_body">Dejarás de ver %1$s y de recibir sus cambios. Solo podrás volver si alguien del grupo te invita de nuevo.</string>
+    <string name="leave_final_confirm">Salir del grupo</string>
+    <string name="transfer_delete">Eliminar pago</string>
+    <string name="transfer_delete_title">¿Eliminar este pago?</string>
+    <string name="transfer_delete_body">%1$s, %2$s. Las deudas vuelven a como estaban antes del pago. Podrás restaurarlo desde el historial durante 30 días.</string>
+    <string name="transfer_delete_confirm">Eliminar</string>
+    <string name="close">Cerrar</string>
 </resources>

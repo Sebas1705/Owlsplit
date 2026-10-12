@@ -138,17 +138,25 @@ fun AccentPicker(
         GroupAccent.entries.forEach { accent ->
             val isSelected = accent == selected
             val label = names(accent)
+            val press = rememberPress()
             Box(
                 Modifier
                     .weight(1f)
                     .heightIn(min = Sizes.touchTarget)
-                    .selectable(selected = isSelected, role = Role.RadioButton, onClick = { onSelect(accent) })
+                    .selectable(
+                        selected = isSelected,
+                        interactionSource = press,
+                        indication = null,
+                        role = Role.RadioButton,
+                        onClick = { onSelect(accent) },
+                    )
                     .semantics { contentDescription = label },
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
                     Modifier
                         .size(32.dp)
+                        .pressFeedback(press, CircleShape)
                         .background(accent.content(colors), CircleShape)
                         .then(if (isSelected) Modifier.border(2.dp, colors.textPrimary, CircleShape) else Modifier)
                         .padding(Spacing.xs),

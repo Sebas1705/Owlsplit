@@ -1,5 +1,6 @@
 package es.sebas1705.owlsplit.core.ui.components
 
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -40,6 +41,7 @@ fun SegmentedControl(
                 Modifier
                     .weight(1f)
                     .heightIn(min = Sizes.touchTarget - 8.dp)
+                    .clip(OwlsplitShapes.control)
                     .background(
                         if (selected) Owlsplit.colors.segmentSelected else Color.Transparent,
                         OwlsplitShapes.control

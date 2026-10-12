@@ -151,8 +151,8 @@ class InMemoryLedger(var uid: String = "uid-ana") {
     }
 
     val transfers: TransferRepository = object : TransferRepository {
-        override fun observeTransfers(groupId: String): Flow<List<Transfer>> =
-            transferList.map { list -> list.filter { it.groupId == groupId && !it.meta.deleted } }
+        override fun observeTransfers(groupId: String, includeDeleted: Boolean): Flow<List<Transfer>> =
+            transferList.map { list -> list.filter { it.groupId == groupId && (includeDeleted || !it.meta.deleted) } }
 
         override suspend fun create(groupId: String, input: TransferInput): String {
             val transfer = Transfer(

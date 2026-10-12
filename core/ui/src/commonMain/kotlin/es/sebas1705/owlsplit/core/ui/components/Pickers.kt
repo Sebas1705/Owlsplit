@@ -1,5 +1,7 @@
 package es.sebas1705.owlsplit.core.ui.components
 
+import es.sebas1705.owlsplit.core.ui.theme.OwlsplitShapes
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -76,6 +78,7 @@ fun CurrencyPicker(
                             Modifier
                                 .fillMaxWidth()
                                 .heightIn(min = Sizes.touchTarget)
+                                .clip(OwlsplitShapes.control)
                                 .clickable(role = Role.Button) { onSelect(code) }
                                 .padding(horizontal = Spacing.s),
                             verticalAlignment = Alignment.CenterVertically,

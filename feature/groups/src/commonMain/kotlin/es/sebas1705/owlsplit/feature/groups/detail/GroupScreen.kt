@@ -1,5 +1,18 @@
 package es.sebas1705.owlsplit.feature.groups.detail
 
+import es.sebas1705.owlsplit.feature.groups.resources.close
+import es.sebas1705.owlsplit.feature.groups.resources.transfer_delete_confirm
+import es.sebas1705.owlsplit.feature.groups.resources.transfer_delete_body
+import es.sebas1705.owlsplit.feature.groups.resources.transfer_delete_title
+import es.sebas1705.owlsplit.feature.groups.resources.transfer_delete
+import es.sebas1705.owlsplit.feature.groups.resources.leave_final_confirm
+import es.sebas1705.owlsplit.feature.groups.resources.leave_final_body
+import es.sebas1705.owlsplit.feature.groups.resources.leave_final_title
+import es.sebas1705.owlsplit.feature.groups.resources.leave_balance_owes
+import es.sebas1705.owlsplit.feature.groups.resources.leave_balance_owed
+import es.sebas1705.owlsplit.feature.groups.resources.settle_final_confirm
+import es.sebas1705.owlsplit.feature.groups.resources.settle_final_body
+import es.sebas1705.owlsplit.feature.groups.resources.settle_final_title
 import androidx.compose.foundation.layout.offset
 import es.sebas1705.owlsplit.core.ui.theme.memberAccent
 import es.sebas1705.owlsplit.core.ui.components.BottomActionBar
@@ -387,7 +400,7 @@ private fun LazyListScope.settle(
                         currency = Currency.of(transfer.currency),
                         format = format,
                         detail = null,
-                        onClick = {},
+                        onClick = { onEvent(GroupIntent.OpenTransfer(transfer)) },
                     )
                 }
             }
@@ -438,15 +451,104 @@ private fun Dialogs(
             onDismiss = dismiss,
         )
     }
+    state.finalSettle?.let { payment ->
+        ConfirmDialog(
+            stringResource(Res.string.settle_final_title),
+            stringResource(Res.string.settle_final_body, paymentText(payment, detail, currency, format)),
+            stringResource(Res.string.settle_final_confirm),
+            onConfirm = { onEvent(GroupIntent.FinalSettle) },
+            onDismiss = dismiss,
+        )
+    }
+    LeaveDialogs(state, detail, currency, format, onEvent)
+    TransferDialog(state, detail, format, onEvent)
+}
+
+/** Leaving: first what happens to my balance, then a last "are you sure". */
+@Composable
+private fun LeaveDialogs(
+    state: GroupState,
+    detail: GroupDetail,
+    currency: Currency,
+    format: MoneyFormat,
+    onEvent: (GroupIntent) -> Unit,
+) {
+    val dismiss = { onEvent(GroupIntent.DismissDialog) }
     if (state.confirmLeave) {
+        val mine = detail.myMemberId?.let { detail.balances?.balances?.get(it) } ?: 0L
+        val balance = when {
+            mine > 0 -> stringResource(Res.string.leave_balance_owed, format.format(mine, currency))
+            mine < 0 -> stringResource(Res.string.leave_balance_owes, format.format(-mine, currency))
+            else -> null
+        }
         ConfirmDialog(
             stringResource(Res.string.leave_title, detail.group.name),
-            stringResource(Res.string.leave_body),
+            listOfNotNull(balance, stringResource(Res.string.leave_body)).joinToString("\n\n"),
             stringResource(Res.string.leave_confirm),
             onConfirm = { onEvent(GroupIntent.ConfirmLeave) },
             onDismiss = dismiss,
             destructive = true,
         )
+    }
+    if (state.finalLeave) {
+        ConfirmDialog(
+            stringResource(Res.string.leave_final_title),
+            stringResource(Res.string.leave_final_body, detail.group.name),
+            stringResource(Res.string.leave_final_confirm),
+            onConfirm = { onEvent(GroupIntent.FinalLeave) },
+            onDismiss = dismiss,
+            destructive = true,
+        )
+    }
+}
+
+/** A recorded payment: its details, and deleting it after confirming. */
+@Composable
+private fun TransferDialog(
+    state: GroupState,
+    detail: GroupDetail,
+    format: MoneyFormat,
+    onEvent: (GroupIntent) -> Unit
+) {
+    val dismiss = { onEvent(GroupIntent.DismissDialog) }
+    state.openTransfer?.let { transfer ->
+        val text = stringResource(
+            Res.string.transfer_title,
+            memberLabel(transfer.fromMemberId, detail),
+            memberLabel(transfer.toMemberId, detail),
+        )
+        val amount = format.format(transfer.amountMinor, Currency.of(transfer.currency))
+        if (state.confirmDeleteTransfer) {
+            ConfirmDialog(
+                stringResource(Res.string.transfer_delete_title),
+                stringResource(Res.string.transfer_delete_body, text, amount),
+                stringResource(Res.string.transfer_delete_confirm),
+                onConfirm = { onEvent(GroupIntent.ConfirmDeleteTransfer) },
+                onDismiss = dismiss,
+                destructive = true,
+            )
+        } else {
+            AlertDialog(
+                onDismissRequest = dismiss,
+                containerColor = Owlsplit.colors.surface,
+                title = { Text("$text · $amount", style = Owlsplit.type.title, color = Owlsplit.colors.textPrimary) },
+                text = {
+                    Text(
+                        listOfNotNull(dayLabel(transfer.date, Today.System()), transfer.note).joinToString(" · "),
+                        style = Owlsplit.type.body,
+                        color = Owlsplit.colors.textSecondary,
+                    )
+                },
+                confirmButton = {
+                    TextActionButton(
+                        stringResource(Res.string.transfer_delete),
+                        { onEvent(GroupIntent.AskDeleteTransfer) },
+                        color = Owlsplit.colors.error,
+                    )
+                },
+                dismissButton = { TextActionButton(stringResource(Res.string.close), dismiss) },
+            )
+        }
     }
 }
 

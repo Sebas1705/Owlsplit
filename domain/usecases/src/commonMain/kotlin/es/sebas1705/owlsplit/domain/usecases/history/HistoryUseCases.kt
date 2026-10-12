@@ -1,5 +1,6 @@
 package es.sebas1705.owlsplit.domain.usecases.history
 
+import es.sebas1705.owlsplit.domain.usecases.groups.hasMember
 import es.sebas1705.owlsplit.data.models.ChangeAction
 import es.sebas1705.owlsplit.data.models.ChangeLogEntry
 import es.sebas1705.owlsplit.data.models.Conflict
@@ -109,7 +110,7 @@ class HistoryDescriber(
         groups.observeGroup(groupId),
         members.observeMembers(groupId),
         expenses.observeExpenses(groupId, includeDeleted = true),
-        transfers.observeTransfers(groupId),
+        transfers.observeTransfers(groupId, includeDeleted = true),
         changeLog.observe(groupId),
     ) { group, memberList, expenseList, transferList, entries ->
         GroupIndex(group, memberList, expenseList, transferList, accountsOf(entries))
@@ -133,7 +134,11 @@ class HistoryDescriber(
             byMe = entry.authorUid == uid,
             subject = subject,
             currency = expense?.currency ?: index.group?.baseCurrency ?: "EUR",
-            canRestore = entry.action == ChangeAction.DELETED && expense?.meta?.deleted == true && recent,
+            canRestore = entry.action == ChangeAction.DELETED && recent && when (entry.entityType) {
+                EntityType.EXPENSE -> expense?.meta?.deleted == true
+                EntityType.TRANSFER -> index.transfers.firstOrNull { it.id == entry.entityId }?.meta?.deleted == true
+                else -> false
+            },
             conflictId = if (entry.action == ChangeAction.CONFLICT) {
                 conflicts.lastOrNull { it.groupId == entry.groupId && it.entityId == entry.entityId }?.id
             } else {
@@ -187,9 +192,18 @@ class ObserveActivity(
     private val changeLog: ChangeLogRepository,
     private val conflicts: ConflictRepository,
     private val accounts: AccountService,
+    private val groups: GroupRepository,
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
-    operator fun invoke(): Flow<Activity> = changeLog.observeRecent(LIMIT).flatMapLatest { entries ->
+    operator fun invoke(): Flow<Activity> = combine(
+        changeLog.observeRecent(LIMIT),
+        groups.observeGroups(),
+        accounts.session,
+    ) { all, groupList, session ->
+        // A group I left stays on the device, but its activity is no longer mine.
+        val mine = groupList.filter { it.hasMember(session?.uid) }.mapTo(HashSet()) { it.id }
+        all.filter { it.groupId in mine }
+    }.flatMapLatest { entries ->
         val groupIds = entries.map { it.groupId }.distinct()
         if (groupIds.isEmpty()) return@flatMapLatest flowOf(Activity(emptyList(), emptyList()))
         val indexes = combine(groupIds.map { id -> describer.index(id) }) { list -> groupIds.zip(list).toMap() }
@@ -204,8 +218,15 @@ class ObserveActivity(
     }
 }
 
-class RestoreExpense(private val expenses: ExpenseRepository) {
+/** Undoes the deletion of an expense or a payment. */
+class RestoreExpense(private val expenses: ExpenseRepository, private val transfers: TransferRepository? = null) {
     suspend operator fun invoke(expenseId: String) = expenses.restore(expenseId)
+
+    suspend fun restore(type: EntityType, id: String) = when (type) {
+        EntityType.EXPENSE -> expenses.restore(id)
+        EntityType.TRANSFER -> transfers?.restore(id)
+        else -> Unit
+    }
 }
 
 class ResolveConflict(private val conflicts: ConflictRepository) {

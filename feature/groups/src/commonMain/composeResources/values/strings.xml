@@ -135,4 +135,17 @@
     <string name="import_run">Import group</string>
     <string name="import_another">Choose another file</string>
     <string name="repeats">repeats</string>
+    <string name="settle_final_title">Has it really been paid?</string>
+    <string name="settle_final_body">%1$s. Record it only once the money has been sent. If you get it wrong, you can delete it from “Recorded payments”.</string>
+    <string name="settle_final_confirm">Yes, it’s paid</string>
+    <string name="leave_balance_owed">You are owed %1$s in this group: if you leave, that balance stays with your member without an account and you won’t be able to claim it in the app.</string>
+    <string name="leave_balance_owes">You owe %1$s in this group: if you leave, the debt stays with your member without an account.</string>
+    <string name="leave_final_title">Leave for sure?</string>
+    <string name="leave_final_body">You will no longer see %1$s or get its changes. You can only come back if someone in the group invites you again.</string>
+    <string name="leave_final_confirm">Leave group</string>
+    <string name="transfer_delete">Delete payment</string>
+    <string name="transfer_delete_title">Delete this payment?</string>
+    <string name="transfer_delete_body">%1$s, %2$s. Debts go back to how they were before the payment. You can restore it from the history for 30 days.</string>
+    <string name="transfer_delete_confirm">Delete</string>
+    <string name="close">Close</string>
 </resources>

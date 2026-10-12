@@ -67,7 +67,8 @@ interface ExpenseRepository {
 }
 
 interface TransferRepository {
-    fun observeTransfers(groupId: String): Flow<List<Transfer>>
+    /** Visible payments; [includeDeleted] adds deleted ones (history, restore). */
+    fun observeTransfers(groupId: String, includeDeleted: Boolean = false): Flow<List<Transfer>>
     suspend fun create(groupId: String, input: TransferInput): String
     suspend fun delete(id: String)
     suspend fun restore(id: String)

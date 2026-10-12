@@ -49,7 +49,7 @@ class FakeExpenses(val expenses: MutableStateFlow<List<Expense>>) : ExpenseRepos
 }
 
 class FakeTransfers(val transfers: MutableStateFlow<List<Transfer>>) : TransferRepository {
-    override fun observeTransfers(groupId: String): Flow<List<Transfer>> = transfers
+    override fun observeTransfers(groupId: String, includeDeleted: Boolean): Flow<List<Transfer>> = transfers
     override suspend fun create(groupId: String, input: TransferInput): String = error("unused")
     override suspend fun delete(id: String) = error("unused")
     override suspend fun restore(id: String) = error("unused")

@@ -124,6 +124,9 @@ class ClaimMember(
     private val members: MemberRepository,
     private val profiles: ProfileRepository,
     private val accounts: AccountService,
+    /** With both, the invite preview's member count is refreshed after joining. */
+    private val groups: GroupRepository? = null,
+    private val invites: InviteService? = null,
 ) {
     /** [memberId] null adds a new member with my profile; nothing happens if I already have one. */
     suspend operator fun invoke(groupId: String, memberId: String?) {
@@ -136,6 +139,13 @@ class ClaimMember(
             members.addMe(groupId, profile?.name ?: DEFAULT_NAME, profile?.avatar)
         }
         profile?.payMethods?.orNull()?.let { members.publishMyPayMethods(it) }
+        refreshInvite(groupId)
+    }
+
+    /** The preview says how many people are in the group: one more now. Best effort. */
+    private suspend fun refreshInvite(groupId: String) {
+        val group = groups?.observeGroup(groupId)?.first() ?: return
+        invites?.publish(group, members.observeMembers(groupId).first().count { it.active })
     }
 
     private companion object {

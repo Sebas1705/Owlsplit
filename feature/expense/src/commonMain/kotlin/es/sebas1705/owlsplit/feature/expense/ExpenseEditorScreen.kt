@@ -1,5 +1,6 @@
 package es.sebas1705.owlsplit.feature.expense
 
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.ColumnScope
 import es.sebas1705.owlsplit.core.ui.components.BottomActionBar
@@ -234,6 +235,7 @@ private fun Amount(state: ExpenseEditorState, format: MoneyFormat, currency: Cur
     Column(
         Modifier
             .fillMaxWidth()
+            .clip(OwlsplitShapes.container)
             .clickable(role = Role.Button, onClick = onClick)
             .semantics(mergeDescendants = true) { contentDescription = spoken }
             .padding(vertical = Spacing.l),
@@ -310,6 +312,7 @@ private fun Categories(selected: ExpenseCategory, onSelect: (ExpenseCategory) ->
             Row(
                 Modifier
                     .heightIn(min = Sizes.touchTarget)
+                    .clip(OwlsplitShapes.pill)
                     .background(if (isSelected) colors.accentContainer else colors.surface, OwlsplitShapes.pill)
                     .selectable(isSelected, role = Role.RadioButton) { onSelect(category) }
                     .padding(horizontal = Spacing.m),

@@ -21,11 +21,11 @@ class TransferRepositoryImpl(
 ) : TransferRepository {
     private val writer = Writer(db, ctx)
 
-    override fun observeTransfers(groupId: String): Flow<List<Transfer>> = db.transferEntityQueries
-        .selectVisibleByGroup(groupId)
-        .asFlow()
-        .mapToList(io)
-        .map { rows -> rows.map { it.toModel() } }
+    override fun observeTransfers(groupId: String, includeDeleted: Boolean): Flow<List<Transfer>> {
+        val q = db.transferEntityQueries
+        val query = if (includeDeleted) q.selectAllByGroup(groupId) else q.selectVisibleByGroup(groupId)
+        return query.asFlow().mapToList(io).map { rows -> rows.map { it.toModel() } }
+    }
 
     override suspend fun create(groupId: String, input: TransferInput): String = withContext(io) {
         db.transactionWithResult {
