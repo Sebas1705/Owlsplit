@@ -20,7 +20,7 @@ val inviteModule = module {
     factory { RegenerateInvite(get(), get(), get(), get()) }
     factory { PreviewInvite(get()) }
     factory { JoinGroup(get(), get(), get()) }
-    factory { ClaimMember(get(), get(), get(), get(), get()) }
+    factory { ClaimMember(get(), get(), get(), get(), get(), get()) }
 
     viewModel { (groupId: String) -> InviteViewModel(groupId, get(), get(), get()) }
     viewModel { (code: String?) -> JoinViewModel(code, get(), get(), get(), get(), get()) }

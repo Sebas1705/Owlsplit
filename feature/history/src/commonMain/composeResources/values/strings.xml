@@ -57,4 +57,8 @@
     <string name="dismiss">Dismiss</string>
     <string name="reapply_failed">That item no longer exists: it can’t be reapplied.</string>
     <string name="back">Back</string>
+    <string name="rejoined">%1$s came back to the group</string>
+    <string name="rejoined_me">You came back to the group</string>
+    <string name="rejoined_other">%1$s came back with another account</string>
+    <string name="rejoined_other_me">You came back with another account</string>
 </resources>

@@ -57,6 +57,9 @@ internal data class MemberDto(
     val deleted: Boolean,
     /** Missing in documents written before P12a. */
     val payMethods: PayMethods? = null,
+    /** Missing in documents written before P14. */
+    val pastUids: List<String> = emptyList(),
+    val linked: Boolean = false,
 )
 
 @Serializable
@@ -120,6 +123,8 @@ internal fun Group.toDto(s: Stamp) = GroupDto(
 internal fun Member.toDto(s: Stamp) = MemberDto(
     name, avatar, defaultWeight, userUid, active, sortKey, s.version, Timestamp.ServerTimestamp, s.uid, meta.deleted,
     payMethods,
+    pastUids,
+    linked,
 )
 
 internal fun Expense.toDto(s: Stamp) = ExpenseDto(
@@ -150,7 +155,7 @@ internal fun GroupDto.toModel(id: String): Group? = meta(version, updatedAt, upd
 
 internal fun MemberDto.toModel(groupId: String, id: String): Member? =
     meta(version, updatedAt, updatedBy, deleted)?.let {
-        Member(id, groupId, name, avatar, defaultWeight, userUid, active, sortKey, it, payMethods)
+        Member(id, groupId, name, avatar, defaultWeight, userUid, active, sortKey, it, payMethods, pastUids, linked)
     }
 
 internal fun ExpenseDto.toModel(groupId: String, id: String): Expense? =

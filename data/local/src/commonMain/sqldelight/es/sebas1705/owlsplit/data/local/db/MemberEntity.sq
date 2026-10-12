@@ -14,7 +14,11 @@ CREATE TABLE member_entity (
     deleted INTEGER NOT NULL,
     sync_state TEXT NOT NULL,
     -- PayMethods as JSON; added in schema 2.
-    pay_methods TEXT
+    pay_methods TEXT,
+    -- Accounts that had this member and left (JSON list of uids); added in schema 3.
+    past_uids TEXT,
+    -- The account behind it is linked to Google; added in schema 3.
+    linked INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX member_by_group ON member_entity(group_id);

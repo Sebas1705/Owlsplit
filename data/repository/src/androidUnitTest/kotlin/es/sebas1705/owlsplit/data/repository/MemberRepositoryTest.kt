@@ -71,6 +71,24 @@ class MemberRepositoryTest {
     }
 
     @Test
+    fun `leaving keeps who I was, once, and the history can tell I came back`() = runTest {
+        val env = TestEnv(this)
+        val g = env.groups.create(GroupInput("Piso", "home", "GREEN", "EUR"), "Ana")
+        val ana = env.members.observeMembersOnce(g).single()
+        env.members.publishMyLinked(true)
+        env.groups.leave(g)
+        val left = env.members.observeMembersOnce(g).single()
+        assertEquals(listOf("uid-ana"), left.pastUids)
+        assertNull(left.userUid)
+        assertFalse(left.linked)
+
+        env.members.claim(ana.id)
+        env.groups.leave(g)
+        // Leaving again does not repeat me.
+        assertEquals(listOf("uid-ana"), env.members.observeMembersOnce(g).single().pastUids)
+    }
+
+    @Test
     fun `pay handles reach my members in every group, stay out of the history and leave with me`() = runTest {
         val env = TestEnv(this)
         val ibiza = env.groups.create(GroupInput("Ibiza", "plane", "BLUE", "EUR"), "Ana")

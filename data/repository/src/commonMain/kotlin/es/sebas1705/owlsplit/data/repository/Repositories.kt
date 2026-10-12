@@ -52,6 +52,9 @@ interface MemberRepository {
      * of the history: it is personal data, not a change to the group.
      */
     suspend fun publishMyPayMethods(methods: PayMethods?)
+
+    /** Marks my member in every group as linked (or not) to Google, so the group sees it is safe. */
+    suspend fun publishMyLinked(linked: Boolean)
 }
 
 interface ExpenseRepository {

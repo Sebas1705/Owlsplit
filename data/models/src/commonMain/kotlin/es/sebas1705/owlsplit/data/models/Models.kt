@@ -51,7 +51,14 @@ data class Member(
     val meta: SyncMeta,
     /** How the person behind this member wants to be paid; only they set it (from their profile). */
     val payMethods: PayMethods? = null,
-)
+    /** Accounts that had this member and left: they get it back on their own when they return. */
+    val pastUids: List<String> = emptyList(),
+    /** The account behind it is linked to Google, so it is never lost (shown to the group). */
+    val linked: Boolean = false,
+) {
+    /** Somebody had it and left: their expenses and history wait here for them. */
+    val abandoned: Boolean get() = userUid == null && pastUids.isNotEmpty()
+}
 
 enum class ExpenseCategory {
     FOOD, GROCERIES, TRANSPORT, ACCOMMODATION, LEISURE, SHOPPING, HOME, UTILITIES, HEALTH, GIFTS, OTHER,

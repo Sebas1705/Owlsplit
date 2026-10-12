@@ -148,4 +148,6 @@
     <string name="transfer_delete_body">%1$s, %2$s. Las deudas vuelven a como estaban antes del pago. Podrás restaurarlo desde el historial durante 30 días.</string>
     <string name="transfer_delete_confirm">Eliminar</string>
     <string name="close">Cerrar</string>
+    <string name="with_google">Cuenta con Google</string>
+    <string name="left_group">Salió del grupo</string>
 </resources>

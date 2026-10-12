@@ -36,6 +36,7 @@ import es.sebas1705.owlsplit.domain.usecases.account.LinkGoogle
 import es.sebas1705.owlsplit.domain.usecases.account.ObserveAccount
 import es.sebas1705.owlsplit.domain.usecases.account.ReauthenticateGoogle
 import es.sebas1705.owlsplit.domain.usecases.account.SaveProfile
+import es.sebas1705.owlsplit.domain.usecases.account.SyncMyLinked
 import es.sebas1705.owlsplit.domain.usecases.account.SignInWithGoogle
 import es.sebas1705.owlsplit.domain.usecases.account.SignOut
 import es.sebas1705.owlsplit.feature.onboarding.OnboardingViewModel
@@ -82,7 +83,8 @@ val accountModule = module {
     factory { SaveProfile(get(), get()) }
     factory { CompleteOnboarding(get(), get()) }
     factory { SignInWithGoogle(get(), get(), get()) }
-    factory { LinkGoogle(get(), get(), get()) }
+    factory { LinkGoogle(get(), get(), get(), get()) }
+    factory { SyncMyLinked(get(), get()) }
     factory { ReauthenticateGoogle(get(), get()) }
     factory { SignOut(get(), get(), get()) }
     factory { DeleteAccount(get(), get(), get(), get(), get()) }

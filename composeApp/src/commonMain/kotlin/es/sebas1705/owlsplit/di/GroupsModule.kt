@@ -63,7 +63,7 @@ val groupsModule = module {
     factory { RestoreExpense(get(), get()) }
     factory { ResolveConflict(get()) }
 
-    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { (groupId: String?) -> GroupEditorViewModel(groupId, get(), get(), get()) }
     viewModel { (groupId: String, tab: GroupTab) -> GroupViewModel(groupId, tab, get(), get(), get(), get(), get()) }
     viewModel { (groupId: String) -> MembersViewModel(groupId, get(), get()) }

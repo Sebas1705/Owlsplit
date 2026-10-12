@@ -51,6 +51,14 @@ class ObserveAccount(private val accounts: AccountService, private val profiles:
 }
 
 /** Saves the profile; how I want to be paid is cleaned up and copied to my member in every group. */
+/** Keeps "linked to Google" on my members in step with my session (run when the app opens). */
+class SyncMyLinked(private val accounts: AccountService, private val members: MemberRepository) {
+    suspend operator fun invoke() {
+        val session = accounts.currentSession() ?: return
+        members.publishMyLinked("google.com" in session.providers)
+    }
+}
+
 class SaveProfile(private val profiles: ProfileRepository, private val members: MemberRepository) {
     suspend operator fun invoke(profile: UserProfile) {
         val pay = PayLinks.normalise(profile.payMethods)
@@ -98,12 +106,16 @@ class LinkGoogle(
     private val google: GoogleCredentials,
     private val accounts: AccountService,
     private val profiles: ProfileRepository,
+    private val members: MemberRepository? = null,
 ) {
     val isAvailable: Boolean get() = google.isAvailable
 
     suspend operator fun invoke(): GoogleOutcome = google.withToken(accounts::linkGoogle).also {
-        // users/{uid} lists the linked providers.
-        if (it is GoogleOutcome.Done) profiles.uploadCurrent()
+        // users/{uid} lists the linked providers; my groups show the account is linked.
+        if (it is GoogleOutcome.Done) {
+            profiles.uploadCurrent()
+            members?.publishMyLinked(true)
+        }
     }
 }
 

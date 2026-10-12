@@ -1,5 +1,7 @@
 package es.sebas1705.owlsplit.domain.usecases.invite
 
+import es.sebas1705.owlsplit.domain.usecases.groups.MemberAccounts
+import es.sebas1705.owlsplit.data.repository.ChangeLogRepository
 import es.sebas1705.owlsplit.data.models.AccountResult
 import es.sebas1705.owlsplit.data.repository.GroupRepository
 import es.sebas1705.owlsplit.data.repository.MemberRepository
@@ -127,7 +129,28 @@ class ClaimMember(
     /** With both, the invite preview's member count is refreshed after joining. */
     private val groups: GroupRepository? = null,
     private val invites: InviteService? = null,
+    /** The group's history: knows who had each member before P14 kept it on the member. */
+    private val changeLog: ChangeLogRepository? = null,
 ) {
+    /** Member id → accounts that had it and left (they make it a profile somebody abandoned). */
+    suspend fun formerAccounts(groupId: String): Map<String, Set<String>> =
+        MemberAccounts.former(members.observeMembers(groupId).first(), history(groupId))
+
+    /**
+     * Rejoining with an account that had a member here: it is mine again, with its expenses and
+     * history, without asking. False when there is none (choose, or join as new).
+     */
+    suspend fun reclaim(groupId: String): Boolean {
+        val uid = accounts.currentSession()?.uid ?: return false
+        val list = members.observeMembers(groupId).first()
+        if (list.mine(uid) != null) return true
+        val mine = MemberAccounts.reclaimable(uid, list, history(groupId)) ?: return false
+        invoke(groupId, mine.id)
+        return true
+    }
+
+    private suspend fun history(groupId: String) = changeLog?.observe(groupId)?.first().orEmpty()
+
     /** [memberId] null adds a new member with my profile; nothing happens if I already have one. */
     suspend operator fun invoke(groupId: String, memberId: String?) {
         val uid = accounts.currentSession()?.uid
@@ -139,6 +162,7 @@ class ClaimMember(
             members.addMe(groupId, profile?.name ?: DEFAULT_NAME, profile?.avatar)
         }
         profile?.payMethods?.orNull()?.let { members.publishMyPayMethods(it) }
+        if (accounts.currentSession()?.providers?.contains(GOOGLE) == true) members.publishMyLinked(true)
         refreshInvite(groupId)
     }
 
@@ -150,5 +174,6 @@ class ClaimMember(
 
     private companion object {
         const val DEFAULT_NAME = "Yo"
+        const val GOOGLE = "google.com"
     }
 }

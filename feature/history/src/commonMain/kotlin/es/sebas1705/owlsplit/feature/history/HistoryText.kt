@@ -1,5 +1,10 @@
 package es.sebas1705.owlsplit.feature.history
 
+import es.sebas1705.owlsplit.feature.history.resources.rejoined_other_me
+import es.sebas1705.owlsplit.feature.history.resources.rejoined_other
+import es.sebas1705.owlsplit.feature.history.resources.rejoined_me
+import es.sebas1705.owlsplit.feature.history.resources.rejoined
+import es.sebas1705.owlsplit.domain.usecases.groups.Rejoin
 import androidx.compose.runtime.Composable
 import es.sebas1705.owlsplit.core.money.Currency
 import es.sebas1705.owlsplit.core.money.FxRate
@@ -67,14 +72,7 @@ internal fun headline(item: HistoryItem): String {
         if (entry.entityType == EntityType.TRANSFER || entry.entityType == EntityType.MEMBER) it else stringResource(Res.string.quoted, it)
     } ?: stringResource(Res.string.unknown_subject)
     val who = item.author ?: stringResource(Res.string.someone)
-    // Leaving (or deleting the account) is said of the member, not as an edit of them.
-    if (item.leftGroup) {
-        return if (item.byMe) {
-            stringResource(Res.string.left_me)
-        } else {
-            stringResource(Res.string.left, item.subject ?: who)
-        }
-    }
+    membership(item, who)?.let { return it }
     val (mine, theirs) = when (entry.action) {
         ChangeAction.CREATED -> when (entry.entityType) {
             EntityType.GROUP -> Res.string.created_group_me to Res.string.created_group
@@ -89,6 +87,21 @@ internal fun headline(item: HistoryItem): String {
         ChangeAction.CONFLICT -> return stringResource(Res.string.conflict, subject)
     }
     return if (item.byMe) stringResource(mine, subject) else stringResource(theirs, who, subject)
+}
+
+/**
+ * Leaving and coming back are said of the person, not as edits of their member: "Ana salió del
+ * grupo", "Ana volvió al grupo" (same account) or "… con otra cuenta". Null for anything else.
+ */
+@Composable
+private fun membership(item: HistoryItem, who: String): String? = when {
+    item.leftGroup && item.byMe -> stringResource(Res.string.left_me)
+    item.leftGroup -> stringResource(Res.string.left, item.subject ?: who)
+    item.rejoin == Rejoin.SAME_ACCOUNT && item.byMe -> stringResource(Res.string.rejoined_me)
+    item.rejoin == Rejoin.SAME_ACCOUNT -> stringResource(Res.string.rejoined, who)
+    item.rejoin == Rejoin.OTHER_ACCOUNT && item.byMe -> stringResource(Res.string.rejoined_other_me)
+    item.rejoin == Rejoin.OTHER_ACCOUNT -> stringResource(Res.string.rejoined_other, who)
+    else -> null
 }
 
 /** The fields an edit changed, readable: "importe 12,40 € → 14,40 €; reparto cambiado". */
