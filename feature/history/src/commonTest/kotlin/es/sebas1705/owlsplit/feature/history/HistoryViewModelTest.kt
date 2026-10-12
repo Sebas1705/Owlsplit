@@ -45,7 +45,7 @@ class HistoryViewModelTest {
     private fun viewModel(groupId: String?) = HistoryViewModel(
         groupId,
         ObserveHistory(describer, ledger.changeLog, conflicts, accounts),
-        ObserveActivity(describer, ledger.changeLog, conflicts, accounts),
+        ObserveActivity(describer, ledger.changeLog, conflicts, accounts, ledger.groups),
         RestoreExpense(ledger.expenses),
         ResolveConflict(conflicts),
     )
@@ -72,7 +72,7 @@ class HistoryViewModelTest {
         val vm = viewModel(g)
         assertFalse(vm.uiState.value.acrossGroups)
         assertTrue(vm.uiState.value.items[1].canRestore)
-        vm.onEvent(HistoryIntent.Restore(e))
+        vm.onEvent(HistoryIntent.Restore(EntityType.EXPENSE, e))
         assertFalse(ledger.expenseList.value.single().meta.deleted)
         assertFalse(vm.uiState.value.items[1].canRestore)
 

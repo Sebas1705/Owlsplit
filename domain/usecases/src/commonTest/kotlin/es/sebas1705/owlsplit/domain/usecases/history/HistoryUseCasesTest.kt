@@ -148,7 +148,7 @@ class HistoryUseCasesTest {
             entry("c1", a, EntityType.GROUP, a, ChangeAction.CREATED, 1, "uid-ana"),
         )
         conflicts.open.value = listOf(Conflict(1, b, EntityType.GROUP, b, 2))
-        val activity = ObserveActivity(describer, ledger.changeLog, conflicts, accounts)().first()
+        val activity = ObserveActivity(describer, ledger.changeLog, conflicts, accounts, ledger.groups)().first()
         assertEquals(listOf("Piso", "Ibiza"), activity.items.map { it.groupName })
         assertEquals(listOf("Piso"), activity.pending.map { it.subject })
     }

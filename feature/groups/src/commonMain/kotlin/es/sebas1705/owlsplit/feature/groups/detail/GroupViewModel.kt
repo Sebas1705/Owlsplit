@@ -1,5 +1,7 @@
 package es.sebas1705.owlsplit.feature.groups.detail
 
+import es.sebas1705.owlsplit.domain.usecases.groups.DeleteTransfer
+import es.sebas1705.owlsplit.data.models.Transfer
 import androidx.lifecycle.viewModelScope
 import es.sebas1705.owlsplit.core.common.mvi.MVIBaseIntent
 import es.sebas1705.owlsplit.core.common.mvi.MVIBaseState
@@ -27,7 +29,14 @@ data class GroupState(
     val myShares: Map<String, Long> = emptyMap(),
     val filter: ExpenseFilter = ExpenseFilter(),
     val confirmSettle: SuggestedPayment? = null,
+    /** Second step of settling: recording a payment is the one action people regret. */
+    val finalSettle: SuggestedPayment? = null,
     val confirmLeave: Boolean = false,
+    /** Second step of leaving: there is no way back without a new invite. */
+    val finalLeave: Boolean = false,
+    /** A recorded payment opened from the list, and whether its deletion is being confirmed. */
+    val openTransfer: Transfer? = null,
+    val confirmDeleteTransfer: Boolean = false,
     /** The group is no longer here (left, or gone): the screen closes. */
     val closed: Boolean = false,
 ) : MVIBaseState {
@@ -43,9 +52,14 @@ sealed interface GroupIntent : MVIBaseIntent {
     data object ClearFilters : GroupIntent
     data class AskSettle(val payment: SuggestedPayment) : GroupIntent
     data object ConfirmSettle : GroupIntent
+    data object FinalSettle : GroupIntent
+    data class OpenTransfer(val transfer: Transfer) : GroupIntent
+    data object AskDeleteTransfer : GroupIntent
+    data object ConfirmDeleteTransfer : GroupIntent
     data object ToggleArchive : GroupIntent
     data object AskLeave : GroupIntent
     data object ConfirmLeave : GroupIntent
+    data object FinalLeave : GroupIntent
     data object DismissDialog : GroupIntent
 }
 
@@ -55,6 +69,7 @@ class GroupViewModel(
     observeDetail: ObserveGroupDetail,
     private val settleUp: SettleUp,
     private val actions: GroupActions,
+    private val deleteTransfer: DeleteTransfer? = null,
     /** Adds the repeating expenses that are due (null in tests that do not need it). */
     generateRecurring: GenerateRecurring? = null,
 ) : MVIBaseViewModel<GroupState, GroupIntent>() {
@@ -102,21 +117,39 @@ class GroupViewModel(
             }
             GroupIntent.ClearFilters -> updateState { it.copy(filter = ExpenseFilter()) }
             is GroupIntent.AskSettle -> updateState { it.copy(confirmSettle = intent.payment) }
-            GroupIntent.ConfirmSettle -> settle()
+            GroupIntent.ConfirmSettle -> updateState { it.copy(finalSettle = it.confirmSettle, confirmSettle = null) }
+            GroupIntent.FinalSettle -> settle()
+            is GroupIntent.OpenTransfer -> updateState { it.copy(openTransfer = intent.transfer) }
+            GroupIntent.AskDeleteTransfer -> updateState { it.copy(confirmDeleteTransfer = true) }
+            GroupIntent.ConfirmDeleteTransfer -> {
+                val transfer = currentState.openTransfer
+                updateState { it.copy(openTransfer = null, confirmDeleteTransfer = false) }
+                transfer?.let { deleteTransfer?.invoke(it.id) }
+            }
             GroupIntent.ToggleArchive -> currentState.detail?.let { actions.setArchived(groupId, !it.archivedByMe) }
             GroupIntent.AskLeave -> updateState { it.copy(confirmLeave = true) }
-            GroupIntent.ConfirmLeave -> {
-                updateState { it.copy(confirmLeave = false) }
+            GroupIntent.ConfirmLeave -> updateState { it.copy(confirmLeave = false, finalLeave = true) }
+            GroupIntent.FinalLeave -> {
+                updateState { it.copy(finalLeave = false) }
                 actions.leave(groupId)
             }
-            GroupIntent.DismissDialog -> updateState { it.copy(confirmSettle = null, confirmLeave = false) }
+            GroupIntent.DismissDialog -> updateState {
+                it.copy(
+                    confirmSettle = null,
+                    finalSettle = null,
+                    confirmLeave = false,
+                    finalLeave = false,
+                    openTransfer = null,
+                    confirmDeleteTransfer = false,
+                )
+            }
         }
     }
 
     private suspend fun settle() {
-        val payment = currentState.confirmSettle ?: return
+        val payment = currentState.finalSettle ?: return
         val currency = currentState.detail?.group?.baseCurrency ?: return
-        updateState { it.copy(confirmSettle = null) }
+        updateState { it.copy(finalSettle = null) }
         settleUp(groupId, payment, currency)
     }
 }

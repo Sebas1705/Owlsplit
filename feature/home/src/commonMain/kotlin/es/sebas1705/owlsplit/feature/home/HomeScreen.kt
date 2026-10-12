@@ -1,5 +1,19 @@
 package es.sebas1705.owlsplit.feature.home
 
+import androidx.compose.foundation.layout.ColumnScope
+import es.sebas1705.owlsplit.feature.home.resources.archived_hide
+import es.sebas1705.owlsplit.feature.home.resources.archived_show
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import es.sebas1705.owlsplit.data.models.Group
+import es.sebas1705.owlsplit.core.ui.theme.OwlsplitShapes
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -106,17 +120,7 @@ fun HomeScreen(
         }
         if (!state.loaded) return@Column
         if (state.groups.isEmpty()) {
-            EmptyState(
-                stringResource(Res.string.empty_title),
-                stringResource(Res.string.empty_body),
-                actionLabel = stringResource(Res.string.create_group),
-                onAction = navigation.createGroup,
-            )
-            TextActionButton(
-                stringResource(Res.string.join_with_code),
-                navigation.joinGroup,
-                Modifier.align(Alignment.CenterHorizontally),
-            )
+            NoGroups(state, navigation)
             return@Column
         }
         Balance(state, format)
@@ -138,6 +142,7 @@ fun HomeScreen(
         OwlsplitContainer(title = stringResource(Res.string.groups)) {
             state.groups.forEach { item -> Group(item, format) { navigation.openGroup(item.group.id) } }
         }
+        Archived(state.archived, navigation.openGroup)
     }
     state.picking?.let { action ->
         GroupPicker(state.groups, onDismiss = { onEvent(HomeIntent.DismissPicker) }) { groupId ->
@@ -217,6 +222,71 @@ private fun Group(item: HomeGroup, format: MoneyFormat, onClick: () -> Unit) {
     )
 }
 
+/** No group yet (or only archived ones): create, join, or reopen an archived one. */
+@Composable
+private fun ColumnScope.NoGroups(state: HomeState, navigation: HomeNavigation) {
+    EmptyState(
+        stringResource(Res.string.empty_title),
+        stringResource(Res.string.empty_body),
+        actionLabel = stringResource(Res.string.create_group),
+        onAction = navigation.createGroup,
+    )
+    TextActionButton(
+        stringResource(Res.string.join_with_code),
+        navigation.joinGroup,
+        Modifier.align(Alignment.CenterHorizontally),
+    )
+    Archived(state.archived, navigation.openGroup)
+}
+
+/** Archived groups, collapsed: open one to unarchive it from its menu. */
+@Composable
+private fun Archived(groups: List<Group>, onOpen: (String) -> Unit) {
+    if (groups.isEmpty()) return
+    var open by rememberSaveable { mutableStateOf(false) }
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
+        TextActionButton(
+            stringResource(if (open) Res.string.archived_hide else Res.string.archived_show, groups.size),
+            { open = !open },
+            Modifier.offset(x = -Spacing.m),
+        )
+        if (open) {
+            OwlsplitContainer {
+                groups.forEach { group ->
+                    val accent = GroupAccent.entries.firstOrNull { it.name == group.accent } ?: GroupAccent.BLUE
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = Sizes.rowMinHeight)
+                            .clickable(role = Role.Button) { onOpen(group.id) }
+                            .padding(horizontal = Spacing.m, vertical = Spacing.s),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.m),
+                    ) {
+                        Box(
+                            Modifier.size(Sizes.iconTile).background(accent.container(Owlsplit.colors), CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                GroupIcons.of(group.icon),
+                                null,
+                                tint = accent.content(Owlsplit.colors),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Text(
+                            group.name,
+                            style = Owlsplit.type.bodyStrong,
+                            color = Owlsplit.colors.textSecondary,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun Nudge(onEvent: (HomeIntent) -> Unit, onLink: () -> Unit) {
     OwlsplitContainer(title = stringResource(Res.string.nudge_title)) {
@@ -260,8 +330,9 @@ private fun GroupPicker(groups: List<HomeGroup>, onDismiss: () -> Unit, onPick: 
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = Sizes.touchTarget)
+                            .clip(OwlsplitShapes.control)
                             .clickable(role = Role.Button) { onPick(item.group.id) }
-                            .padding(vertical = Spacing.m),
+                            .padding(horizontal = Spacing.s, vertical = Spacing.m),
                     )
                 }
             }

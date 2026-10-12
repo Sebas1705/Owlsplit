@@ -1,5 +1,6 @@
 package es.sebas1705.owlsplit.core.ui.components
 
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.widthIn
@@ -26,16 +27,24 @@ fun AvatarToggle(
     modifier: Modifier = Modifier,
 ) {
     val colors = Owlsplit.colors
+    val press = rememberPress()
     Column(
         modifier
             .widthIn(min = Sizes.touchTarget)
-            .toggleable(value = included, role = Role.Checkbox, onValueChange = onToggle)
+            .toggleable(
+                value = included,
+                interactionSource = press,
+                indication = null,
+                role = Role.Checkbox,
+                onValueChange = onToggle,
+            )
             .semantics(mergeDescendants = true) { contentDescription = "$name, $shareText" },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
         Avatar(
             name,
+            modifier = Modifier.pressFeedback(press, CircleShape),
             size = 36.dp,
             background = if (included) colors.accent else colors.surfaceVariant,
             content = if (included) colors.onAccent else colors.textMuted,

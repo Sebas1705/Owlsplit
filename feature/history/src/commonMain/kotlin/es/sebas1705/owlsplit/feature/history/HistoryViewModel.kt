@@ -1,5 +1,6 @@
 package es.sebas1705.owlsplit.feature.history
 
+import es.sebas1705.owlsplit.data.models.EntityType
 import androidx.lifecycle.viewModelScope
 import es.sebas1705.owlsplit.core.common.mvi.MVIBaseIntent
 import es.sebas1705.owlsplit.core.common.mvi.MVIBaseState
@@ -25,7 +26,7 @@ data class HistoryState(
 ) : MVIBaseState
 
 sealed interface HistoryIntent : MVIBaseIntent {
-    data class Restore(val expenseId: String) : HistoryIntent
+    data class Restore(val type: EntityType, val id: String) : HistoryIntent
     data class Reapply(val conflictId: Long) : HistoryIntent
     data class Dismiss(val conflictId: Long) : HistoryIntent
     data object DismissMessage : HistoryIntent
@@ -53,7 +54,7 @@ class HistoryViewModel(
 
     override fun intentHandler(intent: HistoryIntent): Job = execute {
         when (intent) {
-            is HistoryIntent.Restore -> restoreExpense(intent.expenseId)
+            is HistoryIntent.Restore -> restoreExpense.restore(intent.type, intent.id)
             is HistoryIntent.Reapply ->
                 if (!resolveConflict.reapply(intent.conflictId)) updateState { it.copy(reapplyFailed = true) }
             is HistoryIntent.Dismiss -> resolveConflict.dismiss(intent.conflictId)

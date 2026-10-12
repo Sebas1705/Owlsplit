@@ -49,6 +49,9 @@ data class HomeGroup(
     val lastActivity: Long,
 )
 
+/** Groups I am in: after leaving one it stays on the device (history) but is no longer mine. */
+fun Group.hasMember(uid: String?): Boolean = uid == null || uid in memberUids
+
 data class HomeData(
     val groups: List<HomeGroup>,
     val preferredCurrency: String,
@@ -56,7 +59,11 @@ data class HomeData(
     val total: Long,
     /** My balances in groups of other currencies, per currency (converted in P9b). */
     val otherCurrencies: Map<String, Long>,
+    /** Groups I archived, apart: they can be opened (and unarchived) from Inicio. */
+    val archived: List<Group> = emptyList(),
 )
+
+private data class HomeQuery(val list: List<Group>, val archived: List<Group>, val uid: String?, val currency: String?)
 
 /** Inicio: my groups (not archived by me), most recent activity first, and my total balance. */
 class ObserveHome(
@@ -70,17 +77,22 @@ class ObserveHome(
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
     operator fun invoke(): Flow<HomeData> =
-        combine(groups.observeGroups(), accounts.session, profiles.profile) { list, session, profile ->
-            Triple(list.filter { session == null || session.uid !in it.archivedBy }, session?.uid, profile?.currency)
-        }.flatMapLatest { (list, uid, currency) ->
+        combine(groups.observeGroups(), accounts.session, profiles.profile) { all, session, profile ->
+            val uid = session?.uid
+            val mine = all.filter { it.hasMember(uid) }
+            val (archived, list) = mine.partition { uid != null && uid in it.archivedBy }
+            HomeQuery(list, archived, uid, profile?.currency)
+        }.flatMapLatest { query ->
+            val (list, archived, uid) = query
+            val currency = query.currency
             val preferred = currency ?: DEFAULT_CURRENCY
-            if (list.isEmpty()) return@flatMapLatest flowOf(HomeData(emptyList(), preferred, 0, emptyMap()))
+            if (list.isEmpty()) return@flatMapLatest flowOf(HomeData(emptyList(), preferred, 0, emptyMap(), archived))
             combine(list.map { homeGroup(it, uid) }) { items ->
                 val sorted = items.sortedByDescending { it.lastActivity }
                 val byCurrency = sorted.filter { it.myBalance != null }
                     .groupBy({ it.group.baseCurrency }, { it.myBalance!! })
                     .mapValues { (_, values) -> values.sum() }
-                HomeData(sorted, preferred, byCurrency[preferred] ?: 0, byCurrency - preferred)
+                HomeData(sorted, preferred, byCurrency[preferred] ?: 0, byCurrency - preferred, archived)
             }
         }
 
@@ -198,6 +210,11 @@ class MemberActions(private val members: MemberRepository) {
 }
 
 /** One tap on a suggested payment: the transfer that settles it, in the group currency, today. */
+/** Removes a recorded payment (it can be restored from the history). */
+class DeleteTransfer(private val transfers: TransferRepository) {
+    suspend operator fun invoke(transferId: String) = transfers.delete(transferId)
+}
+
 class SettleUp(private val transfers: TransferRepository, private val today: Today = Today.System) {
     suspend operator fun invoke(groupId: String, payment: SuggestedPayment, currency: String): String =
         transfers.create(

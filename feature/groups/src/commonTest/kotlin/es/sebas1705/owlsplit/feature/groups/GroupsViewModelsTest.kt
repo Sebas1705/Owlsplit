@@ -12,6 +12,7 @@ import es.sebas1705.owlsplit.domain.usecases.account.ObserveAccount
 import es.sebas1705.owlsplit.domain.usecases.balances.ObserveGroupBalances
 import es.sebas1705.owlsplit.domain.usecases.expenses.ExpenseDrafts
 import es.sebas1705.owlsplit.domain.usecases.expenses.SaveExpense
+import es.sebas1705.owlsplit.domain.usecases.groups.DeleteTransfer
 import es.sebas1705.owlsplit.domain.usecases.groups.GroupActions
 import es.sebas1705.owlsplit.domain.usecases.groups.MemberActions
 import es.sebas1705.owlsplit.domain.usecases.groups.ObserveGroupDetail
@@ -101,8 +102,39 @@ class GroupsViewModelsTest {
         val payment = vm.uiState.value.detail!!.balances!!.suggestedPayments.single()
         vm.onEvent(GroupIntent.AskSettle(payment))
         vm.onEvent(GroupIntent.ConfirmSettle)
+        // A second confirmation before anything is recorded.
+        assertEquals(payment, vm.uiState.value.finalSettle)
+        assertTrue(ledger.transferList.value.isEmpty())
+        vm.onEvent(GroupIntent.FinalSettle)
         assertTrue(vm.uiState.value.detail!!.balances!!.suggestedPayments.isEmpty())
         assertNull(vm.uiState.value.confirmSettle)
+        assertNull(vm.uiState.value.finalSettle)
+    }
+
+    @Test
+    fun aRecordedPaymentCanBeDeletedAfterConfirming() = runTest {
+        val g = dinnerGroup()
+        val vm = GroupViewModel(
+            g,
+            GroupTab.SETTLE,
+            detail,
+            SettleUp(ledger.transfers),
+            actions,
+            DeleteTransfer(ledger.transfers)
+        )
+        val payment = vm.uiState.value.detail!!.balances!!.suggestedPayments.single()
+        vm.onEvent(GroupIntent.AskSettle(payment))
+        vm.onEvent(GroupIntent.ConfirmSettle)
+        vm.onEvent(GroupIntent.FinalSettle)
+        val transfer = vm.uiState.value.detail!!.transfers.single()
+
+        vm.onEvent(GroupIntent.OpenTransfer(transfer))
+        vm.onEvent(GroupIntent.AskDeleteTransfer)
+        assertTrue(vm.uiState.value.confirmDeleteTransfer)
+        vm.onEvent(GroupIntent.ConfirmDeleteTransfer)
+        assertTrue(vm.uiState.value.detail!!.transfers.isEmpty())
+        assertEquals(payment, vm.uiState.value.detail!!.balances!!.suggestedPayments.single())
+        assertNull(vm.uiState.value.openTransfer)
     }
 
     @Test
@@ -114,6 +146,9 @@ class GroupsViewModelsTest {
         assertTrue(vm.uiState.value.detail!!.archivedByMe)
         vm.onEvent(GroupIntent.AskLeave)
         vm.onEvent(GroupIntent.ConfirmLeave)
+        assertTrue(vm.uiState.value.finalLeave)
+        assertFalse(vm.uiState.value.closed)
+        vm.onEvent(GroupIntent.FinalLeave)
         assertTrue(vm.uiState.value.closed)
     }
 
@@ -179,6 +214,8 @@ class GroupsViewModelsTest {
         vm.onEvent(TransferIntent.AmountChanged("12,555")) // too many decimals: ignored
         assertEquals("12,5", vm.uiState.value.amountText)
         vm.onEvent(TransferIntent.Save)
+        assertTrue(vm.uiState.value.confirming)
+        vm.onEvent(TransferIntent.ConfirmSave)
         assertTrue(vm.uiState.value.done)
         assertEquals(1_250L, ledger.transferList.value.single().amountMinor)
     }

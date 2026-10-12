@@ -1,5 +1,7 @@
 package es.sebas1705.owlsplit.feature.groups.editor
 
+import es.sebas1705.owlsplit.core.ui.components.pressFeedback
+import es.sebas1705.owlsplit.core.ui.components.rememberPress
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -173,17 +175,19 @@ private fun IconGrid(state: GroupEditorState, onSelect: (String) -> Unit) {
                 row.forEach { (key, icon) ->
                     val selected = key == state.icon
                     val name = GroupIcons.name(key)
+                    val press = rememberPress()
                     Box(
                         Modifier
                             .weight(1f)
                             .heightIn(min = Sizes.touchTarget)
-                            .selectable(selected, role = Role.RadioButton) { onSelect(key) }
+                            .selectable(selected, press, indication = null, role = Role.RadioButton) { onSelect(key) }
                             .semantics { contentDescription = name },
                         contentAlignment = Alignment.Center,
                     ) {
                         Box(
                             Modifier
                                 .size(44.dp)
+                                .pressFeedback(press, CircleShape)
                                 .background(
                                     if (selected) state.accent.container(colors) else colors.surface,
                                     CircleShape

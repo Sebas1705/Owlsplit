@@ -1,5 +1,6 @@
 package es.sebas1705.owlsplit.feature.groups.detail
 
+import androidx.compose.ui.draw.clip
 import compose.icons.tablericons.Search
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitMenuItem
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitDropdownMenu
@@ -87,6 +88,7 @@ private fun <T> Chip(label: String, selected: Boolean, options: List<Pair<T, Str
         Row(
             Modifier
                 .heightIn(min = Sizes.touchTarget)
+                .clip(OwlsplitShapes.pill)
                 .background(if (selected) colors.accentContainer else colors.surface, OwlsplitShapes.pill)
                 .clickable(role = Role.DropdownList) { open = true }
                 .padding(horizontal = Spacing.m),

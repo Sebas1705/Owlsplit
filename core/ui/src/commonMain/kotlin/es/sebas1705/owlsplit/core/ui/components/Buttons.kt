@@ -49,15 +49,24 @@ fun PrimaryPillButton(text: String, onClick: () -> Unit, modifier: Modifier = Mo
 /** Round shortcut under the balance (Expense, Settle, Group, Join). */
 @Composable
 fun QuickActionButton(icon: ImageVector, label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val press = rememberPress()
     Column(
         modifier
             .widthIn(min = Sizes.touchTarget)
-            .clickable(role = Role.Button, onClickLabel = label, onClick = onClick),
+            .clickable(
+                interactionSource = press,
+                indication = null,
+                role = Role.Button,
+                onClickLabel = label,
+                onClick = onClick,
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
         Box(
-            Modifier.size(Sizes.quickAction).background(Owlsplit.colors.surface, CircleShape),
+            Modifier.size(
+                Sizes.quickAction
+            ).pressFeedback(press, CircleShape).background(Owlsplit.colors.surface, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, contentDescription = null, tint = Owlsplit.colors.textPrimary, modifier = Modifier.size(22.dp))

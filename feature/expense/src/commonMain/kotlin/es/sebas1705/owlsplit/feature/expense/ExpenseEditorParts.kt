@@ -1,5 +1,6 @@
 package es.sebas1705.owlsplit.feature.expense
 
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -83,6 +84,7 @@ internal fun CurrencyLine(state: ExpenseEditorState, format: MoneyFormat, onEven
         Row(
             Modifier
                 .heightIn(min = Sizes.touchTarget)
+                .clip(OwlsplitShapes.pill)
                 .background(Owlsplit.colors.surface, OwlsplitShapes.pill)
                 .clickable(role = Role.Button) { picking = true }
                 .semantics { contentDescription = description }
@@ -185,7 +187,8 @@ internal fun Payers(state: ExpenseEditorState, myMemberId: String?, onEvent: (Ex
             stringResource(Res.string.several_payers),
             state.draft.multiplePayers,
             { onEvent(ExpenseEditorIntent.MultiplePayers(it)) },
-            Modifier.heightIn(min = Sizes.rowMinHeight).padding(horizontal = Spacing.m),
+            Modifier.heightIn(min = Sizes.rowMinHeight),
+            horizontalPadding = Spacing.m,
         )
     }
 }

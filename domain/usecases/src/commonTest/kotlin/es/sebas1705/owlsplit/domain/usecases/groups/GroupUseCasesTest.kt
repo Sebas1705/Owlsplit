@@ -110,6 +110,19 @@ class GroupUseCasesTest {
     }
 
     @Test
+    fun archivedGroupsAreApartAndGroupsILeftAreGone() = runTest {
+        val kept = actions.create(GroupInput("Piso", "home", "GREEN", "EUR"))
+        val archived = actions.create(GroupInput("Ibiza", "plane", "BLUE", "EUR"))
+        val left = actions.create(GroupInput("Cena", "food", "PINK", "EUR"))
+        actions.setArchived(archived, true)
+        actions.leave(left)
+
+        val data = home().first()
+        assertEquals(listOf(kept), data.groups.map { it.group.id })
+        assertEquals(listOf(archived), data.archived.map { it.id })
+    }
+
+    @Test
     fun iCannotDeactivateOrDeleteMyself() = runTest {
         val g = trip()
         val me = ledger.members.observeMembers(g).first().single()

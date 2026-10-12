@@ -30,4 +30,6 @@
     <string name="balance_spoken_owed">Te deben %1$s</string>
     <string name="balance_spoken_owe">Debes %1$s</string>
     <string name="balance_spoken_even">Estás en paz</string>
+    <string name="archived_show">Ver archivados (%1$d)</string>
+    <string name="archived_hide">Ocultar archivados (%1$d)</string>
 </resources>

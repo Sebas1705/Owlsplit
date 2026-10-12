@@ -30,4 +30,6 @@
     <string name="balance_spoken_owed">You are owed %1$s</string>
     <string name="balance_spoken_owe">You owe %1$s</string>
     <string name="balance_spoken_even">You are all settled up</string>
+    <string name="archived_show">Show archived (%1$d)</string>
+    <string name="archived_hide">Hide archived (%1$d)</string>
 </resources>

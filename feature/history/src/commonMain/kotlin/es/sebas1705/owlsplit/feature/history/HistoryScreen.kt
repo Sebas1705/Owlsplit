@@ -182,7 +182,7 @@ private fun Entry(
                 if (item.canRestore) {
                     TextActionButton(
                         stringResource(Res.string.restore),
-                        { onEvent(HistoryIntent.Restore(item.entry.entityId)) }
+                        { onEvent(HistoryIntent.Restore(item.entry.entityType, item.entry.entityId)) }
                     )
                 }
                 item.conflictId?.let { id ->

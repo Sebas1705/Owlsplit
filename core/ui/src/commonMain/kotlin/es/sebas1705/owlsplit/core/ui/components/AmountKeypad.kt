@@ -1,5 +1,7 @@
 package es.sebas1705.owlsplit.core.ui.components
 
+import es.sebas1705.owlsplit.core.ui.theme.OwlsplitShapes
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +43,7 @@ fun AmountKeypad(
                         Modifier
                             .weight(1f)
                             .heightIn(min = 56.dp)
+                            .clip(OwlsplitShapes.control)
                             .clickable(role = Role.Button, onClick = { onKey(key) }),
                         contentAlignment = Alignment.Center,
                     ) {

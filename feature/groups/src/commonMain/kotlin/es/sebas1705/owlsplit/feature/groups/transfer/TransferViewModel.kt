@@ -21,6 +21,8 @@ data class TransferState(
     val amountText: String = "",
     val amountMinor: Long = 0,
     val note: String = "",
+    /** Asking "has it really been paid?" before recording. */
+    val confirming: Boolean = false,
     val done: Boolean = false,
 ) : MVIBaseState {
     val sameMember: Boolean get() = fromId != null && fromId == toId
@@ -33,6 +35,8 @@ sealed interface TransferIntent : MVIBaseIntent {
     data class AmountChanged(val text: String) : TransferIntent
     data class NoteChanged(val note: String) : TransferIntent
     data object Save : TransferIntent
+    data object ConfirmSave : TransferIntent
+    data object DismissConfirm : TransferIntent
 }
 
 /** "Ana pagó 23,50 € a Luis": a payment typed by hand, in the group currency. */
@@ -71,7 +75,12 @@ class TransferViewModel(
                 state.copy(amountText = intent.text, amountMinor = minor)
             }
             is TransferIntent.NoteChanged -> updateState { it.copy(note = intent.note.take(RecordTransfer.MAX_NOTE)) }
-            TransferIntent.Save -> save()
+            TransferIntent.Save -> updateState { it.copy(confirming = it.canSave) }
+            TransferIntent.ConfirmSave -> {
+                updateState { it.copy(confirming = false) }
+                save()
+            }
+            TransferIntent.DismissConfirm -> updateState { it.copy(confirming = false) }
         }
     }
 

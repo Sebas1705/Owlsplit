@@ -1,5 +1,6 @@
 package es.sebas1705.owlsplit.core.ui.components
 
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -24,6 +25,7 @@ fun OwlsplitContainer(
     Column(
         modifier
             .fillMaxWidth()
+            .clip(OwlsplitShapes.container)
             .background(Owlsplit.colors.surface, OwlsplitShapes.container)
             .padding(vertical = Spacing.xs),
     ) {
