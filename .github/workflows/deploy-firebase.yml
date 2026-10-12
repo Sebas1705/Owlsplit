@@ -39,7 +39,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: dopplerhq/cli-action@v4
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with: { node-version: 22 }
       # The Spark plan forbids executables on Hosting: the APK stays in the (public) GitHub Release;
       # the site only describes it (/download/latest.json) and redirects /apk to it.
