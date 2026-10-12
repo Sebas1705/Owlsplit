@@ -94,7 +94,13 @@ class GroupRepositoryImpl(
             db.memberEntityQueries.selectVisibleByGroup(id).executeAsList().map { it.toModel() }
                 .filter { it.userUid == me }
                 .forEach { old ->
-                    val new = old.copy(userUid = null, payMethods = null, meta = writer.editedMeta(old.meta))
+                    val new = old.copy(
+                        userUid = null,
+                        payMethods = null,
+                        linked = false,
+                        pastUids = if (me in old.pastUids) old.pastUids else old.pastUids + me,
+                        meta = writer.editedMeta(old.meta),
+                    )
                     MemberRepositoryImpl.save(db, writer, new, old, ChangeAction.UPDATED)
                 }
             // ...then leave. No history entry: once out, the group can no longer be written.

@@ -40,4 +40,9 @@
     <string name="waiting_members">Descargando el grupo…</string>
     <string name="new_member">Soy nuevo: añadirme como %1$s</string>
     <string name="me_default">Yo</string>
+    <string name="ghost_left">Salió del grupo · sus gastos siguen aquí</string>
+    <string name="ghost_left_google">Salió del grupo · era una cuenta de Google</string>
+    <string name="reclaim_title">¿Eres %1$s?</string>
+    <string name="reclaim_body">Este perfil era de otra cuenta que salió del grupo. Elígelo solo si eres %1$s: recuperarás sus gastos, su saldo y su historial, y el grupo verá en el historial que volviste con otra cuenta.</string>
+    <string name="reclaim_confirm">Soy %1$s</string>
 </resources>

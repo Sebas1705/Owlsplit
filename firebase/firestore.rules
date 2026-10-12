@@ -84,12 +84,14 @@ service cloud.firestore {
       match /members/{memberId} {
         function validMember() {
           return data().keys().hasOnly(['name', 'avatar', 'defaultWeight', 'userUid', 'active', 'sortKey',
-              'version', 'updatedAt', 'updatedBy', 'deleted', 'payMethods'])
+              'version', 'updatedAt', 'updatedBy', 'deleted', 'payMethods', 'pastUids', 'linked'])
             && isText(data().name, 1, 40) && isOptText(data().avatar, 300)
             && data().defaultWeight is int && data().defaultWeight >= 1 && data().defaultWeight <= 100
             && (data().userUid == null || data().userUid is string)
             && data().active is bool && data().sortKey is int && isMeta(data())
-            && isPayMethods(data().get('payMethods', null));
+            && isPayMethods(data().get('payMethods', null))
+            && data().get('pastUids', []) is list && data().get('pastUids', []).size() <= 20
+            && data().get('linked', false) is bool;
         }
         // How to pay someone: only they publish it (on their own member); anyone may clear it.
         function isPayMethods(p) {
@@ -99,6 +101,18 @@ service cloud.firestore {
         }
         function payMethodsAreOwn() {
           return !changedKeys().hasAny(['payMethods']) || data().get('payMethods', null) == null
+            || data().userUid == uid();
+        }
+        // Who had this member (P14): the list only grows, and only by my own uid when I release it.
+        function pastUidsAreOwn() {
+          let before = resource.data.get('pastUids', []);
+          let after = data().get('pastUids', []);
+          return after == before
+            || (resource.data.userUid == uid() && data().userUid == null && after == before.concat([uid()]));
+        }
+        // "Linked to Google": only the person behind the member says so; releasing clears it.
+        function linkedIsOwn() {
+          return !changedKeys().hasAny(['linked']) || data().get('linked', false) == false
             || data().userUid == uid();
         }
         // A member can be claimed (null → me) or released (me → null), never taken from someone else.
@@ -111,9 +125,11 @@ service cloud.firestore {
         allow read: if isMemberOf(groupId);
         allow create: if isMemberOf(groupId) && validMember() && created()
           && (data().userUid == null || data().userUid == uid())
-          && (data().get('payMethods', null) == null || data().userUid == uid());
+          && (data().get('payMethods', null) == null || data().userUid == uid())
+          && data().get('pastUids', []).size() == 0
+          && (data().get('linked', false) == false || data().userUid == uid());
         allow update: if isMemberOf(groupId) && validMember() && nextVersion() && claimIsOwn()
-          && payMethodsAreOwn();
+          && payMethodsAreOwn() && pastUidsAreOwn() && linkedIsOwn();
         allow delete: if false;
       }
 

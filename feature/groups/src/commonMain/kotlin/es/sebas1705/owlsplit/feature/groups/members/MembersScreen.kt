@@ -1,5 +1,7 @@
 package es.sebas1705.owlsplit.feature.groups.members
 
+import es.sebas1705.owlsplit.feature.groups.resources.left_group
+import es.sebas1705.owlsplit.feature.groups.resources.with_google
 import es.sebas1705.owlsplit.core.ui.theme.OwlsplitShapes
 import es.sebas1705.owlsplit.core.ui.components.BottomActionBar
 import es.sebas1705.owlsplit.core.ui.components.ProfileAvatar
@@ -97,7 +99,14 @@ fun MembersScreen(
 private fun MemberRow(member: Member, isMe: Boolean, onClick: () -> Unit) {
     val colors = Owlsplit.colors
     val details = listOfNotNull(
-        stringResource(if (member.userUid != null) Res.string.with_account else Res.string.ghost),
+        stringResource(
+            when {
+                member.userUid != null && member.linked -> Res.string.with_google
+                member.userUid != null -> Res.string.with_account
+                member.abandoned -> Res.string.left_group
+                else -> Res.string.ghost
+            },
+        ),
         stringResource(Res.string.weight_value, member.defaultWeight.toInt()),
         if (member.active) null else stringResource(Res.string.inactive),
     ).joinToString(" · ")

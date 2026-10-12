@@ -57,4 +57,8 @@
     <string name="dismiss">Descartar</string>
     <string name="reapply_failed">Ese elemento ya no existe: no se puede reaplicar.</string>
     <string name="back">Atrás</string>
+    <string name="rejoined">%1$s volvió al grupo</string>
+    <string name="rejoined_me">Volviste al grupo</string>
+    <string name="rejoined_other">%1$s volvió al grupo con otra cuenta</string>
+    <string name="rejoined_other_me">Volviste al grupo con otra cuenta</string>
 </resources>

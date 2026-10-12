@@ -1,5 +1,6 @@
 package es.sebas1705.owlsplit.feature.home
 
+import es.sebas1705.owlsplit.domain.usecases.account.SyncMyLinked
 import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.domain.usecases.expenses.GenerateRecurring
 import androidx.lifecycle.viewModelScope
@@ -55,12 +56,15 @@ class HomeViewModel(
     private val nudge: LinkNudgeSettings,
     /** Adds the repeating expenses that are due in every group (null in tests that do not need it). */
     generateRecurring: GenerateRecurring? = null,
+    /** Shows my groups whether my account is linked to Google (null in tests that do not need it). */
+    syncMyLinked: SyncMyLinked? = null,
 ) : MVIBaseViewModel<HomeState, HomeIntent>() {
 
     override fun initState() = HomeState()
 
     init {
         generateRecurring?.let { generate -> execute { generate.all() } }
+        syncMyLinked?.let { sync -> execute { sync() } }
         viewModelScope.launch {
             combine(
                 observeHome(),

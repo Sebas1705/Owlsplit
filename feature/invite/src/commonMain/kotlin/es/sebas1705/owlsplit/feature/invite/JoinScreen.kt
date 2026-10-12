@@ -1,5 +1,13 @@
 package es.sebas1705.owlsplit.feature.invite
 
+import es.sebas1705.owlsplit.feature.invite.resources.cancel
+import es.sebas1705.owlsplit.feature.invite.resources.reclaim_confirm
+import es.sebas1705.owlsplit.feature.invite.resources.reclaim_body
+import es.sebas1705.owlsplit.feature.invite.resources.reclaim_title
+import es.sebas1705.owlsplit.feature.invite.resources.ghost_left_google
+import es.sebas1705.owlsplit.feature.invite.resources.ghost_left
+import es.sebas1705.owlsplit.core.ui.components.TextActionButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -125,7 +133,7 @@ private fun ColumnScope.EnterCode(state: JoinState, onEvent: (JoinIntent) -> Uni
                     Modifier.size(36.dp).padding(Spacing.s),
                     tint = Owlsplit.colors.accentText
                 )
-            }, onScan)
+            }, onClick = onScan)
         }
     }
     OwlsplitTextField(
@@ -175,6 +183,38 @@ private fun ColumnScope.Preview(state: JoinState, onEvent: (JoinIntent) -> Unit)
 @Composable
 private fun ColumnScope.PickMember(state: JoinState, onEvent: (JoinIntent) -> Unit) {
     Heading(stringResource(Res.string.who_are_you))
+    state.confirmGhost?.let { ghost ->
+        AlertDialog(
+            onDismissRequest = { onEvent(JoinIntent.DismissPick) },
+            containerColor = Owlsplit.colors.surface,
+            title = {
+                Text(
+                    stringResource(Res.string.reclaim_title, ghost.name),
+                    style = Owlsplit.type.title,
+                    color = Owlsplit.colors.textPrimary
+                )
+            },
+            text = {
+                Text(
+                    stringResource(Res.string.reclaim_body, ghost.name),
+                    style = Owlsplit.type.body,
+                    color = Owlsplit.colors.textSecondary
+                )
+            },
+            confirmButton = {
+                TextActionButton(
+                    stringResource(Res.string.reclaim_confirm, ghost.name),
+                    { onEvent(JoinIntent.ConfirmPick) }
+                )
+            },
+            dismissButton = {
+                TextActionButton(
+                    stringResource(Res.string.cancel),
+                    { onEvent(JoinIntent.DismissPick) }
+                )
+            },
+        )
+    }
     val ghosts = state.ghosts
     if (ghosts == null) {
         Busy(stringResource(Res.string.waiting_members))
@@ -184,9 +224,14 @@ private fun ColumnScope.PickMember(state: JoinState, onEvent: (JoinIntent) -> Un
     val enabled = state.step == JoinStep.PICK
     OwlsplitContainer {
         ghosts.forEach { ghost ->
+            val subtitle = when {
+                ghost.abandoned && ghost.linked -> stringResource(Res.string.ghost_left_google)
+                ghost.abandoned -> stringResource(Res.string.ghost_left)
+                else -> null
+            }
             ChoiceRow(ghost.name, enabled, {
                 ProfileAvatar(ghost.name, memberAccent(ghost.id, null))
-            }) { onEvent(JoinIntent.Pick(ghost.id)) }
+            }, subtitle) { onEvent(JoinIntent.Pick(ghost.id)) }
         }
         val me = state.myName.ifBlank { stringResource(Res.string.me_default) }
         ChoiceRow(stringResource(Res.string.new_member, me), enabled, {
@@ -196,7 +241,13 @@ private fun ColumnScope.PickMember(state: JoinState, onEvent: (JoinIntent) -> Un
 }
 
 @Composable
-private fun ChoiceRow(text: String, enabled: Boolean, leading: @Composable () -> Unit, onClick: () -> Unit) {
+private fun ChoiceRow(
+    text: String,
+    enabled: Boolean,
+    leading: @Composable () -> Unit,
+    subtitle: String? = null,
+    onClick: () -> Unit,
+) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -207,7 +258,12 @@ private fun ChoiceRow(text: String, enabled: Boolean, leading: @Composable () ->
         horizontalArrangement = Arrangement.spacedBy(Spacing.m),
     ) {
         leading()
-        Text(text, style = Owlsplit.type.bodyStrong, color = Owlsplit.colors.textPrimary)
+        Column(Modifier.weight(1f)) {
+            Text(text, style = Owlsplit.type.bodyStrong, color = Owlsplit.colors.textPrimary)
+            if (subtitle != null) {
+                Text(subtitle, style = Owlsplit.type.caption, color = Owlsplit.colors.textSecondary)
+            }
+        }
     }
 }
 

@@ -75,6 +75,22 @@ class MemberRepositoryImpl(
         }
     }
 
+    override suspend fun publishMyLinked(linked: Boolean) = withContext(io) {
+        db.transaction {
+            db.memberEntityQueries.selectByUser(writer.uid()).executeAsList().map { it.toModel() }
+                .filter { it.linked != linked }
+                .forEach { old ->
+                    save(
+                        db,
+                        writer,
+                        old.copy(linked = linked, meta = writer.editedMeta(old.meta)),
+                        old,
+                        action = null
+                    )
+                }
+        }
+    }
+
     override suspend fun publishMyPayMethods(methods: PayMethods?) = withContext(io) {
         db.transaction {
             db.memberEntityQueries.selectByUser(writer.uid()).executeAsList().map { it.toModel() }

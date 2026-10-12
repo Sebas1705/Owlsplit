@@ -148,4 +148,6 @@
     <string name="transfer_delete_body">%1$s, %2$s. Debts go back to how they were before the payment. You can restore it from the history for 30 days.</string>
     <string name="transfer_delete_confirm">Delete</string>
     <string name="close">Close</string>
+    <string name="with_google">Google account</string>
+    <string name="left_group">Left the group</string>
 </resources>

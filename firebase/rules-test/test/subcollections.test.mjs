@@ -50,6 +50,26 @@ describe('members', () => {
     await assertFails(updateDoc(doc(db, path('members/m1')), { payMethods: { bizum: '0'.repeat(21) }, ...bump('ana') }));
     await assertFails(updateDoc(doc(db, path('members/m1')), { payMethods: 'bizum', ...bump('ana') }));
   });
+  test('leaving adds my own uid to pastUids, and nothing else can change it', async () => {
+    const ana = as(env, 'ana');
+    // Releasing my member: userUid → null and my uid appended.
+    await assertSucceeds(updateDoc(doc(ana, path('members/m1')), { userUid: null, pastUids: ['ana'], ...bump('ana') }));
+    // Nobody rewrites or extends it afterwards (not even with their own uid without releasing).
+    await assertFails(updateDoc(doc(as(env, 'luis'), path('members/m1')), { pastUids: [], ...bump('luis') }));
+    await assertFails(updateDoc(doc(as(env, 'luis'), path('members/m1')), { pastUids: ['ana', 'luis'], ...bump('luis') }));
+    // Claiming it back keeps the list.
+    await assertSucceeds(updateDoc(doc(ana, path('members/m1')), { userUid: 'ana', ...bump('ana') }));
+  });
+  test('releasing cannot write someone else into pastUids', async () => {
+    await assertFails(updateDoc(doc(as(env, 'ana'), path('members/m1')), { userUid: null, pastUids: ['luis'], ...bump('ana') }));
+    await assertFails(setDoc(doc(as(env, 'luis'), path('members/m9')),
+      memberData({ name: 'Zoe', userUid: null, sortKey: 3, pastUids: ['ana'], ...fresh('luis') })));
+  });
+  test('only the person behind a member marks it as linked to Google', async () => {
+    await assertSucceeds(updateDoc(doc(as(env, 'ana'), path('members/m1')), { linked: true, ...bump('ana') }));
+    await assertFails(updateDoc(doc(as(env, 'luis'), path('members/ghost')), { linked: true, ...bump('luis') }));
+    await assertSucceeds(updateDoc(doc(as(env, 'ana'), path('members/m1')), { userUid: null, linked: false, pastUids: ['ana'], ...bump('ana') }));
+  });
   test('weights stay within 1..100', async () => {
     await assertFails(updateDoc(doc(as(env, 'ana'), path('members/m1')), { defaultWeight: 0, ...bump('ana') }));
   });

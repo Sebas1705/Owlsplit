@@ -40,4 +40,9 @@
     <string name="waiting_members">Downloading the group…</string>
     <string name="new_member">I’m new: add me as %1$s</string>
     <string name="me_default">Me</string>
+    <string name="ghost_left">Left the group · their expenses are still here</string>
+    <string name="ghost_left_google">Left the group · it was a Google account</string>
+    <string name="reclaim_title">Are you %1$s?</string>
+    <string name="reclaim_body">This profile belonged to another account that left the group. Choose it only if you are %1$s: you get back their expenses, balance and history, and the group will see in the history that you came back with another account.</string>
+    <string name="reclaim_confirm">I’m %1$s</string>
 </resources>

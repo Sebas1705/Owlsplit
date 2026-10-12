@@ -60,6 +60,8 @@ internal fun Member_entity.toModel() = Member(
     active = active.asFlag(), sortKey = sort_key,
     meta = meta(version, server_version, updated_at, updated_by, deleted, sync_state),
     payMethods = pay_methods?.let { json.decodeFromString(PayMethods.serializer(), it) },
+    pastUids = past_uids?.let { json.decodeFromString(stringList, it) }.orEmpty(),
+    linked = linked.asFlag(),
 )
 
 internal fun Member.toRow() = Member_entity(
@@ -68,6 +70,8 @@ internal fun Member.toRow() = Member_entity(
     updated_at = meta.updatedAt, updated_by = meta.updatedBy, deleted = meta.deleted.asInt(),
     sync_state = meta.syncState.name,
     pay_methods = payMethods?.let { json.encodeToString(PayMethods.serializer(), it) },
+    past_uids = pastUids.takeIf { it.isNotEmpty() }?.let { json.encodeToString(stringList, it) },
+    linked = linked.asInt(),
 )
 
 internal fun Expense_entity.toModel(payers: Map<String, Long>, splitValues: Map<String, Long>) = Expense(

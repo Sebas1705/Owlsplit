@@ -1,5 +1,7 @@
 package es.sebas1705.owlsplit.domain.usecases.history
 
+import es.sebas1705.owlsplit.domain.usecases.groups.Rejoin
+import es.sebas1705.owlsplit.domain.usecases.groups.MemberAccounts
 import es.sebas1705.owlsplit.domain.usecases.groups.hasMember
 import es.sebas1705.owlsplit.data.models.ChangeAction
 import es.sebas1705.owlsplit.data.models.ChangeLogEntry
@@ -64,6 +66,8 @@ data class HistoryItem(
     val conflictId: Long?,
     /** A member that stopped being someone's account: they left the group or deleted it. */
     val leftGroup: Boolean = false,
+    /** A join to a member that had an account before: back with the same one, or with another. */
+    val rejoin: Rejoin? = null,
 )
 
 /** A group's documents, including deleted expenses, to describe its history. */
@@ -74,6 +78,8 @@ internal data class GroupIndex(
     val transfers: List<Transfer>,
     /** Every account that was a member of the group, uid → member id, from its history. */
     val accounts: Map<String, String> = emptyMap(),
+    /** History entry id → how a member that had an account was joined again. */
+    val rejoins: Map<String, Rejoin> = emptyMap(),
 ) {
     /** The member [uid] is or was. */
     fun memberOf(uid: String): Member? =
@@ -113,7 +119,7 @@ class HistoryDescriber(
         transfers.observeTransfers(groupId, includeDeleted = true),
         changeLog.observe(groupId),
     ) { group, memberList, expenseList, transferList, entries ->
-        GroupIndex(group, memberList, expenseList, transferList, accountsOf(entries))
+        GroupIndex(group, memberList, expenseList, transferList, accountsOf(entries), MemberAccounts.rejoins(entries))
     }
 
     internal fun describe(entry: ChangeLogEntry, index: GroupIndex, uid: String?, conflicts: List<Conflict>): HistoryItem {
@@ -145,6 +151,7 @@ class HistoryDescriber(
                 null
             },
             leftGroup = leftGroup(entry, index),
+            rejoin = index.rejoins[entry.id],
         )
     }
 

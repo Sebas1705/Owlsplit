@@ -37,6 +37,7 @@ class FakeMembers(val members: MutableStateFlow<List<Member>>) : MemberRepositor
     override suspend fun claim(id: String) = error("unused")
     override suspend fun addMe(groupId: String, name: String, avatar: String?): String = error("unused")
     override suspend fun publishMyPayMethods(methods: PayMethods?) = error("unused")
+    override suspend fun publishMyLinked(linked: Boolean) = error("unused")
 }
 
 class FakeExpenses(val expenses: MutableStateFlow<List<Expense>>) : ExpenseRepository {

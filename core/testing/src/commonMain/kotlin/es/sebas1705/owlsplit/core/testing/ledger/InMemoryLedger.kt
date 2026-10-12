@@ -78,7 +78,20 @@ class InMemoryLedger(var uid: String = "uid-ana") {
 
         override suspend fun leave(id: String) {
             val mine = { m: Member -> m.groupId == id && m.userUid == uid }
-            memberList.update { list -> list.map { if (mine(it)) it.copy(userUid = null, payMethods = null) else it } }
+            memberList.update { list ->
+                list.map {
+                    if (mine(it)) {
+                        it.copy(
+                            userUid = null,
+                            payMethods = null,
+                            linked = false,
+                            pastUids = (it.pastUids + uid).distinct()
+                        )
+                    } else {
+                        it
+                    }
+                }
+            }
             editGroup(id) { it.copy(memberUids = it.memberUids - uid) }
         }
     }
@@ -107,6 +120,10 @@ class InMemoryLedger(var uid: String = "uid-ana") {
             val member = Member(id("m"), groupId, name, avatar, 1, uid, true, sortKey, meta())
             memberList.update { it + member }
             return member.id
+        }
+
+        override suspend fun publishMyLinked(linked: Boolean) {
+            memberList.update { list -> list.map { if (it.userUid == uid) it.copy(linked = linked) else it } }
         }
 
         override suspend fun publishMyPayMethods(methods: PayMethods?) {
