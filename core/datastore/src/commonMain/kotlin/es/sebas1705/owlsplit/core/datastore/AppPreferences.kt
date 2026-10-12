@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -40,13 +41,19 @@ interface LinkNudgeSettings {
     suspend fun dismissLinkNudge()
 }
 
+/** The release whose update the user put off (its versionCode): not offered again, a newer one is. */
+interface UpdateSettings {
+    val dismissedUpdate: Flow<Long?>
+    suspend fun dismissUpdate(versionCode: Long)
+}
+
 /** Small values the app can rebuild (exchange rates): kept on the device, never synced. */
 interface KeyValueCache {
     suspend fun get(key: String): String?
     suspend fun put(key: String, value: String)
 }
 
-class AppPreferences(private val dataStore: DataStore<Preferences>) : DisplaySettings, LinkNudgeSettings, KeyValueCache {
+class AppPreferences(private val dataStore: DataStore<Preferences>) : DisplaySettings, LinkNudgeSettings, UpdateSettings, KeyValueCache {
 
     // ── Theme ─────────────────────────────────────────────────────────────────
     override val themeMode: Flow<ThemeMode> = dataStore.data.map { prefs ->
@@ -87,6 +94,10 @@ class AppPreferences(private val dataStore: DataStore<Preferences>) : DisplaySet
     override val linkNudgeDismissed: Flow<Boolean> = dataStore.data.map { it[Keys.LINK_NUDGE_DISMISSED] ?: false }
     override suspend fun dismissLinkNudge() { dataStore.edit { it[Keys.LINK_NUDGE_DISMISSED] = true } }
 
+    // ── Updates ───────────────────────────────────────────────────────────────
+    override val dismissedUpdate: Flow<Long?> = dataStore.data.map { it[Keys.DISMISSED_UPDATE] }
+    override suspend fun dismissUpdate(versionCode: Long) { dataStore.edit { it[Keys.DISMISSED_UPDATE] = versionCode } }
+
     // ── Cache ─────────────────────────────────────────────────────────────────
     override suspend fun get(key: String): String? = dataStore.data.first()[stringPreferencesKey("cache:$key")]
     override suspend fun put(
@@ -107,6 +118,7 @@ class AppPreferences(private val dataStore: DataStore<Preferences>) : DisplaySet
         val PAYPAL = stringPreferencesKey("profile_paypal")
         val REVOLUT = stringPreferencesKey("profile_revolut")
         val LINK_NUDGE_DISMISSED = booleanPreferencesKey("link_nudge_dismissed")
+        val DISMISSED_UPDATE = longPreferencesKey("dismissed_update")
     }
 
     private fun MutablePreferences.setOrRemove(key: Preferences.Key<String>, value: String?) {

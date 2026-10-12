@@ -1,6 +1,10 @@
 package es.sebas1705.owlsplit.feature.home
 
 import es.sebas1705.owlsplit.core.datastore.LinkNudgeSettings
+import es.sebas1705.owlsplit.core.datastore.UpdateSettings
+import es.sebas1705.owlsplit.data.models.LatestRelease
+import es.sebas1705.owlsplit.data.repository.update.ReleaseFeed
+import es.sebas1705.owlsplit.domain.usecases.update.CheckForUpdate
 import es.sebas1705.owlsplit.core.money.FxRate
 import es.sebas1705.owlsplit.core.testing.CoroutineTestRule
 import es.sebas1705.owlsplit.data.repository.fx.FxQuote
@@ -28,6 +32,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class HomeViewModelTest {
@@ -52,7 +57,7 @@ class HomeViewModelTest {
     private val sync = FakeSync()
     private val nudge = Nudge()
 
-    private fun viewModel() = HomeViewModel(
+    private fun viewModel(checkForUpdate: CheckForUpdate? = null, updates: UpdateSettings? = null) = HomeViewModel(
         ObserveHome(
             ledger.groups,
             ledger.members,
@@ -70,6 +75,7 @@ class HomeViewModelTest {
             },
         ),
         nudge,
+        updates = if (checkForUpdate != null && updates != null) UpdateOffer(checkForUpdate, updates) else null,
     )
 
     @Test
@@ -115,5 +121,25 @@ class HomeViewModelTest {
         assertEquals(900L, vm.uiState.value.total) // +10,00 USD × 0,9
         assertTrue(vm.uiState.value.approximate)
         assertTrue(vm.uiState.value.otherCurrencies.isEmpty())
+    }
+
+    @Test
+    fun aNewerReleaseIsOfferedUntilItIsPutOff() = runTest {
+        val beta5 = LatestRelease("1.0.0-beta.5", 190, "https://x/a.apk")
+        val feed = object : ReleaseFeed {
+            override suspend fun latest() = beta5
+        }
+        val updates = object : UpdateSettings {
+            override val dismissedUpdate = MutableStateFlow<Long?>(null)
+            override suspend fun dismissUpdate(versionCode: Long) {
+                dismissedUpdate.value = versionCode
+            }
+        }
+        val vm = viewModel(CheckForUpdate(feed, installedCode = 180), updates)
+        assertEquals(beta5, vm.uiState.value.update)
+
+        vm.onEvent(HomeIntent.DismissUpdate)
+        assertNull(vm.uiState.value.update)
+        assertNull(viewModel(CheckForUpdate(feed, installedCode = 180), updates).uiState.value.update)
     }
 }

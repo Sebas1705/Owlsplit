@@ -3,6 +3,7 @@ package es.sebas1705.owlsplit.di
 import es.sebas1705.owlsplit.core.datastore.AppPreferences
 import es.sebas1705.owlsplit.core.datastore.KeyValueCache
 import es.sebas1705.owlsplit.core.datastore.LinkNudgeSettings
+import es.sebas1705.owlsplit.core.datastore.UpdateSettings
 import es.sebas1705.owlsplit.core.datastore.DisplaySettings
 import es.sebas1705.owlsplit.core.datastore.createDataStore
 import es.sebas1705.owlsplit.core.security.SecureStorage
@@ -51,7 +52,7 @@ val appModule = module {
     single { SecureStorage() }
     single {
         AppPreferences(createDataStore())
-    } binds arrayOf(DisplaySettings::class, LinkNudgeSettings::class, KeyValueCache::class)
+    } binds arrayOf(DisplaySettings::class, LinkNudgeSettings::class, UpdateSettings::class, KeyValueCache::class)
     single { createDatabase(get<DatabaseDriverFactory>()) }
 }
 

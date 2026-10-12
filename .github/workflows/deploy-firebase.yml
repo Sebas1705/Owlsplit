@@ -34,7 +34,10 @@ jobs:
       DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
       GH_TOKEN: ${{ github.token }}
     steps:
+      # Full history and tags: a release's versionCode is the commit count of its tag (build-release).
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: dopplerhq/cli-action@v4
       - uses: actions/setup-node@v6
         with: { node-version: 22 }
@@ -51,10 +54,12 @@ jobs:
           DATE=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json publishedAt -q .publishedAt)
           SIZE=$(stat -c %s "$RUNNER_TEMP/$FILE")
           SHA=$(sha256sum "$RUNNER_TEMP/$FILE" | cut -d' ' -f1)
+          # The app compares it with its own to offer the update (docs/plans/2026-10-12-p15-updates.md).
+          CODE=$(git rev-list --count "$TAG")
           mkdir -p hosting/download
-          jq -n --arg version "${TAG#v}" --arg tag "$TAG" --arg file "$FILE" --arg url "$URL" \
+          jq -n --arg version "${TAG#v}" --arg tag "$TAG" --argjson versionCode "$CODE" --arg file "$FILE" --arg url "$URL" \
             --argjson size "$SIZE" --arg sha256 "$SHA" --arg date "$DATE" \
-            '{version: $version, tag: $tag, file: $file, url: $url, size: $size, sha256: $sha256, date: $date}' \
+            '{version: $version, tag: $tag, versionCode: $versionCode, file: $file, url: $url, size: $size, sha256: $sha256, date: $date}' \
             > hosting/download/latest.json
           jq --arg url "$URL" '.hosting.redirects = [{source: "/apk", destination: $url, type: 302}]' \
             firebase.json > "$RUNNER_TEMP/firebase.json" && mv "$RUNNER_TEMP/firebase.json" firebase.json

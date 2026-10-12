@@ -32,4 +32,7 @@
     <string name="balance_spoken_even">Estás en paz</string>
     <string name="archived_show">Ver archivados (%1$d)</string>
     <string name="archived_hide">Ocultar archivados (%1$d)</string>
+    <string name="update_title">Nueva versión: %1$s</string>
+    <string name="update_body">Descárgala y ábrela para instalarla encima de esta; tus grupos se quedan.</string>
+    <string name="update_action">Actualizar</string>
 </resources>

@@ -2,7 +2,11 @@ package es.sebas1705.owlsplit.di
 
 import es.sebas1705.owlsplit.config.AppConfig
 import es.sebas1705.owlsplit.core.network.buildHttpClient
+import es.sebas1705.owlsplit.config.updatableVersionCode
 import es.sebas1705.owlsplit.data.fx.FrankfurterRates
+import es.sebas1705.owlsplit.data.fx.HostingReleaseFeed
+import es.sebas1705.owlsplit.data.repository.update.ReleaseFeed
+import es.sebas1705.owlsplit.domain.usecases.update.CheckForUpdate
 import es.sebas1705.owlsplit.data.repository.fx.FxRates
 import es.sebas1705.owlsplit.domain.usecases.account.ObservePendingChanges
 import es.sebas1705.owlsplit.domain.usecases.balances.ObserveGroupBalances
@@ -33,7 +37,9 @@ import es.sebas1705.owlsplit.feature.groups.importer.ImportViewModel
 import es.sebas1705.owlsplit.feature.groups.stats.StatsViewModel
 import es.sebas1705.owlsplit.feature.groups.transfer.TransferViewModel
 import es.sebas1705.owlsplit.feature.history.HistoryViewModel
+import es.sebas1705.owlsplit.feature.home.HomeChores
 import es.sebas1705.owlsplit.feature.home.HomeViewModel
+import es.sebas1705.owlsplit.feature.home.UpdateOffer
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -56,6 +62,8 @@ val groupsModule = module {
         FrankfurterRates(buildHttpClient(), AppConfig.FX_API_BASE_URL, get(), AppConfig.FX_CACHE_SECONDS)
     }
     factory { GetFxRate(get()) }
+    single<ReleaseFeed> { HostingReleaseFeed(buildHttpClient(), AppConfig.LATEST_RELEASE_URL) }
+    factory { CheckForUpdate(get(), updatableVersionCode) }
     factory { ConvertTotal(get()) }
     factory { HistoryDescriber(get(), get(), get(), get(), get()) }
     factory { ObserveHistory(get(), get(), get(), get()) }
@@ -63,6 +71,8 @@ val groupsModule = module {
     factory { RestoreExpense(get(), get()) }
     factory { ResolveConflict(get()) }
 
+    factory { UpdateOffer(get(), get()) }
+    factory { HomeChores(get(), get()) }
     viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { (groupId: String?) -> GroupEditorViewModel(groupId, get(), get(), get()) }
     viewModel { (groupId: String, tab: GroupTab) -> GroupViewModel(groupId, tab, get(), get(), get(), get(), get()) }
