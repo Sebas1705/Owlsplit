@@ -33,6 +33,11 @@
     <string name="design_catalog">Design catalogue</string>
     <string name="msg_linked">Account linked to Google.</string>
     <string name="msg_credential_in_use">That Google account already has Owlsplit data.</string>
+    <string name="unlink_google">Unlink Google</string>
+    <string name="unlink_title">Unlink Google?</string>
+    <string name="unlink_body">You keep your groups on this phone, but if you lose it or delete the app you cannot get them back until you link again. Then you can link another Google account.</string>
+    <string name="unlink_confirm">Unlink</string>
+    <string name="msg_unlinked">Google unlinked. You can link another account.</string>
     <string name="switch_title">You already have an account with this Google</string>
     <string name="switch_body">Sign in to it to get your groups back. The groups on this phone come with you: same name, expenses and balance.</string>
     <string name="switch_confirm">Sign in to that account</string>

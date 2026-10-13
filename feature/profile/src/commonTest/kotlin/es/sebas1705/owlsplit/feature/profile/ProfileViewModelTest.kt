@@ -3,6 +3,7 @@ package es.sebas1705.owlsplit.feature.profile
 import es.sebas1705.owlsplit.core.testing.ledger.FakeInvites
 import es.sebas1705.owlsplit.domain.usecases.account.CarryGroups
 import es.sebas1705.owlsplit.domain.usecases.account.SwitchToGoogle
+import es.sebas1705.owlsplit.domain.usecases.account.UnlinkGoogle
 import es.sebas1705.owlsplit.domain.usecases.invite.ClaimMember
 import es.sebas1705.owlsplit.domain.usecases.invite.JoinGroup
 import es.sebas1705.owlsplit.domain.usecases.invite.PreviewInvite
@@ -84,6 +85,7 @@ class ProfileViewModelTest {
             DeleteAccount(NoGroups(), sync, accounts, remote, reset),
             ReauthenticateGoogle(google, accounts),
             if (switch) switchToGoogle() else null,
+            UnlinkGoogle(accounts, profiles, ledger.members),
         )
 
         private fun switchToGoogle(): SwitchToGoogle {
@@ -182,6 +184,23 @@ class ProfileViewModelTest {
         assertEquals("uid-google", env.accounts.currentSession()!!.uid)
         assertFalse(env.vm.uiState.value.isAnonymous)
         assertEquals(ProfileMessage.LINKED, env.vm.uiState.value.message)
+    }
+
+    @Test
+    fun oneGoogleAtATimeUnlinkingAsksFirstAndLetsLinkAnother() = runTest {
+        val env = Env(Session("uid-ana", isAnonymous = false, providers = FakeAccounts.GOOGLE))
+        assertTrue(env.vm.uiState.value.linkedGoogle)
+        env.vm.onEvent(ProfileIntent.AskUnlink)
+        assertEquals(ProfileDialog.CONFIRM_UNLINK, env.vm.uiState.value.dialog)
+
+        env.vm.onEvent(ProfileIntent.ConfirmUnlink)
+        assertEquals(ProfileMessage.UNLINKED, env.vm.uiState.value.message)
+        assertFalse(env.vm.uiState.value.linkedGoogle)
+        // Anonymous again: the same uid, and linking is offered again.
+        assertTrue(env.vm.uiState.value.isAnonymous)
+        assertEquals("uid-ana", env.accounts.currentSession()!!.uid)
+        env.vm.onEvent(ProfileIntent.Link)
+        assertTrue(env.vm.uiState.value.linkedGoogle)
     }
 
     @Test

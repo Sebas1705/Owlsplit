@@ -38,6 +38,12 @@ class FakeAccounts(initial: Session? = ANONYMOUS) : AccountService {
         return linkResult
     }
 
+    override suspend fun unlinkGoogle(): AccountResult {
+        calls += "unlinkGoogle"
+        session.value = session.value?.copy(isAnonymous = true, providers = emptyList())
+        return AccountResult.Done
+    }
+
     override suspend fun signInWithGoogle(idToken: String, accessToken: String?): AccountResult {
         calls += "signInWithGoogle $idToken"
         if (signInResult == AccountResult.Done) session.value = Session("uid-google", false, GOOGLE)

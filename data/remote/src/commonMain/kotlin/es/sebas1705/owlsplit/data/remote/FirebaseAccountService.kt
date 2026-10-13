@@ -29,6 +29,12 @@ class FirebaseAccountService(private val auth: FirebaseAuth) : AccountService {
         user.reload()
     }
 
+    override suspend fun unlinkGoogle() = call {
+        val user = requireNotNull(auth.currentUser) { "No session to unlink" }
+        user.unlink(GOOGLE_PROVIDER)
+        user.reload()
+    }
+
     override suspend fun signInWithGoogle(idToken: String, accessToken: String?) =
         call { auth.signInWithCredential(GoogleAuthProvider.credential(idToken, accessToken)) }
 
@@ -57,10 +63,12 @@ class FirebaseAccountService(private val auth: FirebaseAuth) : AccountService {
     }
 }
 
-private fun FirebaseUser.toSession() = Session(
-    uid = uid,
-    isAnonymous = isAnonymous,
-    providers = providerData.map { it.providerId }.filter { it != FIREBASE_PROVIDER },
-)
+private fun FirebaseUser.toSession(): Session {
+    val providers = providerData.map { it.providerId }.filter { it != FIREBASE_PROVIDER }
+    // After unlinking Google, Firebase no longer calls the user anonymous, but nothing can bring it
+    // back either: for the app it is anonymous again (it can link Google, not sign out).
+    return Session(uid = uid, isAnonymous = isAnonymous || providers.isEmpty(), providers = providers)
+}
 
 private const val FIREBASE_PROVIDER = "firebase"
+private const val GOOGLE_PROVIDER = "google.com"

@@ -20,8 +20,8 @@ enum class JoinStep { ENTER, SEARCHING, PREVIEW, JOINING, PICK, DONE }
 enum class JoinError { NOT_FOUND, OFFLINE, REJECTED }
 
 /**
- * A member without an account: whoever joins can become them. [abandoned]: an account had it and
- * left (its expenses and history wait for that person), so choosing it asks for confirmation.
+ * A member without an account: whoever joins can become them with one tap, whatever it was before
+ * (deactivated, or [abandoned] by an account that left: the history says who came back).
  */
 data class Ghost(val id: String, val name: String, val abandoned: Boolean = false, val linked: Boolean = false)
 
@@ -33,8 +33,6 @@ data class JoinState(
     /** Null while the group is still arriving from the server. */
     val ghosts: List<Ghost>? = null,
     val myName: String = "",
-    /** Choosing a profile somebody else's account left: "only if you are them". */
-    val confirmGhost: Ghost? = null,
     val joinedGroupId: String? = null,
 ) : MVIBaseState {
     val canSearch: Boolean get() = InviteCodes.isValid(InviteCodes.normalize(code)) && step == JoinStep.ENTER
@@ -51,8 +49,6 @@ sealed interface JoinIntent : MVIBaseIntent {
 
     /** Null: a new member with my profile. */
     data class Pick(val memberId: String?) : JoinIntent
-    data object ConfirmPick : JoinIntent
-    data object DismissPick : JoinIntent
 }
 
 /** Typing (or opening) a code, seeing the group, joining it and choosing who I am in it. */
@@ -90,11 +86,6 @@ class JoinViewModel(
             JoinIntent.Back -> updateState { it.copy(step = JoinStep.ENTER, preview = null, error = null) }
             JoinIntent.Join -> join()
             is JoinIntent.Pick -> pick(intent.memberId)
-            JoinIntent.ConfirmPick -> uiState.value.confirmGhost?.let {
-                updateState { s -> s.copy(confirmGhost = null) }
-                claim(it.id)
-            }
-            JoinIntent.DismissPick -> updateState { it.copy(confirmGhost = null) }
         }
     }
 
@@ -139,7 +130,8 @@ class JoinViewModel(
         }
         val former = claimMember.formerAccounts(groupId)
         val ghosts = detail.members
-            .filter { it.userUid == null && (it.active || former[it.id].orEmpty().isNotEmpty()) }
+            // Any member nobody has: active, deactivated or left by someone.
+            .filter { it.userUid == null }
             .map { Ghost(it.id, it.name, abandoned = former[it.id].orEmpty().isNotEmpty(), linked = it.linked) }
             // People who left first: they are the ones most likely coming back.
             .sortedByDescending { it.abandoned }
@@ -148,15 +140,6 @@ class JoinViewModel(
 
     private suspend fun pick(memberId: String?) {
         if (uiState.value.step != JoinStep.PICK) return
-        val ghost = uiState.value.ghosts?.firstOrNull { it.id == memberId }
-        if (ghost?.abandoned == true) {
-            updateState { it.copy(confirmGhost = ghost) }
-        } else {
-            claim(memberId)
-        }
-    }
-
-    private suspend fun claim(memberId: String?) {
         val groupId = uiState.value.preview?.groupId ?: return
         claimMember(groupId, memberId)
         updateState { it.copy(step = JoinStep.DONE, joinedGroupId = groupId) }
