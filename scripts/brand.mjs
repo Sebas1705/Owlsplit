@@ -4,8 +4,8 @@
 //
 //   node scripts/brand.mjs            write every generated file
 //   node scripts/brand.mjs --check    fail if any generated file is out of date (CI)
-//   node scripts/brand.mjs --png      also render the PNG icons: iOS and the Android density folders
-//                                     (needs Edge or Chrome)
+//   node scripts/brand.mjs --png      also render the PNG icons (iOS, the Android density folders)
+//                                     and the Google Play graphics in fastlane/metadata (needs Edge or Chrome)
 //
 // The app's own colours live in core/ui Tokens.kt; BrandTokensTest checks they match.
 import { execFileSync } from "node:child_process";
@@ -140,20 +140,37 @@ if (process.argv.includes("--png")) {
   ];
   const browser = browsers.find(existsSync);
   if (!browser) throw new Error("No Edge or Chrome found to render the PNG icons");
-  const render = (source, size, path, transparent) => {
+  /** Screenshots [html] at [width]×[height]; [fonts] waits for web fonts to load. */
+  const shoot = (html, width, height, path, transparent, fonts = false) => {
     const page = join(tmpdir(), "owlsplit-icon.html");
-    writeFileSync(page, `<!doctype html><html><body style="margin:0">${source.replace("<svg ", `<svg width="${size}" height="${size}" `)}</body></html>`);
+    writeFileSync(page, html);
     const out = join(root, path);
     mkdirSync(dirname(out), { recursive: true });
     execFileSync(browser, ["--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1",
-      ...(transparent ? ["--default-background-color=00000000"] : []),
-      `--window-size=${size},${size}`, `--screenshot=${out}`, "file:///" + page.replaceAll("\\", "/")], { stdio: "ignore" });
+      ...(fonts ? ["--virtual-time-budget=5000"] : []), ...(transparent ? ["--default-background-color=00000000"] : []),
+      `--window-size=${width},${height}`, `--screenshot=${out}`, "file:///" + page.replaceAll("\\", "/")], { stdio: "ignore", timeout: 60_000 });
     rmSync(page);
     console.log("wrote", path);
   };
+  const render = (source, size, path, transparent) => shoot(
+    `<!doctype html><html><body style="margin:0">${source.replace("<svg ", `<svg width="${size}" height="${size}" `)}</body></html>`,
+    size, size, path, transparent);
   render(iconSvg, 1024, "iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/AppIcon.png", false);
   const densities = { mdpi: 48, hdpi: 72, xhdpi: 96, xxhdpi: 144, xxxhdpi: 192 };
   for (const [density, size] of Object.entries(densities)) {
     render(logoSvg, size, `${res}/mipmap-${density}/ic_launcher.png`, true);
+  }
+
+  // Google Play: a 512 px opaque icon (Play rounds it) and the 1024×500 feature graphic per language.
+  const play = "fastlane/metadata/android";
+  const taglines = { "es-ES": "Gastos compartidos, cuentas claras", "en-US": "Shared expenses, clear accounts" };
+  for (const [locale, tagline] of Object.entries(taglines)) {
+    render(iconSvg, 512, `${play}/${locale}/images/icon.png`, false);
+    shoot(`<!doctype html><html><head>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@600&display=block">
+<style>body{margin:0;width:1024px;height:500px;background:${light.accent};display:flex;align-items:center;gap:56px;padding:0 88px;box-sizing:border-box;color:#fff}
+h1{margin:0;font:800 112px/1 "Bricolage Grotesque",sans-serif;letter-spacing:-0.03em}p{margin:20px 0 0;font:600 36px/1.2 Inter,sans-serif;opacity:.92}</style>
+</head><body>${svg(L.grid, face(1, 0, 0, "#FFFFFF", light.brandBeak)).replace("<svg ", '<svg width="240" height="240" ')}
+<div><h1>owlsplit</h1><p>${tagline}</p></div></body></html>`, 1024, 500, `${play}/${locale}/images/featureGraphic.png`, false, true);
   }
 }

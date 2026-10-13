@@ -3,7 +3,8 @@ name: Release
 # A version: pushing a `vX.Y.Z` tag (or running this workflow by hand with a version) builds the
 # signed APK and AAB, creates a GitHub Release with both, their SHA-256 and notes generated from
 # the PRs since the previous tag, and uploads the APK to Firebase App Distribution (group
-# `testers`). Builds of main reach the testers through distribute.yml. Every secret comes from
+# `testers`) and, once Google Play is set up, the AAB to the Play track in the PLAY_TRACK variable
+# (docs/play/GUIA-PLAY-CONSOLE.md; play-promote.yml moves it on). Builds of main reach the testers through distribute.yml. Every secret comes from
 # Doppler: GitHub only holds DOPPLER_TOKEN, a read-only service token of owlsplit/prd.
 on:
   push:
@@ -104,6 +105,29 @@ jobs:
               --app "$FIREBASE_ANDROID_APP_ID" \
               --groups "$TESTER_GROUP" \
               --release-notes "$NOTES"'
+
+      # Release notes per language: the version and a link to the GitHub notes (Play allows 500
+      # characters). Nothing happens until PLAY_TRACK is set and the key is in Doppler.
+      - name: Play release notes
+        if: vars.PLAY_TRACK != ''
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: |
+          CODE=$(git rev-list --count HEAD)
+          NOTES="https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
+          for LOCALE in es-ES en-US; do mkdir -p "fastlane/metadata/android/$LOCALE/changelogs"; done
+          printf "Owlsplit %s: mejoras y correcciones.\nNovedades: %s" "$VERSION" "$NOTES" > "fastlane/metadata/android/es-ES/changelogs/$CODE.txt"
+          printf "Owlsplit %s: improvements and fixes.\nWhat's new: %s" "$VERSION" "$NOTES" > "fastlane/metadata/android/en-US/changelogs/$CODE.txt"
+
+      - name: Upload to Google Play
+        if: vars.PLAY_TRACK != ''
+        uses: ./.github/actions/play
+        with:
+          args: >-
+            --aab ${{ steps.assets.outputs.aab }} --track ${{ vars.PLAY_TRACK }} --release_status completed
+            --metadata_path fastlane/metadata/android --skip_upload_metadata true --skip_upload_images true
+            --skip_upload_screenshots true --mapping composeApp/build/outputs/mapping/release/mapping.txt
 
       - name: Remove credentials from the runner
         if: always()

@@ -1,0 +1,31 @@
+name: Play listing
+
+# The Google Play store listing lives in fastlane/metadata/android (texts per language, icon,
+# feature graphic and screenshots; graphics from scripts/brand.mjs --png). Changing it on main
+# publishes it. It does nothing until Google Play is set up (docs/play/GUIA-PLAY-CONSOLE.md).
+on:
+  push:
+    branches: [main]
+    paths: ["fastlane/metadata/android/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: play
+  cancel-in-progress: false
+
+jobs:
+  listing:
+    runs-on: ubuntu-latest
+    env:
+      DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/play
+        with:
+          args: >-
+            --metadata_path fastlane/metadata/android
+            --skip_upload_apk true --skip_upload_aab true --skip_upload_changelogs true
+            --sync_image_upload true

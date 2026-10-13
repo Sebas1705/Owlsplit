@@ -1,0 +1,24 @@
+Owlsplit keeps your group's accounts so nobody has to: trips, flatshares, dinners, gifts or anything else.
+
+<b>Add an expense in seconds</b>
+• Who paid (several people too), how much and who shares it.
+• Split equally, by amounts, by percentages or by shares (a couple can count double).
+• Several currencies in one group, with ECB exchange rates.
+• Repeating expenses add themselves: rent, bills, subscriptions.
+
+<b>Settle up in one tap</b>
+• Owlsplit works out the fewest payments to get everyone even.
+• Open PayPal or Revolut with the amount filled in, or copy the Bizum details in one tap.
+• Every payment asks for confirmation and can be undone.
+
+<b>Everyone sees the same</b>
+• Invite with a link or a QR code; no sign-up needed.
+• Works offline and syncs when you're back.
+• A history of every change: who, what and when, and you can restore what was deleted.
+• If someone leaves and comes back, they get their profile and expenses back.
+
+<b>Your data stays yours</b>
+• Group summary and CSV and PDF export.
+• Import your groups from Splitwise.
+• Link your account to Google so you lose nothing when you change phones.
+• No ads, and open source (MIT licence).

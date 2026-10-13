@@ -1,10 +1,13 @@
 package es.sebas1705.owlsplit.feature.groups
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
 import es.sebas1705.owlsplit.core.testing.ui.assertAccessible
+import es.sebas1705.owlsplit.core.ui.format.LocalMoneyFormat
+import es.sebas1705.owlsplit.core.ui.format.MoneyFormat
 import es.sebas1705.owlsplit.core.ui.theme.GroupAccent
 import es.sebas1705.owlsplit.core.ui.theme.OwlsplitTheme
 import es.sebas1705.owlsplit.data.models.Expense
@@ -90,11 +93,13 @@ class GroupsScreenshotTest {
         GroupState(loaded = true, detail = detail, myShares = mapOf("e1" to 3_120L, "e2" to 1_200L, "e3" to 14_000L))
     private val navigation = GroupNavigation({}, {}, {}, {}, {}, {}, {}, {}, {})
 
-    private fun group(name: String, tab: GroupTab, dark: Boolean = false) {
+    private fun group(name: String, tab: GroupTab, dark: Boolean = false, format: MoneyFormat = MoneyFormat.Spanish) {
         compose.setContent {
-            OwlsplitTheme(
-                darkTheme = dark
-            ) { GroupScreen(state.copy(tab = tab), {}, navigation, { true }, today = today) }
+            OwlsplitTheme(darkTheme = dark) {
+                CompositionLocalProvider(LocalMoneyFormat provides format) {
+                    GroupScreen(state.copy(tab = tab), {}, navigation, { true }, today = today)
+                }
+            }
         }
         compose.assertAccessible()
         compose.onRoot().captureRoboImage("screenshots/group_$name.png")
@@ -126,6 +131,15 @@ class GroupsScreenshotTest {
 
     @Test
     fun settle() = group("settle", GroupTab.SETTLE)
+
+    // English versions for the Google Play listing (scripts/play-screenshots.mjs).
+    @Test
+    @Config(qualifiers = "en-w411dp-h891dp-xxhdpi")
+    fun expensesEnglish() = group("expenses_en", GroupTab.EXPENSES, format = MoneyFormat.English)
+
+    @Test
+    @Config(qualifiers = "en-w411dp-h891dp-xxhdpi")
+    fun settleEnglish() = group("settle_en", GroupTab.SETTLE, format = MoneyFormat.English)
 
     @Test
     fun editor() {

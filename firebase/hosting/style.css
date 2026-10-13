@@ -33,3 +33,10 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--accent-text); o
 .narrow ol { margin: 0; padding-left: 20px; color: var(--muted); }
 .narrow li + li { margin-top: 6px; }
 .narrow a { color: var(--accent-text); font-weight: 600; }
+
+/* Legal pages (privacidad, borrar-cuenta): long text, wider column. */
+.doc { max-width: 680px; }
+.doc h2 { margin: 12px 0 0; font: 800 20px/1.2 var(--display); letter-spacing: -0.01em; }
+.doc ul { margin: 0; padding-left: 20px; color: var(--muted); }
+.doc li + li { margin-top: 6px; }
+.doc .updated { font-size: 14px; }

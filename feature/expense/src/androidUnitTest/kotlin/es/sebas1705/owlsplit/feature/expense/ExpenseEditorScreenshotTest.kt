@@ -1,5 +1,8 @@
 package es.sebas1705.owlsplit.feature.expense
 
+import androidx.compose.runtime.CompositionLocalProvider
+import es.sebas1705.owlsplit.core.ui.format.LocalMoneyFormat
+import es.sebas1705.owlsplit.core.ui.format.MoneyFormat
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -45,8 +48,17 @@ class ExpenseEditorScreenshotTest {
         valueTexts = texts,
     )
 
-    private fun capture(name: String, state: ExpenseEditorState, dark: Boolean = false) {
-        compose.setContent { OwlsplitTheme(darkTheme = dark) { ExpenseEditorScreen(state, {}, {}) } }
+    private fun capture(
+        name: String,
+        state: ExpenseEditorState,
+        dark: Boolean = false,
+        format: MoneyFormat = MoneyFormat.Spanish,
+    ) {
+        compose.setContent {
+            OwlsplitTheme(darkTheme = dark) {
+                CompositionLocalProvider(LocalMoneyFormat provides format) { ExpenseEditorScreen(state, {}, {}) }
+            }
+        }
         compose.assertAccessible()
         compose.onRoot().captureRoboImage("screenshots/expense_$name.png")
     }
@@ -73,6 +85,11 @@ class ExpenseEditorScreenshotTest {
         RuntimeEnvironment.setFontScale(2f)
         capture("equal_large_text", state(equal))
     }
+
+    // For the Google Play listing (scripts/play-screenshots.mjs).
+    @Test
+    @Config(qualifiers = "en-w411dp-h1000dp-xxhdpi")
+    fun equalSplitEnglish() = capture("equal_en", state(equal), format = MoneyFormat.English)
 
     @Test
     fun equalSplitDark() = capture("equal_dark", state(equal), dark = true)

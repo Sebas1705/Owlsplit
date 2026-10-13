@@ -20,6 +20,7 @@ expect val isDebugBuild: Boolean
 
 /**
  * The versionCode of this build when it can update from the download page (Android release builds);
- * null otherwise (debug builds, iOS), so the app never offers an APK it cannot use.
+ * null otherwise (debug builds, iOS, installs from Google Play, which Play updates), so the app
+ * never offers an APK it cannot or should not use.
  */
 expect val updatableVersionCode: Long?
