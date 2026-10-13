@@ -40,6 +40,8 @@ import es.sebas1705.owlsplit.domain.usecases.account.SaveProfile
 import es.sebas1705.owlsplit.domain.usecases.account.SyncMyLinked
 import es.sebas1705.owlsplit.domain.usecases.account.SignInWithGoogle
 import es.sebas1705.owlsplit.domain.usecases.account.SignOut
+import es.sebas1705.owlsplit.domain.usecases.account.CarryGroups
+import es.sebas1705.owlsplit.domain.usecases.account.SwitchToGoogle
 import es.sebas1705.owlsplit.feature.onboarding.OnboardingViewModel
 import es.sebas1705.owlsplit.feature.profile.ProfileViewModel
 import kotlinx.coroutines.Dispatchers
@@ -85,13 +87,15 @@ val accountModule = module {
     factory { CompleteOnboarding(get(), get()) }
     factory { SignInWithGoogle(get(), get(), get()) }
     factory { LinkGoogle(get(), get(), get(), get()) }
+    factory { CarryGroups(get(), get(), get(), get(), get(), get(), get()) }
+    factory { SwitchToGoogle(get(), get(), get(), get(), get()) }
     factory { SyncMyLinked(get(), get()) }
     factory { ReauthenticateGoogle(get(), get()) }
     factory { SignOut(get(), get(), get()) }
     factory { DeleteAccount(get(), get(), get(), get(), get()) }
 
     viewModel { OnboardingViewModel(get(), get()) }
-    viewModel { ProfileViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { ProfileViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
 }
 
 /** Whether this build has a Firebase configuration (google-services.json / GoogleService-Info.plist). */

@@ -19,6 +19,7 @@ import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SyncEngineTest {
@@ -157,6 +158,33 @@ class SyncEngineTest {
         )
         h.settle()
         assertTrue(h.engine.isAccessLost(g))
+        job.cancel()
+    }
+
+    @Test
+    fun `a lost group that lists me again uploads again`() = runTest {
+        // Left and joined again (maybe with another account) on this device: not stuck as "lost".
+        val h = Harness(this)
+        val g = h.env.groups.create(trip, "Ana")
+        val job = h.engine.start(this, "uid-ana")
+        h.settle()
+        val doc = h.remote.doc(OutboxType.GROUP, g) as RemoteDoc.GroupDoc
+        h.remote.serverWrite(
+            doc.copy(group = doc.group.copy(memberUids = listOf("uid-luis"), meta = doc.group.meta.copy(version = 2)))
+        )
+        h.settle()
+        assertTrue(h.engine.isAccessLost(g))
+
+        h.remote.serverWrite(
+            doc.copy(
+                group = doc.group.copy(
+                    memberUids = listOf("uid-luis", "uid-ana"),
+                    meta = doc.group.meta.copy(version = 3)
+                )
+            )
+        )
+        h.settle()
+        assertFalse(h.engine.isAccessLost(g))
         job.cancel()
     }
 }

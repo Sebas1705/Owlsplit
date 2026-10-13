@@ -75,6 +75,9 @@ import es.sebas1705.owlsplit.feature.profile.resources.link_google
 import es.sebas1705.owlsplit.feature.profile.resources.link_unavailable
 import es.sebas1705.owlsplit.feature.profile.resources.linked_google
 import es.sebas1705.owlsplit.feature.profile.resources.msg_credential_in_use
+import es.sebas1705.owlsplit.feature.profile.resources.switch_body
+import es.sebas1705.owlsplit.feature.profile.resources.switch_confirm
+import es.sebas1705.owlsplit.feature.profile.resources.switch_title
 import es.sebas1705.owlsplit.feature.profile.resources.msg_failed
 import es.sebas1705.owlsplit.feature.profile.resources.msg_linked
 import es.sebas1705.owlsplit.feature.profile.resources.msg_offline
@@ -442,6 +445,14 @@ private fun Dialogs(state: ProfileState, onEvent: (ProfileIntent) -> Unit) {
             stringResource(Res.string.reauth_confirm),
             destructive = false,
             onConfirm = { onEvent(ProfileIntent.Reauthenticate) },
+            onDismiss = { onEvent(ProfileIntent.DismissDialog) },
+        )
+        ProfileDialog.SWITCH_ACCOUNT -> ConfirmDialog(
+            stringResource(Res.string.switch_title),
+            stringResource(Res.string.switch_body),
+            stringResource(Res.string.switch_confirm),
+            destructive = false,
+            onConfirm = { onEvent(ProfileIntent.ConfirmSwitch) },
             onDismiss = { onEvent(ProfileIntent.DismissDialog) },
         )
         null -> Unit

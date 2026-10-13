@@ -27,6 +27,9 @@ internal class SyncLocalStore(private val db: AppDatabase, private val writer: W
 
     fun markAccessLost(groupId: String) = db.metaQueries.put(accessKey(groupId), "1")
 
+    /** Back in the group (joined again, maybe with another account): its writes can be uploaded again. */
+    fun clearAccessLost(groupId: String) = db.metaQueries.put(accessKey(groupId), "0")
+
     /** Local groups already known to the server that list [uid] as member. */
     fun syncedGroupIdsOf(uid: String): Set<String> =
         db.groupEntityQueries.selectVisible().executeAsList()

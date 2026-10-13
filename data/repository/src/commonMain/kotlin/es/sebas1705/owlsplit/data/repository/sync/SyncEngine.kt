@@ -90,6 +90,7 @@ class SyncEngine(
             docs.forEach(::receive)
             val ids = docs.filterNot { it.group.meta.deleted }.mapTo(HashSet()) { it.id }
             (known - ids).forEach { local.markAccessLost(it) }
+            ids.filter(local::isAccessLost).forEach(local::clearAccessLost)
             (listeners.keys - ids).forEach { listeners.remove(it)?.cancel() }
             (ids - listeners.keys).forEach { id -> listeners[id] = launch { pullGroup(id) } }
         }
