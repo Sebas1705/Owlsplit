@@ -19,6 +19,7 @@ import es.sebas1705.owlsplit.domain.usecases.account.GoogleOutcome
 import es.sebas1705.owlsplit.domain.usecases.account.LinkGoogle
 import es.sebas1705.owlsplit.domain.usecases.account.ObserveAccount
 import es.sebas1705.owlsplit.domain.usecases.account.ReauthenticateGoogle
+import es.sebas1705.owlsplit.domain.usecases.account.SwitchToGoogle
 import es.sebas1705.owlsplit.domain.usecases.account.SaveProfile
 import es.sebas1705.owlsplit.domain.usecases.account.SignOut
 import es.sebas1705.owlsplit.domain.usecases.pay.PayLinks
@@ -30,7 +31,7 @@ import kotlinx.coroutines.launch
 enum class ProfileMessage { LINKED, CREDENTIAL_IN_USE, OFFLINE, FAILED, SAVED }
 
 /** A confirmation sheet on top of the screen. */
-enum class ProfileDialog { CONFIRM_DELETE, REAUTHENTICATE }
+enum class ProfileDialog { CONFIRM_DELETE, REAUTHENTICATE, SWITCH_ACCOUNT }
 
 data class ProfileState(
     val loaded: Boolean = false,
@@ -70,6 +71,7 @@ sealed interface ProfileIntent : MVIBaseIntent {
     data class ThemeChanged(val mode: ThemeMode) : ProfileIntent
     data class LanguageChanged(val language: AppLanguage) : ProfileIntent
     data object Link : ProfileIntent
+    data object ConfirmSwitch : ProfileIntent
     data object SignOut : ProfileIntent
     data object AskDelete : ProfileIntent
     data object ConfirmDelete : ProfileIntent
@@ -92,6 +94,8 @@ class ProfileViewModel(
     private val signOut: SignOut,
     private val deleteAccount: DeleteAccount,
     private val reauthenticate: ReauthenticateGoogle,
+    /** Null in tests that do not need it: then an existing Google account is only reported. */
+    private val switchToGoogle: SwitchToGoogle? = null,
 ) : MVIBaseViewModel<ProfileState, ProfileIntent>() {
 
     override fun initState() = ProfileState()
@@ -137,6 +141,7 @@ class ProfileViewModel(
             is ProfileIntent.ThemeChanged -> display.setThemeMode(intent.mode)
             is ProfileIntent.LanguageChanged -> display.setLanguage(intent.language)
             ProfileIntent.Link -> link()
+            ProfileIntent.ConfirmSwitch -> switchAccount()
             ProfileIntent.SignOut -> busy { report(signOut()) }
             ProfileIntent.AskDelete -> updateState { it.copy(dialog = ProfileDialog.CONFIRM_DELETE) }
             ProfileIntent.ConfirmDelete -> delete()
@@ -160,7 +165,25 @@ class ProfileViewModel(
         when (val outcome = linkGoogle()) {
             GoogleOutcome.Cancelled -> Unit
             is GoogleOutcome.Done -> updateState { it.copy(message = ProfileMessage.LINKED) }
-            is GoogleOutcome.Failed -> report(outcome.result)
+            // That Google account already has data: offer to sign in to it and bring this device's groups.
+            is GoogleOutcome.Failed ->
+                if (outcome.result == AccountResult.CredentialInUse && switchToGoogle != null) {
+                    updateState { it.copy(dialog = ProfileDialog.SWITCH_ACCOUNT) }
+                } else {
+                    report(outcome.result)
+                }
+        }
+    }
+
+    private suspend fun switchAccount() {
+        val switch = switchToGoogle ?: return
+        updateState { it.copy(dialog = null) }
+        busy {
+            when (val outcome = switch()) {
+                GoogleOutcome.Cancelled -> Unit
+                is GoogleOutcome.Done -> updateState { it.copy(message = ProfileMessage.LINKED) }
+                is GoogleOutcome.Failed -> report(outcome.result)
+            }
         }
     }
 

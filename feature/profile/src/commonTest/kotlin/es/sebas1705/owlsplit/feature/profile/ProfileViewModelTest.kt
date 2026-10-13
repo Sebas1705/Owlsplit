@@ -1,5 +1,12 @@
 package es.sebas1705.owlsplit.feature.profile
 
+import es.sebas1705.owlsplit.core.testing.ledger.FakeInvites
+import es.sebas1705.owlsplit.domain.usecases.account.CarryGroups
+import es.sebas1705.owlsplit.domain.usecases.account.SwitchToGoogle
+import es.sebas1705.owlsplit.domain.usecases.invite.ClaimMember
+import es.sebas1705.owlsplit.domain.usecases.invite.JoinGroup
+import es.sebas1705.owlsplit.domain.usecases.invite.PreviewInvite
+import es.sebas1705.owlsplit.domain.usecases.invite.ShareInvite
 import es.sebas1705.owlsplit.core.datastore.ThemeMode
 import es.sebas1705.owlsplit.core.datastore.AppLanguage
 import es.sebas1705.owlsplit.core.datastore.DisplaySettings
@@ -59,7 +66,7 @@ class ProfileViewModelTest {
     private val ana = UserProfile("Ana", "accent:GREEN", "EUR")
     private var resets = 0
 
-    private inner class Env(session: Session? = FakeAccounts.ANONYMOUS, online: Boolean = true) {
+    private inner class Env(session: Session? = FakeAccounts.ANONYMOUS, online: Boolean = true, switch: Boolean = false) {
         val accounts = FakeAccounts(session)
         val profiles = FakeProfiles(ana)
         val ledger = InMemoryLedger()
@@ -76,7 +83,22 @@ class ProfileViewModelTest {
             SignOut(sync, accounts, reset),
             DeleteAccount(NoGroups(), sync, accounts, remote, reset),
             ReauthenticateGoogle(google, accounts),
+            if (switch) switchToGoogle() else null,
         )
+
+        private fun switchToGoogle(): SwitchToGoogle {
+            val invites = FakeInvites(ledger)
+            val carry = CarryGroups(
+                ledger.groups,
+                ledger.members,
+                accounts,
+                ShareInvite(ledger.groups, ledger.members, invites, sync, "https://owlsplit.web.app"),
+                PreviewInvite(invites),
+                JoinGroup(invites, ledger.groups, accounts),
+                ClaimMember(ledger.members, profiles, accounts),
+            )
+            return SwitchToGoogle(google, accounts, profiles, sync, carry)
+        }
     }
 
     @Test
@@ -146,6 +168,20 @@ class ProfileViewModelTest {
         env.vm.onEvent(ProfileIntent.Link)
         assertEquals(ProfileMessage.CREDENTIAL_IN_USE, env.vm.uiState.value.message)
         assertTrue(env.vm.uiState.value.isAnonymous)
+    }
+
+    @Test
+    fun aGoogleAccountWithDataIsOfferedAndSigningInToItSwitchesTheAccount() = runTest {
+        val env = Env(switch = true)
+        env.accounts.linkResult = AccountResult.CredentialInUse
+        env.vm.onEvent(ProfileIntent.Link)
+        assertEquals(ProfileDialog.SWITCH_ACCOUNT, env.vm.uiState.value.dialog)
+
+        env.vm.onEvent(ProfileIntent.ConfirmSwitch)
+        assertEquals(null, env.vm.uiState.value.dialog)
+        assertEquals("uid-google", env.accounts.currentSession()!!.uid)
+        assertFalse(env.vm.uiState.value.isAnonymous)
+        assertEquals(ProfileMessage.LINKED, env.vm.uiState.value.message)
     }
 
     @Test
