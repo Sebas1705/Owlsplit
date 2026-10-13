@@ -131,6 +131,29 @@ class SyncEngineTest {
     }
 
     @Test
+    fun `a write that timed out but reached the server is acknowledged by its echo, not a conflict`() = runTest {
+        // Offline, Firestore keeps the write queued while push gives up (Transient); back online the
+        // queued write lands and the listener delivers it with the outbox entry still pending.
+        val h = Harness(this)
+        val g = h.env.groups.create(trip, "Ana")
+        val ana = h.env.members.observeMembersOnce(g).single().id
+        h.engine.pushNow()
+        h.remote.lostAcks = 1
+        val e = h.env.expenses.create(g, dinner(ana))
+        h.engine.pushNow()
+        assertTrue(h.env.outbox().any { it.entity_type == "EXPENSE" })
+
+        val job = h.engine.start(this, "uid-ana")
+        h.settle()
+
+        assertEquals(0L, h.env.db.conflictQueries.countAll().executeAsOne())
+        assertTrue(h.env.outbox().none { it.entity_type == "EXPENSE" })
+        assertEquals(1L, h.remote.doc(OutboxType.EXPENSE, e)!!.version)
+        assertEquals("Cena", h.env.expenses.get(e)!!.title)
+        job.cancel()
+    }
+
+    @Test
     fun `flush uploads everything now and reports what could not be uploaded`() = runTest {
         val h = Harness(this)
         val g = h.env.groups.create(trip, "Ana")

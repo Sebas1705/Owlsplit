@@ -108,9 +108,12 @@ class SyncEngine(
         }
     }
 
-    /** Applies a listener document, unless it is the echo of the upload in flight: then it acknowledges it. */
+    /**
+     * Applies a listener document, unless it is our own write: the echo of the upload in flight, or of
+     * one whose acknowledgement was lost. Then it acknowledges it instead of taking it as a conflict.
+     */
     private fun receive(doc: RemoteDoc) {
-        val echoed = inFlight.echoed(doc)
+        val echoed = inFlight.echoed(doc) ?: local.ownPendingWrite(doc)?.let { it to doc.version }
         if (echoed != null) local.onPushed(echoed.first, echoed.second) else applier.apply(doc)
     }
 
