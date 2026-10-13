@@ -42,6 +42,18 @@ internal class SyncLocalStore(private val db: AppDatabase, private val writer: W
     }
 
     /** After [entry] was written remotely as [version]. */
+    /**
+     * The pending entry [doc] is the server copy of: our own write whose acknowledgement was lost.
+     * Offline, `push` gives up while Firestore keeps the write queued and sends it once back online.
+     */
+    fun ownPendingWrite(doc: RemoteDoc): Outbox? =
+        if (doc is RemoteDoc.ChangeLogDoc) {
+            null
+        } else {
+            db.outboxQueries.selectByEntity(doc.type.name, doc.id).executeAsOneOrNull()
+                ?.takeIf { it.base_version + 1 == doc.version && doc.sameContentAs(it.payload) }
+        }
+
     fun onPushed(entry: Outbox, version: Long) = db.transaction {
         val current = db.outboxQueries.selectById(entry.id).executeAsOneOrNull() ?: return@transaction
         val type = OutboxType.valueOf(entry.entity_type)

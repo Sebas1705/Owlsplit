@@ -22,6 +22,9 @@ class FakeRemoteStore(private val now: () -> Long) : RemoteStore {
     /** Runs after an accepted write and before `push` returns, e.g. to let listeners see it first. */
     var beforeAck: suspend () -> Unit = {}
 
+    /** Accepted writes whose acknowledgement is lost: the server keeps them, `push` times out (Transient). */
+    var lostAcks = 0
+
     fun doc(type: OutboxType, id: String): RemoteDoc? = docs.value[key(type, id)]
 
     /** Another device wrote [doc] directly on the server. */
@@ -39,6 +42,10 @@ class FakeRemoteStore(private val now: () -> Long) : RemoteStore {
         }
         if (!allowed) return PushResult.Rejected
         serverWrite(decodeRemoteDoc(type, payload, version, now(), callerUid))
+        if (lostAcks > 0) {
+            lostAcks--
+            return PushResult.Transient
+        }
         beforeAck()
         return PushResult.Ok
     }
