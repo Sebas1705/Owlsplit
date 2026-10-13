@@ -23,6 +23,7 @@ Los planes se escriben en detalle (código completo, comandos exactos) **justo a
 | P13 | Cambiarse y pisos: [P13a importar de Splitwise](2026-10-10-p13a-splitwise-import.md) · [P13b gastos recurrentes](2026-10-10-p13b-recurring.md) | Traer un grupo de Splitwise con los mismos saldos; gastos que se repiten solos (alquiler, suscripciones) | P12 | Hecho |
 | P14 | [Identidad de los miembros](2026-10-12-p14-identity.md) ([estudio](../designs/2026-10-12-identidad-miembros.md)) | Salir y volver sin perder nada: el miembro recuerda sus cuentas, se reasocia solo con la misma cuenta y se recupera con otra tras confirmar; cuentas con Google visibles | P13 | Hecho |
 | P15 | [Avisos de actualización](2026-10-12-p15-updates.md) | Inicio avisa cuando hay una versión nueva en la página de descarga y abre su APK; «Ahora no» espera a la siguiente | P14 | Hecho |
+| P16 | Google Play: [guía para el propietario](../play/GUIA-PLAY-CONSOLE.md) | Privacidad y borrado de cuenta en la web, ficha (textos, gráficos y capturas generados) en `fastlane/metadata`, subida del AAB en cada tag, promoción a producción por workflow; la app instalada desde Play no muestra el aviso de APK | P15 | En curso (pasos del propietario en Play Console) |
 
 ## Dependencias y paralelismo
 

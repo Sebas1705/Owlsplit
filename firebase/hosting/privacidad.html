@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacidad · Owlsplit</title>
+  <meta name="description" content="Qué datos guarda Owlsplit, para qué y cómo borrarlos.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="/brand.css">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main class="narrow doc">
+  <a class="brand" href="/"><img src="/favicon.svg" alt="" width="30" height="30">owlsplit</a>
+  <h1>Política de privacidad</h1>
+  <p class="updated">Última actualización: 13 de octubre de 2026</p>
+  <p>Owlsplit es una app para repartir gastos en grupo, de código abierto (<a href="https://github.com/Sebas1705/Owlsplit">github.com/Sebas1705/Owlsplit</a>) y desarrollada por Sebas1705. No tiene anuncios, no vende datos y no los usa para perfilarte.</p>
+
+  <h2>Qué datos guarda</h2>
+  <ul>
+    <li><strong>Cuenta:</strong> un identificador anónimo que se crea al abrir la app. Si vinculas Google, también tu cuenta de Google (Firebase Authentication guarda su correo y su identificador). La app no pide contraseñas.</li>
+    <li><strong>Perfil:</strong> el nombre que eliges, tu color de avatar, tu moneda preferida y, si los añades, tus datos de cobro (teléfono de Bizum, usuario de PayPal.me o de Revolut).</li>
+    <li><strong>Grupos:</strong> nombre, miembros, gastos (concepto, importe, moneda, fecha, categoría, nota), pagos entre miembros, el historial de cambios y el código de invitación.</li>
+    <li><strong>Errores:</strong> si la app falla, Firebase Crashlytics recibe el informe técnico (modelo y versión de Android, versión de la app y la traza del error), sin el contenido de tus grupos.</li>
+  </ul>
+
+  <h2>Para qué</h2>
+  <ul>
+    <li>Sincronizar tus grupos entre tus dispositivos y con los demás miembros.</li>
+    <li>Mostrar tus datos de cobro a quien te debe dinero, para que te pague.</li>
+    <li>Encontrar y corregir errores de la app.</li>
+  </ul>
+
+  <h2>Quién los ve</h2>
+  <ul>
+    <li>Los miembros de cada grupo ven sus gastos, pagos, historial y nombres, y los datos de cobro de quien los haya añadido.</li>
+    <li>Los datos se guardan en Google Firebase (Authentication, Cloud Firestore y Crashlytics), que actúa como encargado del tratamiento. Viajan siempre cifrados (HTTPS/TLS).</li>
+    <li>Para convertir monedas, la app consulta tipos de cambio públicos del BCE en frankfurter.dev. Solo envía los códigos de las monedas, nunca datos tuyos.</li>
+    <li>Nadie más: no hay anunciantes, analítica de terceros ni venta de datos.</li>
+  </ul>
+
+  <h2>Cuánto tiempo</h2>
+  <p>Mientras uses la app. Al borrar tu cuenta se eliminan tu perfil y tu cuenta, y sales de todos tus grupos. Los gastos que compartiste se quedan en esos grupos a nombre de tu miembro, ya sin cuenta asociada, porque forman parte de las cuentas de los demás. Los informes de errores se eliminan automáticamente pasados 90 días.</p>
+
+  <h2>Tus derechos</h2>
+  <p>Puedes ver y cambiar tus datos en la app, exportar cada grupo (CSV o PDF) y borrar tu cuenta en cualquier momento: <a href="/borrar-cuenta">cómo borrar tu cuenta</a>. Para cualquier otra petición sobre tus datos (acceso, rectificación, oposición), abre una incidencia en <a href="https://github.com/Sebas1705/Owlsplit/issues/new">GitHub</a> (sin poner datos personales: es pública) y te responderemos allí.</p>
+
+  <h2>Menores</h2>
+  <p>Owlsplit no está dirigida a menores de 13 años.</p>
+
+  <h2>Cambios</h2>
+  <p>Si esta política cambia, se publicará aquí con su nueva fecha.</p>
+</main>
+</body>
+</html>

@@ -1,0 +1,24 @@
+Owlsplit lleva las cuentas de tus grupos para que nadie tenga que hacerlo: viajes, pisos compartidos, cenas, regalos o lo que sea.
+
+<b>Apunta un gasto en segundos</b>
+• Quién pagó (también varias personas), cuánto y entre quién se reparte.
+• Reparto a partes iguales, por importes, por porcentajes o por partes (por ejemplo, una pareja cuenta doble).
+• Varias monedas en el mismo grupo, con el tipo de cambio del BCE.
+• Gastos que se repiten solos: alquiler, suministros, suscripciones.
+
+<b>Salda con un toque</b>
+• Owlsplit calcula el mínimo de pagos para quedar en paz.
+• Abre PayPal o Revolut con el importe ya puesto, o copia el Bizum en un toque.
+• Cada pago pide confirmación y se puede deshacer.
+
+<b>Todos ven lo mismo</b>
+• Invita con un enlace o un código QR; no hace falta registrarse.
+• Funciona sin conexión y se sincroniza al volver.
+• Historial de cada cambio: quién, qué y cuándo, y puedes restaurar lo borrado.
+• Si alguien sale y vuelve, recupera su perfil y sus gastos.
+
+<b>Tus datos, tuyos</b>
+• Resumen del grupo y exportación a CSV y PDF.
+• Importa tus grupos de Splitwise.
+• Vincula tu cuenta con Google para no perder nada al cambiar de móvil.
+• Sin anuncios y de código abierto (licencia MIT).
