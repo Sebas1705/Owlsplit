@@ -9,7 +9,7 @@ import es.sebas1705.owlsplit.data.models.Member
 enum class Rejoin { SAME_ACCOUNT, OTHER_ACCOUNT }
 
 /**
- * Which accounts each member had (docs/designs/2026-10-12-identidad-miembros.md). A member keeps
+ * Which accounts each member had (docs/designs/2026-10-12-member-identity.md). A member keeps
  * `pastUids` since P14; groups older than that only have their history, which records every join
  * (JOINED by the account) and every link change (`userUid` before and after).
  */

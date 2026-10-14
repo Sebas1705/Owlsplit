@@ -1,73 +1,73 @@
-# P6b · Adaptador Firestore — Implementation Plan
+# P6b · Firestore adapter — Implementation Plan
 
 > **For agentic workers:** Use `mobiai-mobile-executing-plans-with-subagents` (recommended) or `mobiai-mobile-executing-plans` to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
-**Goal:** Conectar el motor de P6a con Firestore real: `FirestoreRemoteStore` (GitLive) implementa `RemoteStore`, el motor reconoce el eco de su propia subida, la app arranca la sincronización con un usuario anónimo y un test instrumentado sincroniza dos motores a través de los emuladores de Firestore y Auth.
+**Goal:** Connect the P6a engine to real Firestore: `FirestoreRemoteStore` (GitLive) implements `RemoteStore`, the engine recognizes the echo of its own upload, the app starts sync with an anonymous user, and an instrumented test syncs two engines through the Firestore and Auth emulators.
 
-**Architecture:** El adaptador vive en `data:remote` y depende de `data:repository` (el puerto `RemoteStore` está allí; no hay ciclo). Cada tipo tiene un DTO con exactamente las claves que aceptan las reglas de P5; los modelos se obtienen con `decodeRemoteDoc` del payload del outbox. La caché de Firestore es **en memoria**: la fuente de verdad local es SQLDelight, así que no queremos una segunda copia persistente ni que el SDK reintente escrituras por su cuenta tras reiniciar.
+**Architecture:** The adapter lives in `data:remote` and depends on `data:repository` (the `RemoteStore` port lives there; no cycle). Each type has a DTO with exactly the keys the P5 rules accept; models are obtained with `decodeRemoteDoc` from the outbox payload. The Firestore cache is **in memory**: the local source of truth is SQLDelight, so we don't want a second persistent copy, nor the SDK retrying writes on its own after a restart.
 
-**Tech Stack:** GitLive Firebase 2.7.0 (Firestore, Auth), Koin 4.2, AndroidX WorkManager 2.12.0 (minCompileSdk 35), emuladores de Firebase.
+**Tech Stack:** GitLive Firebase 2.7.0 (Firestore, Auth), Koin 4.2, AndroidX WorkManager 2.12.0 (minCompileSdk 35), Firebase emulators.
 
-**Platform:** KMP (adaptador en código común; disparador WorkManager en Android; test instrumentado en Android)
+**Platform:** KMP (adapter in common code; WorkManager trigger on Android; instrumented test on Android)
 
-**Depende de:** P6a (motor y puerto), P5 (reglas y emuladores).
+**Depends on:** P6a (engine and port), P5 (rules and emulators).
 
 ---
 
-## Decisiones
+## Decisions
 
-1. **Formato en Firestore = DTO por tipo.** `id` y `groupId` salen de la ruta (`groups/{g}/expenses/{id}`), no se guardan. `updatedAt` es `Timestamp` de servidor (`Timestamp.ServerTimestamp` al escribir); `createdAt` (cliente, ms) y los importes son enteros; las fechas, texto `AAAA-MM-DD`; los nulos se escriben explícitos (las reglas leen `note`, `avatar`… aunque sean nulos).
-2. **`set(merge = true)`.** El cliente no conoce `lastJoinCode` (lo escribe quien se une); sobrescribir el documento lo borraría y las reglas lo rechazarían.
-3. **Errores:** `PERMISSION_DENIED` → `Rejected` al subir y `NoAccess` al leer; `NOT_FOUND` o documento inexistente → `Missing`; cualquier otro error o un tiempo de espera (20 s; sin red `set` no termina) → `Transient`. Sin usuario → `Transient`.
-4. **Leer para resolver un rechazo** con `Source.SERVER`: la caché podría tener nuestra escritura local aún no confirmada.
-5. **Escuchas:** solo documentos confirmados (se saltan los que tienen `hasPendingWrites`), solo los cambios de cada instantánea (`documentChanges`; la primera trae todo). El historial no tiene `updatedAt`: se filtra por `createdAt` (reloj del cliente, cubierto por el margen de 5 min del cursor). Errores transitorios → reintento con espera creciente; `PERMISSION_DENIED` → la escucha termina sin error (la escucha de *mis grupos* marca el acceso perdido).
-6. **Eco de la propia subida.** La escucha puede entregar nuestra escritura antes de que `push` vuelva. Sin tratarlo sería un conflicto falso (versión mayor con pendiente local). El motor guarda la entrada en vuelo y su versión; si llega un documento con ese id, esa versión y el mismo contenido que el payload subido, se trata como acuse (`onPushed`) en lugar de aplicarlo.
-7. **Arranque en la app:** `signInAnonymously` si no hay usuario (P8 hará el onboarding real), `SyncEngine.start` en un ámbito de aplicación con el uid, y WorkManager (`OneTimeWorkRequest` con red, `KEEP`) que llama a `pushNow()` cuando el outbox tiene pendientes. iOS: el motor arranca igual; el disparador en segundo plano llega con P11.
-8. **Emuladores en el test instrumentado:** `10.0.2.2:8080` (Firestore) y `10.0.2.2:9099` (Auth), proyecto `demo-owlsplit`. Dos apps de Firebase con nombre distinto = dos usuarios; cada uno con su base SQLite en memoria y su motor.
+1. **Firestore format = one DTO per type.** `id` and `groupId` come from the path (`groups/{g}/expenses/{id}`) and are not stored. `updatedAt` is a server `Timestamp` (`Timestamp.ServerTimestamp` on write); `createdAt` (client, ms) and amounts are integers; dates are `YYYY-MM-DD` text; nulls are written explicitly (the rules read `note`, `avatar`… even when null).
+2. **`set(merge = true)`.** The client doesn't know `lastJoinCode` (it is written by whoever joins); overwriting the document would erase it and the rules would reject it.
+3. **Errors:** `PERMISSION_DENIED` → `Rejected` on upload and `NoAccess` on read; `NOT_FOUND` or a missing document → `Missing`; any other error or a timeout (20 s; without network `set` never completes) → `Transient`. No user → `Transient`.
+4. **Read to resolve a rejection** with `Source.SERVER`: the cache might hold our not-yet-confirmed local write.
+5. **Listeners:** only confirmed documents (those with `hasPendingWrites` are skipped), only each snapshot's changes (`documentChanges`; the first one brings everything). The history has no `updatedAt`: it is filtered by `createdAt` (client clock, covered by the cursor's 5-minute margin). Transient errors → retry with growing backoff; `PERMISSION_DENIED` → the listener ends without error (the *my groups* listener marks the lost access).
+6. **Echo of our own upload.** The listener may deliver our write before `push` returns. Left unhandled it would be a false conflict (higher version with a local pending change). The engine keeps the in-flight entry and its version; if a document arrives with that id, that version and the same content as the uploaded payload, it is treated as an acknowledgement (`onPushed`) instead of being applied.
+7. **App startup:** `signInAnonymously` if there is no user (P8 will do the real onboarding), `SyncEngine.start` in an application scope with the uid, and WorkManager (`OneTimeWorkRequest` with network, `KEEP`) calling `pushNow()` when the outbox has pending entries. iOS: the engine starts the same way; the background trigger comes with P11.
+8. **Emulators in the instrumented test:** `10.0.2.2:8080` (Firestore) and `10.0.2.2:9099` (Auth), project `demo-owlsplit`. Two Firebase apps with different names = two users; each with its own in-memory SQLite database and engine.
 
-## Mapa de archivos
+## File map
 
-| Acción | Ruta |
+| Action | Path |
 |---|---|
-| Crear | `data/remote/src/commonMain/kotlin/es/sebas1705/owlsplit/data/remote/`: `Dtos.kt`, `FirestoreRemoteStore.kt` |
-| Modificar | `data/remote/build.gradle.kts` (depende de `data:repository`, `data:local` para el test) |
-| Modificar | `data/repository/.../sync/SyncEngine.kt` (entrada en vuelo, eco propio) |
-| Test | `data/repository/src/androidUnitTest/.../sync/SyncEngineTest.kt`, `FakeRemoteStore.kt` (eco antes del acuse) |
+| Create | `data/remote/src/commonMain/kotlin/es/sebas1705/owlsplit/data/remote/`: `Dtos.kt`, `FirestoreRemoteStore.kt` |
+| Modify | `data/remote/build.gradle.kts` (depends on `data:repository`, `data:local` for the test) |
+| Modify | `data/repository/.../sync/SyncEngine.kt` (in-flight entry, own echo) |
+| Test | `data/repository/src/androidUnitTest/.../sync/SyncEngineTest.kt`, `FakeRemoteStore.kt` (echo before the acknowledgement) |
 | Test | `data/remote/src/androidInstrumentedTest/.../FirestoreSyncEmulatorTest.kt` |
-| Crear | `scripts/run-sync-emulator-test.sh` |
-| Modificar | `composeApp`: `build.gradle.kts`, `di/AppModule.kt`, `KmpApplication.kt`, `MainViewController.kt`, `sync/SyncWorker.kt` (androidMain), `sync/SyncStarter.kt` |
-| Modificar | `gradle/libs.versions.toml` (WorkManager) |
-| Modificar | `docs/SYNC.md`, `docs/FIREBASE.md`, `docs/plans/README.md` |
+| Create | `scripts/run-sync-emulator-test.sh` |
+| Modify | `composeApp`: `build.gradle.kts`, `di/AppModule.kt`, `KmpApplication.kt`, `MainViewController.kt`, `sync/SyncWorker.kt` (androidMain), `sync/SyncStarter.kt` |
+| Modify | `gradle/libs.versions.toml` (WorkManager) |
+| Modify | `docs/SYNC.md`, `docs/FIREBASE.md`, `docs/plans/README.md` |
 
 ---
 
-### Task 1: Eco de la propia subida
+### Task 1: Echo of our own upload
 
-- [ ] **Step 1:** `FakeRemoteStore`: opción `echoBeforeAck` que, al aceptar un `push`, emite el documento y deja correr a los escuchas antes de devolver `Ok`.
-- [ ] **Step 2:** Test `own upload echoed before its acknowledgement is not a conflict` en `SyncEngineTest` (0 conflictos, outbox vacío, documento `SYNCED`) y comprobar que falla.
-- [ ] **Step 3:** `SyncEngine`: `InFlight(entry, version)` en un `MutableStateFlow`; `OutboxProcessor` lo publica alrededor de `remote.push`; los escuchas consultan `isOwnEcho(doc)` antes de `applier.apply`. Test en verde.
-- [ ] **Step 4:** `./gradlew :data:repository:testDebugUnitTest detekt` y commit.
+- [ ] **Step 1:** `FakeRemoteStore`: `echoBeforeAck` option that, when accepting a `push`, emits the document and lets the listeners run before returning `Ok`.
+- [ ] **Step 2:** Test `own upload echoed before its acknowledgement is not a conflict` in `SyncEngineTest` (0 conflicts, empty outbox, document `SYNCED`) and check that it fails.
+- [ ] **Step 3:** `SyncEngine`: `InFlight(entry, version)` in a `MutableStateFlow`; `OutboxProcessor` publishes it around `remote.push`; listeners check `isOwnEcho(doc)` before `applier.apply`. Test green.
+- [ ] **Step 4:** `./gradlew :data:repository:testDebugUnitTest detekt` and commit.
 
-### Task 2: DTOs y `FirestoreRemoteStore`
+### Task 2: DTOs and `FirestoreRemoteStore`
 
-- [ ] **Step 1:** DTOs con las claves de `firestore.rules` y conversiones modelo↔DTO.
-- [ ] **Step 2:** `FirestoreRemoteStore(firestore, auth)` según las decisiones 1–5.
-- [ ] **Step 3:** `./gradlew :data:remote:compileDebugKotlinAndroid :data:remote:compileKotlinIosSimulatorArm64 detekt` y commit.
+- [ ] **Step 1:** DTOs with the `firestore.rules` keys and model↔DTO conversions.
+- [ ] **Step 2:** `FirestoreRemoteStore(firestore, auth)` following decisions 1–5.
+- [ ] **Step 3:** `./gradlew :data:remote:compileDebugKotlinAndroid :data:remote:compileKotlinIosSimulatorArm64 detekt` and commit.
 
-### Task 3: Test con emuladores
+### Task 3: Emulator test
 
-- [ ] **Step 1:** `FirestoreSyncEmulatorTest`: Ana crea grupo y gasto → Luis… (no puede leer sin unirse; el test hace que Luis se una con `arrayUnion` como en las reglas) → el gasto llega a Luis; Luis lo edita → llega a Ana; edición concurrente → un conflicto; ningún conflicto por eco.
-- [ ] **Step 2:** `scripts/run-sync-emulator-test.sh` (levanta emuladores con `emulators:exec` y lanza solo esa clase). Ejecutarlo en el emulador Android local.
+- [ ] **Step 1:** `FirestoreSyncEmulatorTest`: Ana creates a group and an expense → Luis… (can't read without joining; the test makes Luis join with `arrayUnion` as in the rules) → the expense reaches Luis; Luis edits it → it reaches Ana; concurrent edit → one conflict; no conflict from echoes.
+- [ ] **Step 2:** `scripts/run-sync-emulator-test.sh` (starts the emulators with `emulators:exec` and runs only that class). Run it on the local Android emulator.
 - [ ] **Step 3:** Commit.
 
-### Task 4: Arranque en la app
+### Task 4: App startup
 
-- [ ] **Step 1:** Koin: `FirebaseFirestore` (caché en memoria), `FirebaseAuth`, `RemoteStore`, `RepositoryContext` (uid de Auth), `SyncEngine`.
-- [ ] **Step 2:** `SyncStarter`: inicio de sesión anónimo y `engine.start` en el ámbito de la aplicación; sin `google-services.json` no hace nada.
-- [ ] **Step 3:** `SyncWorker` + programación cuando `pendingCount > 0`.
-- [ ] **Step 4:** Build, instalar en el emulador, comprobar en logcat que inicia sesión y no falla. Commit.
+- [ ] **Step 1:** Koin: `FirebaseFirestore` (in-memory cache), `FirebaseAuth`, `RemoteStore`, `RepositoryContext` (Auth uid), `SyncEngine`.
+- [ ] **Step 2:** `SyncStarter`: anonymous sign-in and `engine.start` in the application scope; without `google-services.json` it does nothing.
+- [ ] **Step 3:** `SyncWorker` + scheduling when `pendingCount > 0`.
+- [ ] **Step 4:** Build, install on the emulator, check in logcat that it signs in and doesn't crash. Commit.
 
-### Task 5: Documentación y PR
+### Task 5: Documentation and PR
 
-- [ ] **Step 1:** `docs/SYNC.md` (sección de implementación P6b), `docs/FIREBASE.md` (formato de documentos), índice de planes.
-- [ ] **Step 2:** PR, CI verde, merge.
+- [ ] **Step 1:** `docs/SYNC.md` (P6b implementation section), `docs/FIREBASE.md` (document format), plan index.
+- [ ] **Step 2:** PR, green CI, merge.

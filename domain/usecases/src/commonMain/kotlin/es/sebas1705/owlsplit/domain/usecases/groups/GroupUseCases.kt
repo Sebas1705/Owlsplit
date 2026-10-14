@@ -230,7 +230,7 @@ class SettleUp(private val transfers: TransferRepository, private val today: Tod
         )
 }
 
-/** A payment typed by hand ("Ana pagó 23,50 € a Luis"), in the group currency, dated today. */
+/** A payment typed by hand ("Ana paid Luis €23.50"), in the group currency, dated today. */
 class RecordTransfer(private val transfers: TransferRepository, private val today: Today = Today.System) {
     /** False (and nothing saved) for the same member on both ends or a non-positive amount. */
     suspend operator fun invoke(

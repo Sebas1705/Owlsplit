@@ -9,7 +9,7 @@ import kotlin.math.abs
 /**
  * Effect of one entry on each member's balance, in the group base currency.
  * Positive = the member is owed money. The values of one entry always sum to exactly 0.
- * See docs/DOMAIN.md#divisas.
+ * See docs/DOMAIN.md#currencies.
  */
 object NetCalculator {
 

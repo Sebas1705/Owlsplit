@@ -1,18 +1,18 @@
-# 0003 · SQLDelight como fuente de verdad + sincronización propia
+# 0003 · SQLDelight as source of truth + custom sync
 
-- **Estado:** aceptada · 2026-10-07
+- **Status:** accepted · 2026-10-07
 
-## Contexto
-La app se usa en viajes, a menudo sin cobertura. Los subproyectos de estadísticas y presupuestos necesitan consultas agregadas rápidas. La caché offline de Firestore no es una base de datos consultable de verdad.
+## Context
+The app is used on trips, often without coverage. The statistics and budgets subprojects need fast aggregate queries. Firestore's offline cache is not a truly queryable database.
 
-## Decisión
-La UI lee solo de **SQLDelight**. Las escrituras son locales y se encolan en un **outbox** que se sube a Firestore; los cambios remotos bajan por listeners incrementales. Concurrencia optimista por documento con `version` encadenada, validada en las reglas: gana la primera escritura que llega al servidor y la perdedora se guarda como conflicto recuperable. La persistencia offline del SDK de Firestore se desactiva. Detalle en [SYNC.md](../SYNC.md).
+## Decision
+The UI reads only from **SQLDelight**. Writes are local and queued in an **outbox** that is uploaded to Firestore; remote changes come down through incremental listeners. Optimistic per-document concurrency with a chained `version`, validated in the rules: the first write to reach the server wins and the loser is stored as a recoverable conflict. The Firestore SDK's offline persistence is disabled. Details in [SYNC.md](../SYNC.md).
 
-## Consecuencias
-- Funciona 100 % offline y los saldos y estadísticas son consultas SQL locales.
-- Hay que construir y probar a fondo el motor de sincronización (`data:sync`), con un Firestore falso en tests.
+## Consequences
+- Works 100 % offline, and balances and statistics are local SQL queries.
+- The sync engine (`data:sync`) has to be built and tested thoroughly, with a fake Firestore in tests.
 
-## Alternativas descartadas
-- **Firestore como única fuente con su caché**: mucho menos código, pero consultas limitadas y mala base para los subproyectos 4 y 5.
-- **Event sourcing** (registro inmutable + proyección local): sin conflictos y con deshacer gratis, pero demasiado complejo para este dominio (migraciones de eventos, compactación).
-- **Last-write-wins por `updatedAt`**: más simple, pero pierde ediciones en silencio. La versión encadenada cuesta lo mismo y no pierde nada.
+## Rejected alternatives
+- **Firestore as the single source with its cache**: much less code, but limited queries and a poor base for subprojects 4 and 5.
+- **Event sourcing** (immutable log + local projection): no conflicts and free undo, but too complex for this domain (event migrations, compaction).
+- **Last-write-wins by `updatedAt`**: simpler, but silently loses edits. The chained version costs the same and loses nothing.

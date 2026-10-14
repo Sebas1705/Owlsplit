@@ -1,51 +1,51 @@
-# P3 · Dinero y cálculo de saldos — Implementation Plan
+# P3 · Money and balance calculation — Implementation Plan
 
 > **For agentic workers:** Use `mobiai-mobile-executing-plans-with-subagents` (recommended) or `mobiai-mobile-executing-plans` to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
-**Goal:** Implementar en Kotlin común puro las reglas de dinero de [DOMAIN.md](../DOMAIN.md): divisas, importes en unidades mínimas, reparto por restos mayores, tipos de cambio en punto fijo, saldos que suman exactamente cero y simplificación voraz de deudas.
+**Goal:** Implement in pure common Kotlin the money rules from [DOMAIN.md](../DOMAIN.md): currencies, amounts in minor units, largest-remainder splitting, fixed-point exchange rates, balances that sum to exactly zero and greedy debt simplification.
 
-**Architecture:** Nuevo módulo `core:money` (tipos de valor y aritmética exacta, sin dependencias) y paquete `domain.ledger` en `domain:usecases` (cálculo de partes, netos por gasto, saldos y pagos sugeridos). Todo son funciones puras sobre tipos inmutables; P4 mapeará las entidades de la base de datos a estos tipos.
+**Architecture:** New `core:money` module (value types and exact arithmetic, no dependencies) and `domain.ledger` package in `domain:usecases` (share calculation, per-expense nets, balances and suggested payments). Everything is pure functions over immutable types; P4 will map the database entities to these types.
 
-**Tech Stack:** Kotlin Multiplatform (solo `commonMain`), `kotlin-test`.
+**Tech Stack:** Kotlin Multiplatform (`commonMain` only), `kotlin-test`.
 
-**Platform:** KMP (código común; los tests corren en la JVM de Android con `testDebugUnitTest`)
+**Platform:** KMP (common code; tests run on the Android JVM with `testDebugUnitTest`)
 
-**Depende de:** P1 terminado. Independiente de P2.
+**Depends on:** P1 done. Independent of P2.
 
 ---
 
-## Contexto para quien ejecuta
+## Context for the executor
 
-- Mismo entorno que P1. Repo `~/Documents/Repos/Owlsplit`.
-- Reglas de negocio: [docs/DOMAIN.md](../DOMAIN.md) y [ADR 0005](../adr/0005-money-as-minor-units.md). Si algo de este plan las contradice, manda `DOMAIN.md` y hay que avisar.
-- Prohibido `Float`/`Double` en todo este código.
-- Ruta base del código: `es/sebas1705/owlsplit/...`.
-- Comandos de test:
+- Same environment as P1. Repo `~/Documents/Repos/Owlsplit`.
+- Business rules: [docs/DOMAIN.md](../DOMAIN.md) and [ADR 0005](../adr/0005-money-as-minor-units.md). If anything in this plan contradicts them, `DOMAIN.md` wins and it must be reported.
+- `Float`/`Double` are forbidden in all of this code.
+- Base path of the code: `es/sebas1705/owlsplit/...`.
+- Test commands:
   - `./gradlew :core:money:testDebugUnitTest`
   - `./gradlew :domain:usecases:testDebugUnitTest`
-  - Un test concreto: añadir `--tests "es.sebas1705.owlsplit.core.money.AllocationTest"`.
+  - A single test: add `--tests "es.sebas1705.owlsplit.core.money.AllocationTest"`.
 
-## Mapa de archivos
+## File map
 
-| Acción | Ruta |
+| Action | Path |
 |---|---|
-| Modificar | `settings.gradle.kts`, `domain/usecases/build.gradle.kts`, `MODULE_MAP.md`, `docs/plans/README.md` |
-| Crear | `core/money/build.gradle.kts` |
-| Crear | `core/money/src/commonMain/kotlin/es/sebas1705/owlsplit/core/money/`: `Currency.kt`, `CurrencyTable.kt`, `Money.kt`, `LongMath.kt`, `Allocation.kt`, `FxRate.kt`, `Conversion.kt` |
+| Modify | `settings.gradle.kts`, `domain/usecases/build.gradle.kts`, `MODULE_MAP.md`, `docs/plans/README.md` |
+| Create | `core/money/build.gradle.kts` |
+| Create | `core/money/src/commonMain/kotlin/es/sebas1705/owlsplit/core/money/`: `Currency.kt`, `CurrencyTable.kt`, `Money.kt`, `LongMath.kt`, `Allocation.kt`, `FxRate.kt`, `Conversion.kt` |
 | Test | `core/money/src/commonTest/kotlin/es/sebas1705/owlsplit/core/money/`: `CurrencyTest.kt`, `MoneyTest.kt`, `LongMathTest.kt`, `AllocationTest.kt`, `FxRateTest.kt`, `ConversionTest.kt` |
-| Crear | `domain/usecases/src/commonMain/kotlin/es/sebas1705/owlsplit/domain/ledger/`: `LedgerModel.kt`, `ShareCalculator.kt`, `NetCalculator.kt`, `BalanceCalculator.kt`, `DebtSimplifier.kt` |
+| Create | `domain/usecases/src/commonMain/kotlin/es/sebas1705/owlsplit/domain/ledger/`: `LedgerModel.kt`, `ShareCalculator.kt`, `NetCalculator.kt`, `BalanceCalculator.kt`, `DebtSimplifier.kt` |
 | Test | `domain/usecases/src/commonTest/kotlin/es/sebas1705/owlsplit/domain/ledger/`: `ShareCalculatorTest.kt`, `NetCalculatorTest.kt`, `BalanceCalculatorTest.kt`, `DebtSimplifierTest.kt`, `LedgerPropertiesTest.kt`, `Fixtures.kt` |
 
 ---
 
-### Task 1: Módulo `core:money` y divisas
+### Task 1: `core:money` module and currencies
 
 **Files:**
 - Create: `core/money/build.gradle.kts`, `Currency.kt`, `CurrencyTable.kt`
 - Modify: `settings.gradle.kts`
 - Test: `CurrencyTest.kt`
 
-- [ ] **Step 1: Crear el módulo**
+- [ ] **Step 1: Create the module**
 
 `core/money/build.gradle.kts`:
 ```kotlin
@@ -59,9 +59,9 @@ kotlin {
     }
 }
 ```
-En `settings.gradle.kts`, dentro del `include(` de core, añadir `":core:money",` después de `":core:logging",`.
+In `settings.gradle.kts`, inside the core `include(`, add `":core:money",` after `":core:logging",`.
 
-- [ ] **Step 2: Escribir el test que falla**
+- [ ] **Step 2: Write the failing test**
 
 `core/money/src/commonTest/kotlin/es/sebas1705/owlsplit/core/money/CurrencyTest.kt`:
 ```kotlin
@@ -97,12 +97,12 @@ class CurrencyTest {
 }
 ```
 
-- [ ] **Step 3: Ejecutar y ver que falla**
+- [ ] **Step 3: Run it and see it fail**
 
 Run: `./gradlew :core:money:testDebugUnitTest`
-Expected: FAIL de compilación, `Unresolved reference 'Currency'`.
+Expected: compilation FAIL, `Unresolved reference 'Currency'`.
 
-- [ ] **Step 4: Implementar**
+- [ ] **Step 4: Implement**
 
 `core/money/src/commonMain/kotlin/es/sebas1705/owlsplit/core/money/Currency.kt`:
 ```kotlin
@@ -147,7 +147,7 @@ internal object CurrencyTable {
 }
 ```
 
-- [ ] **Step 5: Ejecutar y ver que pasa**
+- [ ] **Step 5: Run it and see it pass**
 
 Run: `./gradlew :core:money:testDebugUnitTest`
 Expected: PASS (3 tests).
@@ -201,12 +201,12 @@ class MoneyTest {
 }
 ```
 
-- [ ] **Step 2: Ver que falla**
+- [ ] **Step 2: See it fail**
 
 Run: `./gradlew :core:money:testDebugUnitTest --tests "es.sebas1705.owlsplit.core.money.MoneyTest"`
 Expected: FAIL, `Unresolved reference 'Money'`.
 
-- [ ] **Step 3: Implementar**
+- [ ] **Step 3: Implement**
 
 `core/money/src/commonMain/kotlin/es/sebas1705/owlsplit/core/money/Money.kt`:
 ```kotlin
@@ -256,7 +256,7 @@ class CurrencyMismatchException(a: Currency, b: Currency) :
     IllegalArgumentException("Cannot combine ${a.code} with ${b.code}")
 ```
 
-- [ ] **Step 4: Ver que pasa**
+- [ ] **Step 4: See it pass**
 
 Run: `./gradlew :core:money:testDebugUnitTest --tests "es.sebas1705.owlsplit.core.money.MoneyTest"`
 Expected: PASS (3 tests).
@@ -268,7 +268,7 @@ git add core/money
 git commit -m "feat(money): add Money value type"
 ```
 
-### Task 3: Multiplicación-división exacta de 128 bits
+### Task 3: Exact 128-bit multiply-divide
 
 **Files:**
 - Create: `LongMath.kt`
@@ -318,12 +318,12 @@ class LongMathTest {
 }
 ```
 
-- [ ] **Step 2: Ver que falla**
+- [ ] **Step 2: See it fail**
 
 Run: `./gradlew :core:money:testDebugUnitTest --tests "es.sebas1705.owlsplit.core.money.LongMathTest"`
 Expected: FAIL, `Unresolved reference 'mulDivRem'`.
 
-- [ ] **Step 3: Implementar**
+- [ ] **Step 3: Implement**
 
 `core/money/src/commonMain/kotlin/es/sebas1705/owlsplit/core/money/LongMath.kt`:
 ```kotlin
@@ -397,7 +397,7 @@ internal fun pow10(exponent: Int): Long {
 }
 ```
 
-- [ ] **Step 4: Ver que pasa**
+- [ ] **Step 4: See it pass**
 
 Run: `./gradlew :core:money:testDebugUnitTest --tests "es.sebas1705.owlsplit.core.money.LongMathTest"`
 Expected: PASS (4 tests).
@@ -409,7 +409,7 @@ git add core/money
 git commit -m "feat(money): exact 128-bit multiply-divide"
 ```
 
-### Task 4: Reparto por restos mayores
+### Task 4: Largest-remainder allocation
 
 **Files:**
 - Create: `Allocation.kt`
@@ -470,18 +470,18 @@ class AllocationTest {
 }
 ```
 
-- [ ] **Step 2: Ver que falla**
+- [ ] **Step 2: See it fail**
 
 Run: `./gradlew :core:money:testDebugUnitTest --tests "es.sebas1705.owlsplit.core.money.AllocationTest"`
 Expected: FAIL, `Unresolved reference 'Allocation'`.
 
-- [ ] **Step 3: Implementar**
+- [ ] **Step 3: Implement**
 
 `core/money/src/commonMain/kotlin/es/sebas1705/owlsplit/core/money/Allocation.kt`:
 ```kotlin
 package es.sebas1705.owlsplit.core.money
 
-/** Deterministic integer splitting (largest-remainder method). See docs/DOMAIN.md#reparto. */
+/** Deterministic integer splitting (largest-remainder method). See docs/DOMAIN.md#splitting. */
 object Allocation {
     /**
      * Splits [total] (≥ 0) proportionally to [weights] so the parts sum exactly to [total].
@@ -514,7 +514,7 @@ object Allocation {
 }
 ```
 
-- [ ] **Step 4: Ver que pasa**
+- [ ] **Step 4: See it pass**
 
 Run: `./gradlew :core:money:testDebugUnitTest --tests "es.sebas1705.owlsplit.core.money.AllocationTest"`
 Expected: PASS (7 tests).
@@ -526,7 +526,7 @@ git add core/money
 git commit -m "feat(money): largest-remainder allocation"
 ```
 
-### Task 5: Tipo de cambio en punto fijo
+### Task 5: Fixed-point exchange rate
 
 **Files:**
 - Create: `FxRate.kt`
@@ -568,12 +568,12 @@ class FxRateTest {
 }
 ```
 
-- [ ] **Step 2: Ver que falla**
+- [ ] **Step 2: See it fail**
 
 Run: `./gradlew :core:money:testDebugUnitTest --tests "es.sebas1705.owlsplit.core.money.FxRateTest"`
 Expected: FAIL, `Unresolved reference 'FxRate'`.
 
-- [ ] **Step 3: Implementar**
+- [ ] **Step 3: Implement**
 
 `core/money/src/commonMain/kotlin/es/sebas1705/owlsplit/core/money/FxRate.kt`:
 ```kotlin
@@ -621,10 +621,10 @@ value class FxRate(val scaled: Long) {
 }
 ```
 
-- [ ] **Step 4: Ver que pasa**
+- [ ] **Step 4: See it pass**
 
 Run: `./gradlew :core:money:testDebugUnitTest --tests "es.sebas1705.owlsplit.core.money.FxRateTest"`
-Expected: PASS (3 tests). Nota: `"1000000"` falla porque el patrón admite como mucho 6 cifras enteras (máx. 999 999) y `MAX_SCALED` limita a 900 000.
+Expected: PASS (3 tests). Note: `"1000000"` fails because the pattern allows at most 6 integer digits (max. 999 999) and `MAX_SCALED` caps it at 900 000.
 
 - [ ] **Step 5: Commit**
 
@@ -633,7 +633,7 @@ git add core/money
 git commit -m "feat(money): fixed-point exchange rate"
 ```
 
-### Task 6: Conversión entre divisas
+### Task 6: Currency conversion
 
 **Files:**
 - Create: `Conversion.kt`
@@ -692,12 +692,12 @@ class ConversionTest {
 }
 ```
 
-- [ ] **Step 2: Ver que falla**
+- [ ] **Step 2: See it fail**
 
 Run: `./gradlew :core:money:testDebugUnitTest --tests "es.sebas1705.owlsplit.core.money.ConversionTest"`
 Expected: FAIL, `Unresolved reference 'Conversion'`.
 
-- [ ] **Step 3: Implementar**
+- [ ] **Step 3: Implement**
 
 `core/money/src/commonMain/kotlin/es/sebas1705/owlsplit/core/money/Conversion.kt`:
 ```kotlin
@@ -722,10 +722,10 @@ object Conversion {
 }
 ```
 
-- [ ] **Step 4: Ver que pasa y ejecutar todo el módulo**
+- [ ] **Step 4: See it pass and run the whole module**
 
 Run: `./gradlew :core:money:testDebugUnitTest`
-Expected: PASS (todos los tests de `core:money`, 25).
+Expected: PASS (all `core:money` tests, 25).
 
 - [ ] **Step 5: Commit**
 
@@ -734,14 +734,14 @@ git add core/money
 git commit -m "feat(money): currency conversion with exact remainders"
 ```
 
-### Task 7: Modelo del libro de cuentas y cálculo de partes
+### Task 7: Ledger model and share calculation
 
 **Files:**
 - Modify: `domain/usecases/build.gradle.kts`
 - Create: `LedgerModel.kt`, `ShareCalculator.kt`
 - Test: `Fixtures.kt`, `ShareCalculatorTest.kt`
 
-- [ ] **Step 1: Dependencias de `domain:usecases`**
+- [ ] **Step 1: `domain:usecases` dependencies**
 
 `domain/usecases/build.gradle.kts`:
 ```kotlin
@@ -762,7 +762,7 @@ kotlin {
 }
 ```
 
-- [ ] **Step 2: Fixtures de test**
+- [ ] **Step 2: Test fixtures**
 
 `domain/usecases/src/commonTest/kotlin/es/sebas1705/owlsplit/domain/ledger/Fixtures.kt`:
 ```kotlin
@@ -794,7 +794,7 @@ internal fun expense(
 ) = ExpenseEntry(id, amountMinor, currency, rate, payers, split)
 ```
 
-- [ ] **Step 3: Test de partes**
+- [ ] **Step 3: Shares test**
 
 `domain/usecases/src/commonTest/kotlin/es/sebas1705/owlsplit/domain/ledger/ShareCalculatorTest.kt`:
 ```kotlin
@@ -869,12 +869,12 @@ class ShareCalculatorTest {
 }
 ```
 
-- [ ] **Step 4: Ver que falla**
+- [ ] **Step 4: See it fail**
 
 Run: `./gradlew :domain:usecases:testDebugUnitTest`
 Expected: FAIL, `Unresolved reference 'LedgerMember'`.
 
-- [ ] **Step 5: Modelo**
+- [ ] **Step 5: Model**
 
 `domain/usecases/src/commonMain/kotlin/es/sebas1705/owlsplit/domain/ledger/LedgerModel.kt`:
 ```kotlin
@@ -940,7 +940,7 @@ class InvalidEntryException(val entryId: String, val issue: SplitIssue) :
     IllegalArgumentException("Entry $entryId is invalid: $issue")
 ```
 
-- [ ] **Step 6: Calculadora de partes**
+- [ ] **Step 6: Share calculator**
 
 `domain/usecases/src/commonMain/kotlin/es/sebas1705/owlsplit/domain/ledger/ShareCalculator.kt`:
 ```kotlin
@@ -949,7 +949,7 @@ package es.sebas1705.owlsplit.domain.ledger
 import es.sebas1705.owlsplit.core.money.Allocation
 import es.sebas1705.owlsplit.core.money.Money
 
-/** What each member owes for one expense, in the expense currency. See docs/DOMAIN.md#reparto. */
+/** What each member owes for one expense, in the expense currency. See docs/DOMAIN.md#splitting. */
 object ShareCalculator {
     const val FULL_PERCENT = 10_000L
 
@@ -997,7 +997,7 @@ object ShareCalculator {
 }
 ```
 
-- [ ] **Step 7: Ver que pasa**
+- [ ] **Step 7: See it pass**
 
 Run: `./gradlew :domain:usecases:testDebugUnitTest`
 Expected: PASS (8 tests).
@@ -1009,7 +1009,7 @@ git add domain/usecases
 git commit -m "feat(ledger): split shares by equal, weights, percent and exact"
 ```
 
-### Task 8: Neto por gasto y transferencia en la divisa base
+### Task 8: Per-expense and per-transfer nets in the base currency
 
 **Files:**
 - Create: `NetCalculator.kt`
@@ -1109,12 +1109,12 @@ class NetCalculatorTest {
 }
 ```
 
-- [ ] **Step 2: Ver que falla**
+- [ ] **Step 2: See it fail**
 
 Run: `./gradlew :domain:usecases:testDebugUnitTest --tests "es.sebas1705.owlsplit.domain.ledger.NetCalculatorTest"`
 Expected: FAIL, `Unresolved reference 'NetCalculator'`.
 
-- [ ] **Step 3: Implementar**
+- [ ] **Step 3: Implement**
 
 `domain/usecases/src/commonMain/kotlin/es/sebas1705/owlsplit/domain/ledger/NetCalculator.kt`:
 ```kotlin
@@ -1129,7 +1129,7 @@ import kotlin.math.abs
 /**
  * Effect of one entry on each member's balance, in the group base currency.
  * Positive = the member is owed money. The values of one entry always sum to exactly 0.
- * See docs/DOMAIN.md#divisas.
+ * See docs/DOMAIN.md#currencies.
  */
 object NetCalculator {
 
@@ -1202,10 +1202,10 @@ object NetCalculator {
 }
 ```
 
-- [ ] **Step 4: Ver que pasa**
+- [ ] **Step 4: See it pass**
 
 Run: `./gradlew :domain:usecases:testDebugUnitTest --tests "es.sebas1705.owlsplit.domain.ledger.NetCalculatorTest"`
-Expected: PASS (8 tests). Si `foreign currency …` falla en los valores aproximados pero la suma es 0, revisar el signo del reparto del sobrante: con `leftover > 0` se suma a los restos positivos más altos.
+Expected: PASS (8 tests). If `foreign currency …` fails on the approximate values but the sum is 0, check the sign used when distributing the leftover: with `leftover > 0` it is added to the highest positive remainders.
 
 - [ ] **Step 5: Commit**
 
@@ -1214,7 +1214,7 @@ git add domain/usecases
 git commit -m "feat(ledger): per-entry nets in base currency summing to zero"
 ```
 
-### Task 9: Saldos del grupo
+### Task 9: Group balances
 
 **Files:**
 - Create: `BalanceCalculator.kt`
@@ -1261,14 +1261,14 @@ class BalanceCalculatorTest {
     }
 }
 ```
-(Comprobación del primer caso: cena 48,60 € pagada por Sebas → Sebas +36,45 y el resto −12,15; taxi 20 € de Ana entre Ana y Luis → Ana +10 y Luis −10; Luis devuelve 12,15 € a Sebas → Luis +12,15 y Sebas −12,15. Total: Ana −12,15 + 10 = −2,15; Sebas 36,45 − 12,15 = 24,30; Marta −12,15; Luis −12,15 − 10 + 12,15 = −10.)
+(Check of the first case: €48.60 dinner paid by Sebas → Sebas +36.45 and the others −12.15; Ana's €20 taxi shared by Ana and Luis → Ana +10 and Luis −10; Luis pays €12.15 back to Sebas → Luis +12.15 and Sebas −12.15. Total: Ana −12.15 + 10 = −2.15; Sebas 36.45 − 12.15 = 24.30; Marta −12.15; Luis −12.15 − 10 + 12.15 = −10.)
 
-- [ ] **Step 2: Ver que falla**
+- [ ] **Step 2: See it fail**
 
 Run: `./gradlew :domain:usecases:testDebugUnitTest --tests "es.sebas1705.owlsplit.domain.ledger.BalanceCalculatorTest"`
 Expected: FAIL, `Unresolved reference 'BalanceCalculator'`.
 
-- [ ] **Step 3: Implementar**
+- [ ] **Step 3: Implement**
 
 `domain/usecases/src/commonMain/kotlin/es/sebas1705/owlsplit/domain/ledger/BalanceCalculator.kt`:
 ```kotlin
@@ -1294,7 +1294,7 @@ object BalanceCalculator {
 }
 ```
 
-- [ ] **Step 4: Ver que pasa**
+- [ ] **Step 4: See it pass**
 
 Run: `./gradlew :domain:usecases:testDebugUnitTest --tests "es.sebas1705.owlsplit.domain.ledger.BalanceCalculatorTest"`
 Expected: PASS (3 tests).
@@ -1306,7 +1306,7 @@ git add domain/usecases
 git commit -m "feat(ledger): group balances"
 ```
 
-### Task 10: Simplificación de deudas
+### Task 10: Debt simplification
 
 **Files:**
 - Create: `DebtSimplifier.kt`
@@ -1358,12 +1358,12 @@ class DebtSimplifierTest {
 }
 ```
 
-- [ ] **Step 2: Ver que falla**
+- [ ] **Step 2: See it fail**
 
 Run: `./gradlew :domain:usecases:testDebugUnitTest --tests "es.sebas1705.owlsplit.domain.ledger.DebtSimplifierTest"`
 Expected: FAIL, `Unresolved reference 'DebtSimplifier'`.
 
-- [ ] **Step 3: Implementar**
+- [ ] **Step 3: Implement**
 
 `domain/usecases/src/commonMain/kotlin/es/sebas1705/owlsplit/domain/ledger/DebtSimplifier.kt`:
 ```kotlin
@@ -1372,7 +1372,7 @@ package es.sebas1705.owlsplit.domain.ledger
 /**
  * Greedy settlement (as in Settle Up): the largest debtor pays the largest creditor until
  * everyone is at zero. At most n − 1 payments; ties follow member order.
- * See docs/DOMAIN.md#simplificación-de-deudas.
+ * See docs/DOMAIN.md#debt-simplification.
  */
 object DebtSimplifier {
     fun simplify(balances: Map<String, Long>, members: List<LedgerMember>): List<SuggestedPayment> {
@@ -1404,7 +1404,7 @@ object DebtSimplifier {
 }
 ```
 
-- [ ] **Step 4: Ver que pasa**
+- [ ] **Step 4: See it pass**
 
 Run: `./gradlew :domain:usecases:testDebugUnitTest --tests "es.sebas1705.owlsplit.domain.ledger.DebtSimplifierTest"`
 Expected: PASS (4 tests).
@@ -1416,12 +1416,12 @@ git add domain/usecases
 git commit -m "feat(ledger): greedy debt simplification"
 ```
 
-### Task 11: Tests de propiedades
+### Task 11: Property tests
 
 **Files:**
 - Test: `LedgerPropertiesTest.kt`
 
-Se generan grupos aleatorios con semilla fija (reproducibles) y se comprueban los invariantes de DOMAIN.md. No se añade ninguna librería: basta `kotlin.random.Random` con semilla.
+Random groups are generated with a fixed seed (reproducible) and the DOMAIN.md invariants are checked. No library is added: a seeded `kotlin.random.Random` is enough.
 
 - [ ] **Step 1: Test**
 
@@ -1527,10 +1527,10 @@ class LedgerPropertiesTest {
 }
 ```
 
-- [ ] **Step 2: Ejecutar**
+- [ ] **Step 2: Run**
 
 Run: `./gradlew :domain:usecases:testDebugUnitTest --tests "es.sebas1705.owlsplit.domain.ledger.LedgerPropertiesTest"`
-Expected: PASS (3 tests × 500 escenarios). Si alguno falla, el mensaje incluye el id del gasto; reproducir con la semilla (índice del `repeat`) y añadir ese caso como test de tabla en el archivo correspondiente **antes** de corregir.
+Expected: PASS (3 tests × 500 scenarios). If one fails, the message includes the expense id; reproduce it with the seed (the `repeat` index) and add that case as a table test in the corresponding file **before** fixing it.
 
 - [ ] **Step 3: Commit**
 
@@ -1539,24 +1539,24 @@ git add domain/usecases
 git commit -m "test(ledger): property tests for zero-sum, order independence and settlement"
 ```
 
-### Task 12: Verificación y documentación
+### Task 12: Verification and documentation
 
-- [ ] **Step 1: Todo el proyecto**
+- [ ] **Step 1: Whole project**
 
 ```bash
 ./gradlew detekt testDebugUnitTest :composeApp:assembleDebug 2>&1 | tail -5
 ```
-Expected: `BUILD SUCCESSFUL`. Ajustes de Detekt previstos (en `config/detekt/detekt.yml`, nunca con `@Suppress`):
-- `MagicNumber` en los tests: añadir `excludes: ['**/commonTest/**']` a esa regla. Si lo marca en código de producción, extraer constantes con nombre.
-- `ReturnCount` en `ShareCalculator.shares` (validaciones con retorno temprano): poner `excludeGuardClauses: true` en esa regla. Si sigue saltando, subir `max` a 4; las validaciones en cadena son intencionadas.
-- `CurrencyTable` puede disparar `MagicNumber` por los decimales: añadir `ignorePropertyDeclaration: true` a `MagicNumber`.
+Expected: `BUILD SUCCESSFUL`. Expected Detekt adjustments (in `config/detekt/detekt.yml`, never with `@Suppress`):
+- `MagicNumber` in tests: add `excludes: ['**/commonTest/**']` to that rule. If it flags production code, extract named constants.
+- `ReturnCount` in `ShareCalculator.shares` (validations with early returns): set `excludeGuardClauses: true` on that rule. If it still triggers, raise `max` to 4; the chained validations are intentional.
+- `CurrencyTable` may trigger `MagicNumber` because of the decimals: add `ignorePropertyDeclaration: true` to `MagicNumber`.
 
-- [ ] **Step 2: Documentación**
+- [ ] **Step 2: Documentation**
 
-- `MODULE_MAP.md`: en la fila de `core:money`, quitar "(se crea en P3)"; en `domain:usecases`, dejar "Casos de uso; `ledger`: partes, netos, saldos y pagos sugeridos".
-- `docs/plans/README.md`: estado de P3 → `Hecho`.
+- `MODULE_MAP.md`: in the `core:money` row, remove "(created in P3)"; in `domain:usecases`, set "Use cases; `ledger`: shares, nets, balances and suggested payments".
+- `docs/plans/README.md`: status of P3 → `Done`.
 
-- [ ] **Step 3: Commit y push**
+- [ ] **Step 3: Commit and push**
 
 ```bash
 git add MODULE_MAP.md docs/plans/README.md config/detekt/detekt.yml
@@ -1564,13 +1564,13 @@ git commit -m "docs: mark P3 as done"
 git push
 ```
 
-## Verificación final de P3
+## Final verification of P3
 
-- `./gradlew :core:money:testDebugUnitTest :domain:usecases:testDebugUnitTest` → todos en verde (25 + 26 tests, 1 500 escenarios aleatorios).
-- `grep -rn "Double\|Float" core/money/src domain/usecases/src/commonMain` → sin resultados.
-- CI verde tras el push.
+- `./gradlew :core:money:testDebugUnitTest :domain:usecases:testDebugUnitTest` → all green (25 + 26 tests, 1,500 random scenarios).
+- `grep -rn "Double\|Float" core/money/src domain/usecases/src/commonMain` → no results.
+- Green CI after the push.
 
-## Fuera de este plan
+## Out of scope for this plan
 
-- Modo "sin simplificar" de Cómo saldar (opcional según el spec): se decide al hacer la pantalla en P9; necesitaría deudas por pares a partir de los netos de cada gasto.
-- Mapeo de entidades de la base de datos a `ExpenseEntry`/`TransferEntry`: P4.
+- "Unsimplified" mode of the *Cómo saldar* (How to settle up) screen (optional per the spec): decided when building the screen in P9; it would need pairwise debts derived from each expense's nets.
+- Mapping database entities to `ExpenseEntry`/`TransferEntry`: P4.

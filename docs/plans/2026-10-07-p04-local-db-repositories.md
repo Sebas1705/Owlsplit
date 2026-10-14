@@ -1,61 +1,61 @@
-# P4 · Base de datos local y repositorios — Implementation Plan
+# P4 · Local database and repositories — Implementation Plan
 
 > **For agentic workers:** Use `mobiai-mobile-executing-plans-with-subagents` (recommended) or `mobiai-mobile-executing-plans` to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
-**Goal:** Dejar SQLDelight como fuente de verdad: esquema completo (entidades, outbox, cursores, conflictos, historial), modelos de datos, repositorios que escriben en local + outbox en una sola transacción y exponen Flows, y el caso de uso que convierte todo eso en saldos con el `ledger` de P3.
+**Goal:** Make SQLDelight the source of truth: full schema (entities, outbox, cursors, conflicts, history), data models, repositories that write locally + to the outbox in a single transaction and expose Flows, and the use case that turns all of it into balances with the P3 `ledger`.
 
-**Architecture:** Tres módulos de datos según la plantilla: `data:models` (modelos serializables, sin dependencias de plataforma), `data:local` (esquema `.sq` y `AppDatabase`), `data:repository` (interfaces + implementaciones sobre `AppDatabase`). Cada escritura, en una transacción: entidad con `version = serverVersion + 1` y `syncState = PENDING`, entrada compactada en `outbox` y entrada de historial (también encolada). En `domain`, `ObserveGroupBalances` combina los Flows y llama al `ledger`. La validación de negocio de un gasto (reparto que cuadra) **no** está en el repositorio: llega con los casos de uso de P9; aquí el repositorio confía en su entrada.
+**Architecture:** Three data modules following the template: `data:models` (serializable models, no platform dependencies), `data:local` (`.sq` schema and `AppDatabase`), `data:repository` (interfaces + implementations on top of `AppDatabase`). Each write, in one transaction: the entity with `version = serverVersion + 1` and `syncState = PENDING`, a compacted entry in `outbox` and a history entry (also queued). In `domain`, `ObserveGroupBalances` combines the Flows and calls the `ledger`. Business validation of an expense (a split that adds up) is **not** in the repository: it arrives with the P9 use cases; here the repository trusts its input.
 
-**Tech Stack:** SQLDelight 2.4.1 (dialecto SQLite por defecto, compatible con Android 7 / minSdk 24: sin `UPSERT`), kotlinx-serialization 1.11.0, kotlinx-datetime 0.8.0, kotlinx-coroutines 1.11.0, Turbine 1.2.1, `kotlin.time.Clock` y `kotlin.uuid.Uuid`.
+**Tech Stack:** SQLDelight 2.4.1 (default SQLite dialect, compatible with Android 7 / minSdk 24: no `UPSERT`), kotlinx-serialization 1.11.0, kotlinx-datetime 0.8.0, kotlinx-coroutines 1.11.0, Turbine 1.2.1, `kotlin.time.Clock` and `kotlin.uuid.Uuid`.
 
-**Platform:** KMP (código común; tests en la JVM de Android)
+**Platform:** KMP (common code; tests on the Android JVM)
 
-**Depende de:** P1 y P3 en `main`.
+**Depends on:** P1 and P3 on `main`.
 
 ---
 
-## Contexto para quien ejecuta
+## Context for the executor
 
-- Repo `~/Documents/Repos/Owlsplit`, rama `p4/local-db` desde `main`. Mismo entorno que P1.
-- Modelo y reglas: [docs/DOMAIN.md](../DOMAIN.md) y [docs/SYNC.md](../SYNC.md). Este plan implementa las tablas de SYNC.md salvo `fx_rate_cache`, que llega en P9 (primera migración real).
-- **Sin `INSERT … ON CONFLICT DO UPDATE`**: Android 7 trae SQLite 3.9. La compactación del outbox se hace con `SELECT` + `UPDATE`/`INSERT` dentro de la transacción.
-- **Sin claves foráneas ni `ON DELETE CASCADE`**: `INSERT OR REPLACE` borra la fila antigua y, con cascadas, se llevaría las hijas. Las tablas hijas (`expense_payer`, `expense_split`) se reescriben a mano.
-- Nombres de tabla con sufijo `_entity` (`group` es palabra reservada). SQLDelight genera las clases `Group_entity`, etc., con propiedades en `snake_case`.
-- Instantes como `INTEGER` (epoch ms), fechas de calendario como `TEXT` ISO (`2026-07-12`), booleanos como `INTEGER AS Boolean`, listas y mapas pequeños de grupo como `TEXT` JSON.
+- Repo `~/Documents/Repos/Owlsplit`, branch `p4/local-db` from `main`. Same environment as P1.
+- Model and rules: [docs/DOMAIN.md](../DOMAIN.md) and [docs/SYNC.md](../SYNC.md). This plan implements the SYNC.md tables except `fx_rate_cache`, which arrives in P9 (first real migration).
+- **No `INSERT … ON CONFLICT DO UPDATE`**: Android 7 ships SQLite 3.9. Outbox compaction is done with `SELECT` + `UPDATE`/`INSERT` inside the transaction.
+- **No foreign keys or `ON DELETE CASCADE`**: `INSERT OR REPLACE` deletes the old row and, with cascades, would take its children with it. The child tables (`expense_payer`, `expense_split`) are rewritten by hand.
+- Table names with an `_entity` suffix (`group` is a reserved word). SQLDelight generates the classes `Group_entity`, etc., with `snake_case` properties.
+- Instants as `INTEGER` (epoch ms), calendar dates as ISO `TEXT` (`2026-07-12`), booleans as `INTEGER AS Boolean`, small group lists and maps as JSON `TEXT`.
 - Tests: `./gradlew :data:local:testDebugUnitTest`, `:data:repository:testDebugUnitTest`, `:domain:usecases:testDebugUnitTest`.
 
-## Mapa de archivos
+## File map
 
-| Acción | Ruta |
+| Action | Path |
 |---|---|
-| Modificar | `settings.gradle.kts`, `gradle/libs.versions.toml`, `domain/usecases/build.gradle.kts`, `data/local/build.gradle.kts`, `.github/workflows/ci.yml`, `MODULE_MAP.md`, `docs/plans/README.md` |
-| Crear | `data/models/build.gradle.kts`, `data/models/src/commonMain/kotlin/es/sebas1705/owlsplit/data/models/Models.kt` |
-| Crear | `data/local/src/commonMain/sqldelight/es/sebas1705/owlsplit/data/local/db/`: `GroupEntity.sq`, `MemberEntity.sq`, `ExpenseEntity.sq`, `TransferEntity.sq`, `ChangeLog.sq`, `Outbox.sq`, `SyncCursor.sq`, `Conflict.sq` |
-| Crear | `data/local/src/commonMain/sqldelight/databases/1.db` (generado) |
+| Modify | `settings.gradle.kts`, `gradle/libs.versions.toml`, `domain/usecases/build.gradle.kts`, `data/local/build.gradle.kts`, `.github/workflows/ci.yml`, `MODULE_MAP.md`, `docs/plans/README.md` |
+| Create | `data/models/build.gradle.kts`, `data/models/src/commonMain/kotlin/es/sebas1705/owlsplit/data/models/Models.kt` |
+| Create | `data/local/src/commonMain/sqldelight/es/sebas1705/owlsplit/data/local/db/`: `GroupEntity.sq`, `MemberEntity.sq`, `ExpenseEntity.sq`, `TransferEntity.sq`, `ChangeLog.sq`, `Outbox.sq`, `SyncCursor.sq`, `Conflict.sq` |
+| Create | `data/local/src/commonMain/sqldelight/databases/1.db` (generated) |
 | Test | `data/local/src/androidUnitTest/kotlin/es/sebas1705/owlsplit/data/local/SchemaTest.kt` |
-| Crear | `data/repository/build.gradle.kts`, `data/repository/src/commonMain/kotlin/es/sebas1705/owlsplit/data/repository/`: `Repositories.kt`, `Infrastructure.kt`, `Writer.kt`, `Rows.kt`, `Diffs.kt`, `GroupRepositoryImpl.kt`, `MemberRepositoryImpl.kt`, `ExpenseRepositoryImpl.kt`, `TransferRepositoryImpl.kt`, `ChangeLogRepositoryImpl.kt` |
+| Create | `data/repository/build.gradle.kts`, `data/repository/src/commonMain/kotlin/es/sebas1705/owlsplit/data/repository/`: `Repositories.kt`, `Infrastructure.kt`, `Writer.kt`, `Rows.kt`, `Diffs.kt`, `GroupRepositoryImpl.kt`, `MemberRepositoryImpl.kt`, `ExpenseRepositoryImpl.kt`, `TransferRepositoryImpl.kt`, `ChangeLogRepositoryImpl.kt` |
 | Test | `data/repository/src/androidUnitTest/kotlin/es/sebas1705/owlsplit/data/repository/`: `TestEnv.kt`, `GroupRepositoryTest.kt`, `MemberRepositoryTest.kt`, `ExpenseRepositoryTest.kt`, `TransferRepositoryTest.kt` |
-| Crear | `domain/usecases/src/commonMain/kotlin/es/sebas1705/owlsplit/domain/usecases/balances/ObserveGroupBalances.kt` |
+| Create | `domain/usecases/src/commonMain/kotlin/es/sebas1705/owlsplit/domain/usecases/balances/ObserveGroupBalances.kt` |
 | Test | `domain/usecases/src/commonTest/kotlin/es/sebas1705/owlsplit/domain/usecases/balances/ObserveGroupBalancesTest.kt`, `FakeRepositories.kt` |
 
 ---
 
-### Task 1: Módulo `data:models`
+### Task 1: `data:models` module
 
 **Files:**
 - Create: `data/models/build.gradle.kts`, `Models.kt`
 - Modify: `settings.gradle.kts`
 
-- [ ] **Step 1: Registrar el módulo y crear la rama**
+- [ ] **Step 1: Register the module and create the branch**
 
 ```bash
 git switch main && git pull && git switch -c p4/local-db
 ```
-En `settings.gradle.kts` sustituir `include(":data:local", ":data:remote")` por:
+In `settings.gradle.kts`, replace `include(":data:local", ":data:remote")` with:
 ```kotlin
 include(":data:models", ":data:local", ":data:remote", ":data:repository")
 ```
-(`data:repository` se crea en la Tarea 4; hasta entonces Gradle avisa de que el directorio no existe y lo ignora.)
+(`data:repository` is created in Task 4; until then Gradle warns that the directory does not exist and ignores it.)
 
 - [ ] **Step 2: `data/models/build.gradle.kts`**
 
@@ -72,7 +72,7 @@ kotlin {
 }
 ```
 
-- [ ] **Step 3: Modelos**
+- [ ] **Step 3: Models**
 
 `data/models/src/commonMain/kotlin/es/sebas1705/owlsplit/data/models/Models.kt`:
 ```kotlin
@@ -195,7 +195,7 @@ data class ChangeLogEntry(
 enum class OutboxType { GROUP, MEMBER, EXPENSE, TRANSFER, CHANGE_LOG }
 ```
 
-- [ ] **Step 4: Compilar**
+- [ ] **Step 4: Build**
 
 Run: `./gradlew :data:models:assembleDebug`
 Expected: `BUILD SUCCESSFUL`.
@@ -207,10 +207,10 @@ git add settings.gradle.kts data/models
 git commit -m "feat(data): add data:models with sync-aware domain documents"
 ```
 
-### Task 2: Esquema SQLDelight
+### Task 2: SQLDelight schema
 
 **Files:**
-- Create: los ocho `.sq` de la tabla de archivos
+- Create: the eight `.sq` files from the file map
 - Modify: `data/local/build.gradle.kts`
 
 - [ ] **Step 1: `GroupEntity.sq`**
@@ -498,9 +498,9 @@ deleteById:
 DELETE FROM conflict WHERE id = ?;
 ```
 
-- [ ] **Step 7: Esquema versionado en `data/local/build.gradle.kts`**
+- [ ] **Step 7: Versioned schema in `data/local/build.gradle.kts`**
 
-Sustituir el bloque `sqldelight { … }` por:
+Replace the `sqldelight { … }` block with:
 ```kotlin
 sqldelight {
     databases {
@@ -516,13 +516,13 @@ sqldelight {
 }
 ```
 
-- [ ] **Step 8: Compilar y generar el esquema 1**
+- [ ] **Step 8: Build and generate schema 1**
 
 ```bash
 ./gradlew :data:local:generateSqlDelightInterface --console=plain | tail -3
 ./gradlew :data:local:tasks --all --console=plain | grep -i "schema\|verify"
 ```
-Ejecutar la tarea `generate…AppDatabaseSchema` que aparezca (en KMP suele ser `generateCommonMainAppDatabaseSchema`) y comprobar:
+Run the `generate…AppDatabaseSchema` task that shows up (in KMP it is usually `generateCommonMainAppDatabaseSchema`) and check:
 ```bash
 ls data/local/src/commonMain/sqldelight/databases/
 ```
@@ -535,7 +535,7 @@ git add data/local
 git commit -m "feat(local): full SQLDelight schema for documents, outbox, cursors and conflicts"
 ```
 
-### Task 3: Tests del esquema
+### Task 3: Schema tests
 
 **Files:**
 - Test: `data/local/src/androidUnitTest/kotlin/es/sebas1705/owlsplit/data/local/SchemaTest.kt`
@@ -613,10 +613,10 @@ class SchemaTest {
 }
 ```
 
-- [ ] **Step 2: Ejecutar**
+- [ ] **Step 2: Run**
 
 Run: `./gradlew :data:local:testDebugUnitTest`
-Expected: PASS (`MetaQueriesTest` 2 + `SchemaTest` 4). Si el compilador dice que no conoce el tipo `Boolean` en `AS Boolean`, añadir `import kotlin.Boolean;` como primera línea de cada `.sq` que lo use.
+Expected: PASS (`MetaQueriesTest` 2 + `SchemaTest` 4). If the compiler says it does not know the `Boolean` type in `AS Boolean`, add `import kotlin.Boolean;` as the first line of every `.sq` that uses it.
 
 - [ ] **Step 3: Commit**
 
@@ -625,13 +625,13 @@ git add data/local/src/androidUnitTest
 git commit -m "test(local): schema queries for sort keys, movements, outbox and cursors"
 ```
 
-### Task 4: Módulo `data:repository`: interfaces e infraestructura
+### Task 4: `data:repository` module: interfaces and infrastructure
 
 **Files:**
 - Modify: `gradle/libs.versions.toml`
 - Create: `data/repository/build.gradle.kts`, `Repositories.kt`, `Infrastructure.kt`, `Rows.kt`, `Diffs.kt`, `Writer.kt`
 
-- [ ] **Step 1: Turbine en el catálogo**
+- [ ] **Step 1: Turbine in the catalog**
 
 `[versions]`: `turbine = "1.2.1"`. `[libraries]`: `turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }`.
 
@@ -661,9 +661,9 @@ kotlin {
     }
 }
 ```
-`data:local` necesita exponer `AppDatabase` a quien la use: en `data/local/build.gradle.kts`, cambiar `implementation(libs.sqldelight.runtime)` por `api(libs.sqldelight.runtime)`.
+`data:local` needs to expose `AppDatabase` to its consumers: in `data/local/build.gradle.kts`, change `implementation(libs.sqldelight.runtime)` to `api(libs.sqldelight.runtime)`.
 
-- [ ] **Step 3: Interfaces públicas**
+- [ ] **Step 3: Public interfaces**
 
 `Repositories.kt`:
 ```kotlin
@@ -754,7 +754,7 @@ interface ChangeLogRepository {
 }
 ```
 
-- [ ] **Step 4: Infraestructura inyectable**
+- [ ] **Step 4: Injectable infrastructure**
 
 `Infrastructure.kt`:
 ```kotlin
@@ -798,7 +798,7 @@ data class RepositoryContext(
 )
 ```
 
-- [ ] **Step 5: Conversión filas ↔ modelos**
+- [ ] **Step 5: Row ↔ model mapping**
 
 `Rows.kt`:
 ```kotlin
@@ -905,7 +905,7 @@ internal fun ChangeLogEntry.toRow(state: SyncState) = Change_log(
 )
 ```
 
-- [ ] **Step 6: Diferencias para el historial**
+- [ ] **Step 6: Diffs for the history**
 
 `Diffs.kt`:
 ```kotlin
@@ -969,7 +969,7 @@ internal object Diffs {
 }
 ```
 
-- [ ] **Step 7: Escritura con outbox e historial**
+- [ ] **Step 7: Writes with outbox and history**
 
 `Writer.kt`:
 ```kotlin
@@ -985,7 +985,7 @@ import es.sebas1705.owlsplit.data.models.SyncMeta
 import es.sebas1705.owlsplit.data.models.SyncState
 
 /**
- * Shared write path (docs/SYNC.md, "Escritura local"). Must be called inside `db.transaction {}`.
+ * Shared write path (docs/SYNC.md, "Local write"). Must be called inside `db.transaction {}`.
  */
 internal class Writer(private val db: AppDatabase, private val ctx: RepositoryContext) {
 
@@ -1026,7 +1026,7 @@ internal class Writer(private val db: AppDatabase, private val ctx: RepositoryCo
 }
 ```
 
-- [ ] **Step 8: Compilar**
+- [ ] **Step 8: Build**
 
 Run: `./gradlew :data:repository:assembleDebug`
 Expected: `BUILD SUCCESSFUL`.
@@ -1038,13 +1038,13 @@ git add gradle/libs.versions.toml data/local/build.gradle.kts data/repository
 git commit -m "feat(repository): repository contracts, row mapping, diffs and outbox writer"
 ```
 
-### Task 5: Repositorio de grupos
+### Task 5: Groups repository
 
 **Files:**
-- Create: `GroupRepositoryImpl.kt`, `MemberRepositoryImpl.kt` (el de grupos crea el primer miembro), `ChangeLogRepositoryImpl.kt`
+- Create: `GroupRepositoryImpl.kt`, `MemberRepositoryImpl.kt` (the groups repository creates the first member), `ChangeLogRepositoryImpl.kt`
 - Test: `TestEnv.kt`, `GroupRepositoryTest.kt`
 
-- [ ] **Step 1: Entorno de test**
+- [ ] **Step 1: Test environment**
 
 `data/repository/src/androidUnitTest/kotlin/es/sebas1705/owlsplit/data/repository/TestEnv.kt`:
 ```kotlin
@@ -1092,9 +1092,9 @@ class TestEnv(val scope: TestScope = TestScope()) {
 
 suspend fun MemberRepository.observeMembersOnce(groupId: String): List<Member> = observeMembers(groupId).first()
 ```
-Las dos líneas comentadas se sustituyen por código real en las Tareas 6 y 7, cuando existan esas clases.
+The two commented-out lines are replaced with real code in Tasks 6 and 7, once those classes exist.
 
-- [ ] **Step 2: Test de grupos**
+- [ ] **Step 2: Groups test**
 
 `GroupRepositoryTest.kt`:
 ```kotlin
@@ -1174,12 +1174,12 @@ class GroupRepositoryTest {
 }
 ```
 
-- [ ] **Step 3: Ver que falla**
+- [ ] **Step 3: See it fail**
 
 Run: `./gradlew :data:repository:testDebugUnitTest --tests "*GroupRepositoryTest"`
-Expected: FAIL de compilación (`GroupRepositoryImpl` no existe).
+Expected: compilation FAIL (`GroupRepositoryImpl` does not exist).
 
-- [ ] **Step 4: Implementar grupos**
+- [ ] **Step 4: Implement groups**
 
 `GroupRepositoryImpl.kt`:
 ```kotlin
@@ -1266,7 +1266,7 @@ class GroupRepositoryImpl(
 }
 ```
 
-- [ ] **Step 5: Implementar miembros**
+- [ ] **Step 5: Implement members**
 
 `MemberRepositoryImpl.kt`:
 ```kotlin
@@ -1345,7 +1345,7 @@ class MemberRepositoryImpl(
 }
 ```
 
-- [ ] **Step 6: Implementar el historial (lo usa el segundo test)**
+- [ ] **Step 6: Implement the history (used by the second test)**
 
 `ChangeLogRepositoryImpl.kt`:
 ```kotlin
@@ -1368,7 +1368,7 @@ class ChangeLogRepositoryImpl(
 }
 ```
 
-- [ ] **Step 7: Ver que pasa**
+- [ ] **Step 7: See it pass**
 
 Run: `./gradlew :data:repository:testDebugUnitTest --tests "*GroupRepositoryTest"`
 Expected: PASS (3 tests).
@@ -1380,7 +1380,7 @@ git add data/repository
 git commit -m "feat(repository): groups and members with outbox and history"
 ```
 
-### Task 6: Repositorio de gastos
+### Task 6: Expenses repository
 
 **Files:**
 - Create: `ExpenseRepositoryImpl.kt`
@@ -1470,17 +1470,17 @@ class ExpenseRepositoryTest {
     }
 }
 ```
-En `TestEnv.kt`, sustituir la línea comentada `// Task 6 adds: val expenses = …` por:
+In `TestEnv.kt`, replace the commented-out line `// Task 6 adds: val expenses = …` with:
 ```kotlin
     val expenses = ExpenseRepositoryImpl(db, ctx, dispatcher)
 ```
 
-- [ ] **Step 2: Ver que falla**
+- [ ] **Step 2: See it fail**
 
 Run: `./gradlew :data:repository:testDebugUnitTest --tests "*ExpenseRepositoryTest"`
-Expected: FAIL (`ExpenseRepositoryImpl` no existe).
+Expected: FAIL (`ExpenseRepositoryImpl` does not exist).
 
-- [ ] **Step 3: Implementar**
+- [ ] **Step 3: Implement**
 
 `ExpenseRepositoryImpl.kt`:
 ```kotlin
@@ -1582,7 +1582,7 @@ class ExpenseRepositoryImpl(
 }
 ```
 
-- [ ] **Step 4: Ver que pasa**
+- [ ] **Step 4: See it pass**
 
 Run: `./gradlew :data:repository:testDebugUnitTest --tests "*ExpenseRepositoryTest"`
 Expected: PASS (4 tests).
@@ -1594,16 +1594,16 @@ git add data/repository
 git commit -m "feat(repository): expenses with payers, splits, soft delete and diffs"
 ```
 
-### Task 7: Transferencias y ciclo de vida de los miembros
+### Task 7: Transfers and member lifecycle
 
 **Files:**
 - Create: `TransferRepositoryImpl.kt`
 - Modify: `TestEnv.kt`
 - Test: `TransferRepositoryTest.kt`, `MemberRepositoryTest.kt`
 
-- [ ] **Step 1: Implementar**
+- [ ] **Step 1: Implement**
 
-En `TestEnv.kt`, sustituir la línea comentada `// Task 7 adds: val transfers = …` por `    val transfers = TransferRepositoryImpl(db, ctx, dispatcher)`.
+In `TestEnv.kt`, replace the commented-out line `// Task 7 adds: val transfers = …` with `    val transfers = TransferRepositoryImpl(db, ctx, dispatcher)`.
 
 
 `TransferRepositoryImpl.kt`:
@@ -1748,7 +1748,7 @@ class MemberRepositoryTest {
 }
 ```
 
-- [ ] **Step 3: Todo el módulo**
+- [ ] **Step 3: Whole module**
 
 Run: `./gradlew :data:repository:testDebugUnitTest`
 Expected: PASS (Group 3 + Expense 4 + Transfer 1 + Member 2 = 10 tests).
@@ -1760,27 +1760,27 @@ git add data/repository
 git commit -m "feat(repository): transfers, change log and member lifecycle"
 ```
 
-### Task 8: Saldos de un grupo en el dominio
+### Task 8: Group balances in the domain
 
 **Files:**
 - Modify: `domain/usecases/build.gradle.kts`
 - Create: `ObserveGroupBalances.kt`
 - Test: `FakeRepositories.kt`, `ObserveGroupBalancesTest.kt`
 
-- [ ] **Step 1: Dependencias**
+- [ ] **Step 1: Dependencies**
 
-En `domain/usecases/build.gradle.kts`, `commonMain.dependencies`, añadir:
+In `domain/usecases/build.gradle.kts`, `commonMain.dependencies`, add:
 ```kotlin
             implementation(project(":data:models"))
             implementation(project(":data:repository"))
 ```
-y en `commonTest.dependencies`:
+and in `commonTest.dependencies`:
 ```kotlin
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.turbine)
 ```
 
-- [ ] **Step 2: Repositorios falsos para el test**
+- [ ] **Step 2: Fake repositories for the test**
 
 `domain/usecases/src/commonTest/kotlin/es/sebas1705/owlsplit/domain/usecases/balances/FakeRepositories.kt`:
 ```kotlin
@@ -1917,12 +1917,12 @@ class ObserveGroupBalancesTest {
 }
 ```
 
-- [ ] **Step 4: Ver que falla**
+- [ ] **Step 4: See it fail**
 
 Run: `./gradlew :domain:usecases:testDebugUnitTest --tests "*ObserveGroupBalancesTest"`
-Expected: FAIL (`ObserveGroupBalances` no existe).
+Expected: FAIL (`ObserveGroupBalances` does not exist).
 
-- [ ] **Step 5: Implementar**
+- [ ] **Step 5: Implement**
 
 `domain/usecases/src/commonMain/kotlin/es/sebas1705/owlsplit/domain/usecases/balances/ObserveGroupBalances.kt`:
 ```kotlin
@@ -2014,10 +2014,10 @@ class ObserveGroupBalances(
 }
 ```
 
-- [ ] **Step 6: Ver que pasa**
+- [ ] **Step 6: See it pass**
 
 Run: `./gradlew :domain:usecases:testDebugUnitTest`
-Expected: PASS (26 de P3 + 3 nuevos = 29).
+Expected: PASS (26 from P3 + 3 new = 29).
 
 - [ ] **Step 7: Commit**
 
@@ -2026,29 +2026,29 @@ git add domain/usecases
 git commit -m "feat(domain): observe group balances from local data"
 ```
 
-### Task 9: CI, verificación y documentación
+### Task 9: CI, verification and documentation
 
-- [ ] **Step 1: Verificar migraciones en CI**
+- [ ] **Step 1: Verify migrations in CI**
 
-En `.github/workflows/ci.yml`, job `android`, cambiar el `run` por:
+In `.github/workflows/ci.yml`, `android` job, change the `run` to:
 ```yaml
       - run: ./gradlew detekt testDebugUnitTest verifySqlDelightMigration :composeApp:assembleDebug --continue
 ```
 
-- [ ] **Step 2: Todo en local**
+- [ ] **Step 2: Everything locally**
 
 ```bash
 ./gradlew detekt testDebugUnitTest verifySqlDelightMigration :composeApp:assembleDebug --console=plain
 ```
-Expected: `BUILD SUCCESSFUL`. Detekt: corregir el código; si marca `LongParameterList` en los modelos de datos (`data class` con muchos campos), excluir `**/data/models/**` de esa regla en `config/detekt/detekt.yml`.
+Expected: `BUILD SUCCESSFUL`. Detekt: fix the code; if it flags `LongParameterList` in the data models (`data class` with many fields), exclude `**/data/models/**` from that rule in `config/detekt/detekt.yml`.
 
-- [ ] **Step 3: Documentación**
+- [ ] **Step 3: Documentation**
 
-- `MODULE_MAP.md`: filas nuevas `data:models` (modelos de documento con `SyncMeta`, serializables) y `data:repository` (repositorios con Flows, escritura con outbox e historial); `data:local` pasa a "Esquema completo (v1), `verifyMigrations`"; `domain:usecases` añade `ObserveGroupBalances`. Actualizar la línea de módulos previstos (quedan `data:sync`, `feature:*`).
-- `docs/SYNC.md`, sección "Tablas locales": añadir que `expense_payer` y `expense_split` guardan pagadores y reparto, y que `fx_rate_cache` llega en P9.
-- `docs/plans/README.md`: P4 → `Hecho`.
+- `MODULE_MAP.md`: new rows `data:models` (serializable document models with `SyncMeta`) and `data:repository` (repositories with Flows, writes with outbox and history); `data:local` becomes "Full schema (v1), `verifyMigrations`"; `domain:usecases` adds `ObserveGroupBalances`. Update the planned-modules line (`data:sync`, `feature:*` remain).
+- `docs/SYNC.md`, section "Local tables": add that `expense_payer` and `expense_split` store the payers and the split, and that `fx_rate_cache` arrives in P9.
+- `docs/plans/README.md`: P4 → `Done`.
 
-- [ ] **Step 4: Commit, push y PR**
+- [ ] **Step 4: Commit, push and PR**
 
 ```bash
 git add -A
@@ -2057,16 +2057,16 @@ git push -u origin p4/local-db
 gh pr create --title "P4: local database and repositories" --body "Implements docs/plans/2026-10-07-p04-local-db-repositories.md"
 ```
 
-## Verificación final de P4
+## Final verification of P4
 
-- `./gradlew testDebugUnitTest` verde: `data:local` 6, `data:repository` 10, `domain:usecases` 29, más los de P1–P3.
-- `verifySqlDelightMigration` en verde y `1.db` versionado.
-- Ningún `INSERT … ON CONFLICT` en los `.sq` (`grep -rn "ON CONFLICT" data/local/src` vacío).
+- `./gradlew testDebugUnitTest` green: `data:local` 6, `data:repository` 10, `domain:usecases` 29, plus those from P1–P3.
+- `verifySqlDelightMigration` green and `1.db` under version control.
+- No `INSERT … ON CONFLICT` in the `.sq` files (`grep -rn "ON CONFLICT" data/local/src` empty).
 
-## Desviaciones durante la ejecución (2026-10-07)
+## Deviations during execution (2026-10-07)
 
-- **Booleanos**: SQLDelight 2.4 no trata `INTEGER AS Boolean` como tipo nativo (exige un adaptador por tabla). Se guardan como `INTEGER` 0/1 y `Rows.kt` convierte (`asFlag()` / `asInt()`). Los tests de `SchemaTest` usan `1`/`0`.
-- **Registro de módulos**: Gradle 9 no admite incluir en `settings.gradle.kts` un módulo cuyo directorio no existe; `:data:repository` se registra en la Tarea 4, no en la 1.
-- **Snapshot del esquema**: `verifySqlDelightMigration` busca los `.db` dentro de las fuentes SQLDelight, así que el snapshot vive en `src/commonMain/sqldelight/databases/1.db`; `generateCommonMainAppDatabaseSchema` se ejecuta sola (junto a otras tareas Gradle detecta un solapamiento entrada/salida).
-- `Diffs.transfer` eliminado: las transferencias no se editan (solo crear, borrar, restaurar).
-- La autocorrección de Detekt reformateó listas de argumentos; dos cadenas de llamadas se reescribieron a mano para que se lean bien.
+- **Booleans**: SQLDelight 2.4 does not treat `INTEGER AS Boolean` as a native type (it requires an adapter per table). They are stored as `INTEGER` 0/1 and `Rows.kt` converts them (`asFlag()` / `asInt()`). The `SchemaTest` tests use `1`/`0`.
+- **Module registration**: Gradle 9 does not allow including in `settings.gradle.kts` a module whose directory does not exist; `:data:repository` is registered in Task 4, not in Task 1.
+- **Schema snapshot**: `verifySqlDelightMigration` looks for the `.db` files inside the SQLDelight sources, so the snapshot lives in `src/commonMain/sqldelight/databases/1.db`; `generateCommonMainAppDatabaseSchema` runs on its own (together with other Gradle tasks it detects an input/output overlap).
+- `Diffs.transfer` removed: transfers are not edited (only created, deleted and restored).
+- Detekt's autocorrect reformatted argument lists; two call chains were rewritten by hand for readability.

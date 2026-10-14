@@ -132,7 +132,7 @@ fun MemberBalanceRow(
     }
 }
 
-/** "Luis te debe 23,50 €" with a pill action to settle it. */
+/** "Luis owes you €23.50" with a pill action to settle it. */
 @Composable
 fun SettleSuggestionRow(
     text: String,

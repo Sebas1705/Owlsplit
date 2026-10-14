@@ -1,109 +1,109 @@
-# Sincronización
+# Synchronization
 
-Owlsplit es **local-first**: SQLDelight es la fuente de verdad de la UI y Firestore es el medio de intercambio entre dispositivos. Decisión en [ADR 0003](adr/0003-local-first-sqldelight-sync.md).
+Owlsplit is **local-first**: SQLDelight is the UI's source of truth and Firestore is the exchange medium between devices. Decision in [ADR 0003](adr/0003-local-first-sqldelight-sync.md).
 
-## Principios
+## Principles
 
-1. La UI **nunca** espera a la red: lee Flows de SQLDelight.
-2. La unidad de sincronización es el **documento** (un gasto, un miembro…). No hay mezcla de campos: un documento gana o pierde entero.
-3. **Concurrencia optimista** con `version`: gana la primera escritura que llega al servidor; la otra se conserva como conflicto y nunca se pierde en silencio.
-4. Todo es **idempotente**: repetir una subida o una bajada no cambia el resultado.
-5. La persistencia offline del propio SDK de Firestore se **desactiva** (caché en memoria) para no tener dos cachés que diverjan; el outbox es la única cola.
+1. The UI **never** waits for the network: it reads SQLDelight Flows.
+2. The unit of synchronization is the **document** (an expense, a member…). There is no field merging: a document wins or loses as a whole.
+3. **Optimistic concurrency** with `version`: the first write to reach the server wins; the other is kept as a conflict and is never silently lost.
+4. Everything is **idempotent**: repeating an upload or a download does not change the result.
+5. The Firestore SDK's own offline persistence is **disabled** (in-memory cache) to avoid two caches diverging; the outbox is the only queue.
 
-## Tablas locales (SQLDelight)
+## Local tables (SQLDelight)
 
-| Tabla | Propósito |
+| Table | Purpose |
 |---|---|
-| `group_entity`, `member_entity`, `expense_entity`, `transfer_entity`, `change_log` | Entidades (espejo de Firestore + columnas locales). Booleanos como `INTEGER` 0/1 |
-| `expense_payer`, `expense_split` | Pagadores y valores de reparto de cada gasto (se reescriben enteros en cada edición) |
-| `outbox` | Cola de escrituras pendientes: `id`, `groupId`, `entityType`, `entityId`, `baseVersion`, `payloadJson`, `attempts`, `nextAttemptAt`, `lastError`, `createdAt` |
-| `sync_cursor` | Por grupo y colección: último `updatedAt` remoto aplicado |
-| `conflict` | Ediciones locales rechazadas, para reaplicar o descartar |
-| `fx_rate_cache` | Tipos de cambio con fecha de obtención (llega en P9, primera migración) |
+| `group_entity`, `member_entity`, `expense_entity`, `transfer_entity`, `change_log` | Entities (mirror of Firestore + local columns). Booleans as `INTEGER` 0/1 |
+| `expense_payer`, `expense_split` | Payers and split values for each expense (fully rewritten on every edit) |
+| `outbox` | Queue of pending writes: `id`, `groupId`, `entityType`, `entityId`, `baseVersion`, `payloadJson`, `attempts`, `nextAttemptAt`, `lastError`, `createdAt` |
+| `sync_cursor` | Per group and collection: last applied remote `updatedAt` |
+| `conflict` | Rejected local edits, to reapply or discard |
+| `fx_rate_cache` | Exchange rates with fetch date (arrives in P9, first migration) |
 
-Columnas locales de cada entidad: `syncState` (`SYNCED`, `PENDING`, `CONFLICT`), `serverVersion`.
+Local columns on each entity: `syncState` (`SYNCED`, `PENDING`, `CONFLICT`), `serverVersion`.
 
-## Escritura local
+## Local write
 
-En **una sola transacción**:
-1. Se escribe la entidad con `version = serverVersion + 1` y `syncState = PENDING`.
-2. Se inserta (o se **compacta**, si ya había una pendiente del mismo documento) la entrada en `outbox` con `baseVersion = serverVersion` y el documento completo.
-3. Se añade la entrada de historial local.
+In **a single transaction**:
+1. The entity is written with `version = serverVersion + 1` and `syncState = PENDING`.
+2. The `outbox` entry is inserted (or **compacted**, if there was already a pending one for the same document) with `baseVersion = serverVersion` and the full document.
+3. The local history entry is added.
 
-Compactar: si hay varias ediciones offline del mismo documento, solo se sube el último estado, con la `baseVersion` original. Así, diez ediciones offline = una escritura.
+Compaction: if there are several offline edits of the same document, only the latest state is uploaded, with the original `baseVersion`. So ten offline edits = one write.
 
-## Subida (outbox → Firestore)
+## Upload (outbox → Firestore)
 
-- Disparadores: cambio de conectividad, nueva entrada en outbox, app a primer plano, WorkManager periódico (Android, con restricción de red) y temporizador en primer plano (iOS).
-- Orden: FIFO por `createdAt` dentro de cada grupo; los grupos son independientes entre sí.
-- Cada entrada se escribe con `set` del documento completo, `version = baseVersion + 1` y `updatedAt = serverTimestamp()`. Las reglas exigen `request.resource.data.version == resource.data.version + 1` (o `== 1` al crear).
-- **Éxito** → se borra del outbox; `serverVersion = version`, `syncState = SYNCED` (si no hay otra pendiente encima).
-- **Error transitorio** (red, `unavailable`, `deadline-exceeded`) → `attempts++`, `nextAttemptAt = ahora + min(2^attempts s, 15 min)` con jitter.
-- **`permission-denied`** → se lee el documento remoto para distinguir:
-  - Versión remota ≥ `baseVersion + 1` → **conflicto**: se aplica la remota en local, la local pasa a `conflict` y al historial (“Tu edición de *Cena* chocó con la de Ana”) y se avisa con opción **Reaplicar** (crea una edición nueva sobre la versión remota) o **Descartar**.
-  - Sin acceso al grupo → **acceso perdido**: el grupo pasa a solo lectura; las entradas del outbox de ese grupo se descartan tras confirmar el usuario.
-  - Otro motivo (validación) → `lastError` y aviso; es un bug: se registra en Crashlytics.
+- Triggers: connectivity change, new outbox entry, app to foreground, periodic WorkManager (Android, with network constraint) and a foreground timer (iOS).
+- Order: FIFO by `createdAt` within each group; groups are independent of each other.
+- Each entry is written with a `set` of the full document, `version = baseVersion + 1` and `updatedAt = serverTimestamp()`. The rules require `request.resource.data.version == resource.data.version + 1` (or `== 1` on create).
+- **Success** → removed from the outbox; `serverVersion = version`, `syncState = SYNCED` (if there is no other pending entry on top).
+- **Transient error** (network, `unavailable`, `deadline-exceeded`) → `attempts++`, `nextAttemptAt = now + min(2^attempts s, 15 min)` with jitter.
+- **`permission-denied`** → the remote document is read to tell apart:
+  - Remote version ≥ `baseVersion + 1` → **conflict**: the remote one is applied locally, the local one goes to `conflict` and to the history ("Tu edición de *Cena* chocó con la de Ana" — "Your edit to *Dinner* clashed with Ana's") and the user is notified with the option to **Reapply** (creates a new edit on top of the remote version) or **Discard**.
+  - No access to the group → **access lost**: the group becomes read-only; that group's outbox entries are discarded after the user confirms.
+  - Other reason (validation) → `lastError` and a notice; it is a bug: it is logged to Crashlytics.
 
-## Bajada (Firestore → local)
+## Download (Firestore → local)
 
-- Para cada grupo **abierto o con actividad reciente** (últimos 30 días, máx. 20) hay listeners sobre `members`, `expenses`, `transfers` y el documento del grupo, con `where("updatedAt", ">=", cursor - 5 min)`, ordenados por `updatedAt`. El margen cubre los relojes de servidor de escrituras concurrentes; la idempotencia hace inocuas las repeticiones.
-- El resto de grupos se sincroniza con una consulta puntual al abrir la app o el grupo.
-- Para cada documento recibido:
-  - Si `remote.version > local.serverVersion` y no hay pendiente local → se sobrescribe en local.
-  - Si hay pendiente local → se guarda `serverVersion` remoto; la subida pendiente fallará por versión y entrará en el flujo de conflicto. Para no esperar, se resuelve en el momento con el mismo flujo.
-  - Si `remote.version <= local.serverVersion` → se ignora.
-- El cursor avanza al mayor `updatedAt` aplicado (tras confirmar la transacción local).
-- Nuevo grupo (unión): bajada completa paginada antes de mostrarlo como sincronizado.
+- For each group that is **open or recently active** (last 30 days, max. 20) there are listeners on `members`, `expenses`, `transfers` and the group document, with `where("updatedAt", ">=", cursor - 5 min)`, ordered by `updatedAt`. The margin covers server clocks of concurrent writes; idempotency makes repeats harmless.
+- The remaining groups are synced with a one-off query when the app or the group is opened.
+- For each received document:
+  - If `remote.version > local.serverVersion` and there is no local pending entry → it is overwritten locally.
+  - If there is a local pending entry → the remote `serverVersion` is stored; the pending upload will fail on version and enter the conflict flow. To avoid waiting, it is resolved right away with the same flow.
+  - If `remote.version <= local.serverVersion` → ignored.
+- The cursor advances to the largest applied `updatedAt` (after the local transaction commits).
+- New group (join): full paginated download before showing it as synced.
 
-## Borrados
+## Deletions
 
-- Lógicos: `deleted = true` es una edición más (con versión). Se ocultan en la UI y se excluyen de los saldos.
-- Se pueden restaurar desde el historial durante 30 días; después se purgan en local (en Firestore se quedan marcados; la purga remota llegará con Cloud Functions en el futuro).
+- Soft: `deleted = true` is just another edit (with a version). They are hidden in the UI and excluded from balances.
+- They can be restored from the history for 30 days; after that they are purged locally (in Firestore they stay flagged; remote purging will come with Cloud Functions in the future).
 
-## Historial (`changelog`)
+## History (`changelog`)
 
-- Se crea en el cliente con cada acción y se sube por el outbox como documento de solo creación (las reglas prohíben editarlo o borrarlo).
-- `diff`: lista de `{campo, antes, después}` legible, generada en el dominio.
+- Created on the client with each action and uploaded through the outbox as a create-only document (the rules forbid editing or deleting it).
+- `diff`: human-readable list of `{field, before, after}`, generated in the domain.
 
-## Estado de sincronización en la UI
+## Sync status in the UI
 
-| Estado | Condición |
+| Status | Condition |
 |---|---|
-| Sincronizado | outbox vacío y listeners activos |
-| N cambios pendientes | outbox con N entradas y red disponible (subiendo) |
-| Sin conexión | sin red; N pendientes si los hay |
-| Error | alguna entrada con error no transitorio o conflicto sin resolver |
+| Synced | empty outbox and active listeners |
+| N pending changes | outbox with N entries and network available (uploading) |
+| Offline | no network; N pending if any |
+| Error | some entry with a non-transient error or an unresolved conflict |
 
-## Casos probados (`data:sync`)
+## Tested cases (`data:sync`)
 
-Creación, edición y borrado offline y online; compactación; orden; reintentos con backoff; conflicto (las dos ramas: reaplicar y descartar); acceso perdido; muerte del proceso a mitad de subida (idempotencia); bajada con margen y duplicados; unión a grupo grande con paginación; reloj del dispositivo desajustado (no afecta, porque `updatedAt` es del servidor).
+Offline and online create, edit and delete; compaction; ordering; retries with backoff; conflict (both branches: reapply and discard); access lost; process death mid-upload (idempotency); download with margin and duplicates; joining a large group with pagination; skewed device clock (no effect, because `updatedAt` comes from the server).
 
-## Implementación (P6a)
+## Implementation (P6a)
 
-Motor en `data:repository`, paquete `sync`: `RemoteStore` (puerto hacia el servidor; P6b lo implementa con Firestore), `SyncLocalStore` (outbox, cursores, avisos de acceso), `RemoteApplier` (aplicar remoto y conflictos), `OutboxProcessor` (una pasada de subida) y `SyncEngine` (bucle de subida + escucha). Precisiones respecto a lo anterior:
+Engine in `data:repository`, package `sync`: `RemoteStore` (port to the server; P6b implements it with Firestore), `SyncLocalStore` (outbox, cursors, access notices), `RemoteApplier` (apply remote and conflicts), `OutboxProcessor` (one upload pass) and `SyncEngine` (upload loop + listening). Clarifications to the above:
 
-- **Versión de subida = `base_version + 1`**, no la del payload. Si el documento se edita mientras se sube, al confirmar no se borra la entrada: su base avanza a la versión escrita y la siguiente subida encadena.
-- **Rechazo del servidor → se lee el remoto**: sin acceso → acceso perdido (nuevo intento en 1 h); misma o mayor versión con **el mismo contenido** → era nuestra escritura cuyo acuse se perdió, se da por buena; mayor con otro contenido → conflicto; menor → rechazo por validación (bug), reintento en 1 h con `last_error`.
-- **FIFO por grupo estricto**: una entrada que espera su reintento retiene a las siguientes de su grupo, aunque estén listas. El bucle despierta en el primer reintento entre las **cabezas de grupo** (despertar en el mínimo global giraba en vacío).
-- **Aplicar remoto**: versión menor → se ignora; igual con edición local pendiente → se ignora (eco de nuestra subida); igual sin pendiente → se refresca (`updatedAt` del servidor); mayor con pendiente → conflicto; lo aplicado queda siempre `SYNCED` con `serverVersion = version`.
-- **Acceso perdido**: se guarda como `accessLost:<grupo>` en la tabla `meta`. Se detecta al subir (el servidor niega la lectura) y al escuchar (un grupo ya sincronizado deja de aparecer en "mis grupos").
-- Estado expuesto por ahora: `SyncEngine.pendingCount` e `isAccessLost(grupo)`; los conflictos están en la tabla `conflict` y en el historial (`CONFLICT`). La UI llega en P9.
+- **Upload version = `base_version + 1`**, not the payload's. If the document is edited while uploading, the entry is not removed on confirmation: its base advances to the written version and the next upload chains on.
+- **Server rejection → the remote is read**: no access → access lost (retry in 1 h); same or higher version with **the same content** → it was our write whose acknowledgement was lost, accepted as done; higher with different content → conflict; lower → validation rejection (bug), retry in 1 h with `last_error`.
+- **Strict per-group FIFO**: an entry waiting for its retry holds back the following ones in its group, even if they are ready. The loop wakes up at the first retry among the **group heads** (waking at the global minimum spun idly).
+- **Apply remote**: lower version → ignored; equal with a pending local edit → ignored (echo of our upload); equal with nothing pending → refreshed (server `updatedAt`); higher with pending → conflict; whatever is applied always ends `SYNCED` with `serverVersion = version`.
+- **Access lost**: stored as `accessLost:<group>` in the `meta` table. Detected on upload (the server denies the read) and on listen (an already synced group stops appearing in "my groups").
+- Status exposed for now: `SyncEngine.pendingCount` and `isAccessLost(group)`; conflicts are in the `conflict` table and in the history (`CONFLICT`). The UI arrives in P9.
 
-## Implementación (P6b): Firestore
+## Implementation (P6b): Firestore
 
-`FirestoreRemoteStore` (`data:remote`, GitLive) implementa `RemoteStore`; la app lo arranca en `composeApp/.../sync/SyncModule.kt`.
+`FirestoreRemoteStore` (`data:remote`, GitLive) implements `RemoteStore`; the app starts it in `composeApp/.../sync/SyncModule.kt`.
 
-- **Formato**: un DTO por tipo con exactamente las claves de las reglas (ver [FIREBASE](FIREBASE.md#formato-de-los-documentos)). Se escribe con `set(merge = true)` para no borrar `lastJoinCode`, que el cliente no conoce.
-- **Caché de Firestore en memoria**: la copia local es SQLDelight. Sin red, `set` no termina (el SDK la encola): a los 20 s se da por transitoria y la reintenta el outbox; si la escritura encolada llega antes, el reintento se rechaza, se lee el remoto y se reconoce como propia.
-- **Errores**: `PERMISSION_DENIED` → rechazo (al subir) o sin acceso (al leer); el resto → transitorio. Para resolver un rechazo se lee del **servidor** (la caché podría tener nuestra escritura sin confirmar).
-- **Escuchas**: solo documentos confirmados (sin `hasPendingWrites`) y solo los cambios de cada instantánea. *Mis grupos* se entrega completo y solo cuando no viene de caché ni tiene escrituras pendientes, porque el motor deduce el acceso perdido de lo que falta. Errores transitorios → reintento con espera creciente; `PERMISSION_DENIED` termina la escucha sin romper el motor.
-- **Historial con hora de servidor**: `changelog` también lleva `updatedAt` (las reglas exigen `request.time`) y se baja por él. Filtrar por `createdAt` (reloj del cliente) perdía las entradas creadas sin conexión hace más que el margen del cursor.
-- **Eco de la propia subida**: con Firestore real la escucha entrega nuestra escritura **antes** de que `set` vuelva. El motor recuerda la subida en vuelo (`InFlightUpload`) y, si llega ese documento con esa versión y el mismo contenido, lo trata como acuse. Sin esto cada subida acababa como conflicto (el test con emuladores falla siempre sin ello).
-- **Conflicto visto dos veces**: si la escucha ya registró el conflicto mientras la subida estaba en vuelo, el rechazo posterior no lo vuelve a registrar.
-- **Arranque**: sin `google-services.json` no se arranca nada. Con él, sesión anónima (reintentos con espera si no hay red; el onboarding real es P8) y `SyncEngine.start` con el uid de cada estado de sesión. En Android, WorkManager (`SyncWorker`, con red, trabajo único `KEEP`) sube lo pendiente aunque se cierre la app. En iOS el disparador en segundo plano llega en P11.
-- **Resuelto en P8**: el onboarding no termina sin sesión, así que nada se crea sin `createdBy`. El motor de cada usuario vive en su propio ámbito: al cambiar de sesión se cancela el anterior.
-- **Pruebas**: `FirestoreSyncEmulatorTest` (dos dispositivos con los emuladores de Firestore y Auth y las reglas reales: unión con código, cambios en ambos sentidos, edición concurrente → un único conflicto). Se lanza con `scripts/run-sync-emulator-test.sh` con un emulador Android conectado; no está en CI.
+- **Format**: one DTO per type with exactly the keys in the rules (see [FIREBASE](FIREBASE.md#document-format)). Written with `set(merge = true)` so as not to erase `lastJoinCode`, which the client does not know.
+- **In-memory Firestore cache**: the local copy is SQLDelight. Without network, `set` does not complete (the SDK queues it): after 20 s it is treated as transient and the outbox retries it; if the queued write lands first, the retry is rejected, the remote is read and recognized as our own.
+- **Errors**: `PERMISSION_DENIED` → rejection (on upload) or no access (on read); everything else → transient. To resolve a rejection, the read goes to the **server** (the cache might hold our unconfirmed write).
+- **Listeners**: only confirmed documents (no `hasPendingWrites`) and only each snapshot's changes. *My groups* is delivered complete and only when it neither comes from cache nor has pending writes, because the engine infers access loss from what is missing. Transient errors → retry with increasing backoff; `PERMISSION_DENIED` ends the listener without breaking the engine.
+- **History with server time**: `changelog` also carries `updatedAt` (the rules require `request.time`) and is downloaded by it. Filtering by `createdAt` (client clock) lost entries created offline longer ago than the cursor margin.
+- **Echo of our own upload**: with real Firestore the listener delivers our write **before** `set` returns. The engine remembers the in-flight upload (`InFlightUpload`) and, if that document arrives with that version and the same content, treats it as the acknowledgement. Without this every upload ended up as a conflict (the emulator test always fails without it).
+- **Conflict seen twice**: if the listener already recorded the conflict while the upload was in flight, the later rejection does not record it again.
+- **Startup**: without `google-services.json` nothing starts. With it, anonymous session (retries with backoff if there is no network; the real onboarding is P8) and `SyncEngine.start` with the uid of each session state. On Android, WorkManager (`SyncWorker`, with network, unique work `KEEP`) uploads pending changes even if the app is closed. On iOS the background trigger arrives in P11.
+- **Resolved in P8**: onboarding does not finish without a session, so nothing is created without `createdBy`. Each user's engine lives in its own scope: switching sessions cancels the previous one.
+- **Tests**: `FirestoreSyncEmulatorTest` (two devices with the Firestore and Auth emulators and the real rules: join with code, changes in both directions, concurrent edit → a single conflict). Run with `scripts/run-sync-emulator-test.sh` with an Android emulator connected; not in CI.
 
-## Conflictos en la interfaz (P9c)
+## Conflicts in the UI (P9c)
 
-La entrada de conflicto del historial (y la sección "Cambios por revisar" de Actividad) ofrece **Reaplicar mi cambio** y **Descartar**. Reaplicar lee la versión perdedora guardada en `conflict` y la escribe con los repositorios normales (`ConflictRepositoryImpl`): es una edición más, con nueva versión encima de la ganadora, que se sube, se registra en el historial y puede volver a chocar. Descartar solo borra la fila de `conflict`. Los gastos borrados se pueden restaurar desde el historial durante 30 días.
+The history's conflict entry (and the "Cambios por revisar" ("Changes to review") section of Activity) offers **Reaplicar mi cambio** ("Reapply my change") and **Descartar** ("Discard"). Reapply reads the losing version stored in `conflict` and writes it through the normal repositories (`ConflictRepositoryImpl`): it is just another edit, with a new version on top of the winner, which is uploaded, recorded in the history and may clash again. Discard only deletes the `conflict` row. Deleted expenses can be restored from the history for 30 days.

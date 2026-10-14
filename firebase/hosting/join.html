@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
-  <title>Únete en Owlsplit</title>
-  <meta name="description" content="Te han invitado a un grupo de gastos compartidos.">
+  <title data-en="Join on Owlsplit">Únete en Owlsplit</title>
+  <meta name="description" content="Te han invitado a un grupo de gastos compartidos." data-en-content="You've been invited to a shared expenses group.">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,41 +15,115 @@
 </head>
 <body>
 <main class="narrow">
-  <a class="brand" href="/"><img src="/favicon.svg" alt="" width="30" height="30">owlsplit</a>
-  <h1 id="title">Te han invitado a un grupo</h1>
-  <p id="lead">Ábrelo en la app para ver el grupo y unirte.</p>
+  <div class="page-top">
+    <a class="brand" href="/"><img src="/favicon.svg" alt="" width="30" height="30">owlsplit</a>
+    <!-- Shown by the script below; without JS the page stays in Spanish. -->
+    <div class="lang-toggle" id="lang" role="group" aria-label="Idioma / Language" hidden>
+      <button type="button" data-lang="es" lang="es" aria-label="Español" aria-pressed="true">ES</button>
+      <button type="button" data-lang="en" lang="en" aria-label="English" aria-pressed="false">EN</button>
+    </div>
+  </div>
+  <h1 id="title" data-en="You've been invited to a group">Te han invitado a un grupo</h1>
+  <p id="lead" data-en="Open it in the app to see the group and join.">Ábrelo en la app para ver el grupo y unirte.</p>
   <div class="card" id="card">
-    <div class="label">Código</div>
+    <div class="label" data-en="Code">Código</div>
     <div class="code" id="code"></div>
   </div>
-  <a class="button" id="open" href="#">Abrir en Owlsplit</a>
-  <button class="button link-button" id="copy" type="button">Copiar código</button>
+  <a class="button" id="open" href="#" data-en="Open in Owlsplit">Abrir en Owlsplit</a>
+  <button class="button link-button" id="copy" type="button" data-en="Copy code">Copiar código</button>
   <div>
-    <p><strong>¿No tienes la app?</strong></p>
+    <p><strong data-en="Don't have the app?">¿No tienes la app?</strong></p>
     <ol>
-      <li><a href="/">Descarga Owlsplit</a> e instálala en tu móvil.</li>
-      <li>En Inicio pulsa <strong>Unirme</strong> y escribe el código.</li>
+      <li><a href="/" data-en="Download Owlsplit">Descarga Owlsplit</a> <span data-en="and install it on your phone.">e instálala en tu móvil.</span></li>
+      <li><span data-en="On Home, tap">En Inicio pulsa</span> <strong data-en="Join">Unirme</strong> <span data-en="and enter the code.">y escribe el código.</span></li>
     </ol>
   </div>
 </main>
 <script>
   // The app lives at /j/<code>: links open it directly once App Links are verified.
   // This page is the fallback (app not installed, or a browser that does not hand links over).
+  //
+  // Language: Spanish is the markup's default (and what shows without JS). English is used when the
+  // browser is not in Spanish, or when the visitor picks it in the toggle (remembered in localStorage).
+  // Elements carry their English text in data-en and English attributes in data-en-<attr>;
+  // the Spanish originals are kept in data-es / data-es-<attr> the first time they are swapped.
   (function () {
+    var KEY = 'owlsplit.lang';
+    var ATTRS = ['aria-label', 'href', 'content'];
+    var TEXT = {
+      es: { invalid: 'Este enlace no es válido', invalidLead: 'Pide a quien te invitó un enlace nuevo.', joinWith: 'Únete con el código ', copy: 'Copiar código', copied: 'Copiado' },
+      en: { invalid: 'This link is not valid', invalidLead: 'Ask whoever invited you for a new link.', joinWith: 'Join with code ', copy: 'Copy code', copied: 'Copied' }
+    };
+    var lang = 'es';
+    try {
+      var saved = localStorage.getItem(KEY);
+      if (saved === 'es' || saved === 'en') lang = saved;
+      else lang = /^es/i.test(navigator.language || 'es') ? 'es' : 'en';
+    } catch (e) {
+      lang = /^es/i.test(navigator.language || 'es') ? 'es' : 'en';
+    }
+
     var ALPHABET = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}$/;
     var raw = decodeURIComponent(location.pathname.split('/j/')[1] || '');
     var code = raw.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
     var valid = ALPHABET.test(code);
     var shown = code.slice(0, 4) + ' ' + code.slice(4);
+    var copy = document.getElementById('copy');
+    var copiedTimer = null;
+
+    function applyLang() {
+      var en = lang === 'en';
+      document.documentElement.lang = lang;
+      var nodes = document.querySelectorAll('[data-en]');
+      for (var i = 0; i < nodes.length; i++) {
+        var el = nodes[i];
+        if (!el.hasAttribute('data-es')) el.setAttribute('data-es', el.textContent);
+        el.textContent = el.getAttribute(en ? 'data-en' : 'data-es');
+      }
+      ATTRS.forEach(function (attr) {
+        var list = document.querySelectorAll('[data-en-' + attr + ']');
+        for (var j = 0; j < list.length; j++) {
+          var node = list[j];
+          if (!node.hasAttribute('data-es-' + attr)) node.setAttribute('data-es-' + attr, node.getAttribute(attr) || '');
+          node.setAttribute(attr, node.getAttribute((en ? 'data-en-' : 'data-es-') + attr));
+        }
+      });
+      var buttons = document.querySelectorAll('#lang button');
+      for (var k = 0; k < buttons.length; k++) {
+        buttons[k].setAttribute('aria-pressed', String(buttons[k].getAttribute('data-lang') === lang));
+      }
+      render();
+    }
+
+    // Texts that depend on the code in the URL.
+    function render() {
+      var t = TEXT[lang];
+      if (!valid) {
+        document.getElementById('title').textContent = t.invalid;
+        document.getElementById('lead').textContent = t.invalidLead;
+        return;
+      }
+      document.title = t.joinWith + shown + ' · Owlsplit';
+      if (copiedTimer) copy.textContent = t.copied;
+    }
+
+    var toggle = document.getElementById('lang');
+    var choices = toggle.querySelectorAll('button');
+    for (var b = 0; b < choices.length; b++) {
+      choices[b].addEventListener('click', function () {
+        lang = this.getAttribute('data-lang');
+        try { localStorage.setItem(KEY, lang); } catch (e) { /* Not remembered; still switches. */ }
+        applyLang();
+      });
+    }
+    toggle.hidden = false;
+    applyLang();
 
     if (!valid) {
-      document.getElementById('title').textContent = 'Este enlace no es válido';
-      document.getElementById('lead').textContent = 'Pide a quien te invitó un enlace nuevo.';
       ['card', 'open', 'copy'].forEach(function (id) { document.getElementById(id).classList.add('hidden'); });
       return;
     }
     document.getElementById('code').textContent = shown;
-    document.title = 'Únete con el código ' + shown + ' · Owlsplit';
 
     // The app people install (debug builds open the links through App Links, not this button).
     var pkg = 'es.sebas1705.owlsplit';
@@ -61,12 +135,12 @@
       open.classList.add('hidden');
     }
 
-    var copy = document.getElementById('copy');
     copy.addEventListener('click', function () {
       if (!navigator.clipboard) return;
       navigator.clipboard.writeText(code).then(function () {
-        copy.textContent = 'Copiado';
-        setTimeout(function () { copy.textContent = 'Copiar código'; }, 2000);
+        copy.textContent = TEXT[lang].copied;
+        clearTimeout(copiedTimer);
+        copiedTimer = setTimeout(function () { copiedTimer = null; copy.textContent = TEXT[lang].copy; }, 2000);
       });
     });
   })();

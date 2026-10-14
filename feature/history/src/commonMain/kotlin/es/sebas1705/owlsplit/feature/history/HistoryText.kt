@@ -63,7 +63,7 @@ import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** "Ana añadió «Cena»", "Cambiaste «Taxi»", "Conflicto en «Cena»…" (decision 2 of P9c). */
+/** "Ana added “Dinner”", "You changed “Taxi”", "Conflict on “Dinner”…" (decision 2 of P9c). */
 @Composable
 internal fun headline(item: HistoryItem): String {
     val entry = item.entry
@@ -90,8 +90,9 @@ internal fun headline(item: HistoryItem): String {
 }
 
 /**
- * Leaving and coming back are said of the person, not as edits of their member: "Ana salió del
- * grupo", "Ana volvió al grupo" (same account) or "… con otra cuenta". Null for anything else.
+ * Leaving and coming back are said of the person, not as edits of their member: "Ana left the
+ * group", "Ana came back to the group" (same account) or "… came back with another account".
+ * Null for anything else.
  */
 @Composable
 private fun membership(item: HistoryItem, who: String): String? = when {
@@ -104,7 +105,7 @@ private fun membership(item: HistoryItem, who: String): String? = when {
     else -> null
 }
 
-/** The fields an edit changed, readable: "importe 12,40 € → 14,40 €; reparto cambiado". */
+/** The fields an edit changed, readable: "amount €12.40 → €14.40; split changed". */
 @Composable
 internal fun changes(item: HistoryItem, format: MoneyFormat, today: LocalDate): String? {
     if (item.entry.action != ChangeAction.UPDATED || item.leftGroup) return null

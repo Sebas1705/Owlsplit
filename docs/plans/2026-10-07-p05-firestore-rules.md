@@ -1,40 +1,40 @@
-# P5 · Reglas de Firestore — Implementation Plan
+# P5 · Firestore rules — Implementation Plan
 
 > **For agentic workers:** Use `mobiai-mobile-executing-plans-with-subagents` (recommended) or `mobiai-mobile-executing-plans` to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
-**Goal:** Sustituir las reglas temporales de P2 por las reales de [FIREBASE.md](../FIREBASE.md): acceso solo para miembros, unirse con el código vigente, salir, reclamar miembros, versiones encadenadas con hora del servidor, validación de forma de cada documento e historial de solo creación. Todo probado con el emulador, en local y en CI, y desplegado a `owlsplit-dev`.
+**Goal:** Replace the temporary P2 rules with the real ones from [FIREBASE.md](../FIREBASE.md): members-only access, joining with the current code, leaving, claiming members, chained versions with server time, shape validation of every document and create-only history. Everything tested with the emulator, locally and in CI, and deployed to `owlsplit-dev`.
 
-**Architecture:** Un único `firebase/firestore.rules` con funciones auxiliares. Las pruebas viven en `firebase/rules-test` (Node + Vitest + `@firebase/rules-unit-testing`) y corren dentro de `firebase emulators:exec` contra un proyecto `demo-owlsplit` (sin credenciales). CI añade un job con Java 21 + Node. El despliegue a producción con CI llega en P11; aquí se despliega a dev con la sesión del usuario.
+**Architecture:** A single `firebase/firestore.rules` with helper functions. The tests live in `firebase/rules-test` (Node + Vitest + `@firebase/rules-unit-testing`) and run inside `firebase emulators:exec` against a `demo-owlsplit` project (no credentials). CI adds a job with Java 21 + Node. Production deployment from CI arrives in P11; here it is deployed to dev with the user's session.
 
-**Tech Stack:** Firestore Security Rules v2, firebase-tools 15.32.1, `@firebase/rules-unit-testing` 5.0.2, `firebase` 12.19.0 (SDK web, solo para los tests), Vitest 5.0.3, Node 24 en local / 22 en CI, JDK 21 (emulador).
+**Tech Stack:** Firestore Security Rules v2, firebase-tools 15.32.1, `@firebase/rules-unit-testing` 5.0.2, `firebase` 12.19.0 (web SDK, only for the tests), Vitest 5.0.3, Node 24 locally / 22 in CI, JDK 21 (emulator).
 
-**Platform:** Backend (Firebase); afecta a Android e iOS por igual.
+**Platform:** Backend (Firebase); affects Android and iOS equally.
 
-**Depende de:** P2 (proyecto y `firebase/`).
+**Depends on:** P2 (project and `firebase/`).
 
 ---
 
-## Decisiones de este plan
+## Decisions in this plan
 
-1. **Unirse sin poder leer el grupo.** Un no miembro no puede leer el grupo, así que no conoce `version` ni `memberUids`. La unión se escribe con transformaciones del servidor: `memberUids: arrayUnion(uid)`, `version: increment(1)`, `updatedAt: serverTimestamp()`, `updatedBy: uid`, `lastJoinCode: código`. Las reglas validan el documento resultante. P10 lo implementa así en el cliente.
-2. **Sumas no verificables en reglas.** Las reglas no tienen bucles, así que no pueden sumar los valores de `payers` o `splitValues`. Validan tipos, rangos y tamaños; las sumas las garantiza el cliente (dominio de P3) y, si llegara un gasto inconsistente, `ObserveGroupBalances` (P4) lo deja fuera. Se corrige [FIREBASE.md](../FIREBASE.md), que decía lo contrario.
-3. **Sin borrados.** Ningún documento se borra desde el cliente (borrado lógico con `deleted`), salvo `invites/{code}` al regenerar el código.
-4. **El documento `smoke/{uid}` de P2 se mantiene** para poder repetir la prueba de humo al actualizar GitLive.
-5. **Esquema de los documentos** (lo que P6 escribirá): los mismos campos que `data:models`, con `updatedAt` como timestamp del servidor y sin el campo local `syncState`/`serverVersion`.
+1. **Joining without being able to read the group.** A non-member cannot read the group, so they know neither `version` nor `memberUids`. The join is written with server transforms: `memberUids: arrayUnion(uid)`, `version: increment(1)`, `updatedAt: serverTimestamp()`, `updatedBy: uid`, `lastJoinCode: code`. The rules validate the resulting document. P10 implements it this way in the client.
+2. **Sums cannot be checked in rules.** Rules have no loops, so they cannot add up the values of `payers` or `splitValues`. They validate types, ranges and sizes; the sums are guaranteed by the client (P3 domain) and, if an inconsistent expense ever arrived, `ObserveGroupBalances` (P4) leaves it out. [FIREBASE.md](../FIREBASE.md), which said otherwise, is corrected.
+3. **No deletes.** No document is deleted from the client (soft delete with `deleted`), except `invites/{code}` when the code is regenerated.
+4. **The P2 `smoke/{uid}` document is kept** so the smoke test can be repeated when GitLive is upgraded.
+5. **Document schema** (what P6 will write): the same fields as `data:models`, with `updatedAt` as a server timestamp and without the local `syncState`/`serverVersion` fields.
 
-## Mapa de archivos
+## File map
 
-| Acción | Ruta |
+| Action | Path |
 |---|---|
-| Reescribir | `firebase/firestore.rules` |
-| Crear | `firebase/rules-test/package.json`, `package-lock.json` (generado), `vitest.config.mjs`, `test/helpers.mjs`, `test/groups.test.mjs`, `test/subcollections.test.mjs`, `test/misc.test.mjs` |
-| Modificar | `firebase/firebase.json` (ui del emulador desactivada), `.gitignore` (`node_modules`, logs del emulador), `.github/workflows/ci.yml`, `docs/FIREBASE.md`, `docs/plans/README.md` |
+| Rewrite | `firebase/firestore.rules` |
+| Create | `firebase/rules-test/package.json`, `package-lock.json` (generated), `vitest.config.mjs`, `test/helpers.mjs`, `test/groups.test.mjs`, `test/subcollections.test.mjs`, `test/misc.test.mjs` |
+| Modify | `firebase/firebase.json` (emulator UI disabled), `.gitignore` (`node_modules`, emulator logs), `.github/workflows/ci.yml`, `docs/FIREBASE.md`, `docs/plans/README.md` |
 
 ---
 
-### Task 1: Entorno de pruebas
+### Task 1: Test environment
 
-- [ ] **Step 1: Paquete de pruebas**
+- [ ] **Step 1: Test package**
 
 `firebase/rules-test/package.json`:
 ```json
@@ -64,17 +64,17 @@ export default defineConfig({
 ```bash
 cd firebase/rules-test && npm install && cd ../..
 ```
-Expected: `package-lock.json` creado, sin vulnerabilidades altas.
+Expected: `package-lock.json` created, no high-severity vulnerabilities.
 
-- [ ] **Step 2: Emulador sin UI y `.gitignore`**
+- [ ] **Step 2: Emulator without UI and `.gitignore`**
 
-En `firebase/firebase.json`, dentro de `emulators`, añadir `"ui": { "enabled": false }`. En `.gitignore` añadir:
+In `firebase/firebase.json`, inside `emulators`, add `"ui": { "enabled": false }`. In `.gitignore` add:
 ```
 node_modules/
 firebase/*-debug.log
 ```
 
-- [ ] **Step 3: Ayudas de test**
+- [ ] **Step 3: Test helpers**
 
 `firebase/rules-test/test/helpers.mjs`:
 ```js
@@ -159,9 +159,9 @@ git add firebase/rules-test firebase/firebase.json .gitignore
 git commit -m "test(rules): emulator test harness for Firestore rules"
 ```
 
-### Task 2: Reglas
+### Task 2: Rules
 
-- [ ] **Step 1: Escribir las reglas**
+- [ ] **Step 1: Write the rules**
 
 `firebase/firestore.rules`:
 ```
@@ -350,12 +350,12 @@ service cloud.firestore {
 }
 ```
 
-- [ ] **Step 2: Comprobar que compilan**
+- [ ] **Step 2: Check that they compile**
 
 ```bash
 cd firebase && npx --yes firebase-tools@15.32.1 emulators:exec --only firestore --project demo-owlsplit "echo rules ok" 2>&1 | tail -3; cd ..
 ```
-Expected: `rules ok` y sin `Error compiling rules`.
+Expected: `rules ok` and no `Error compiling rules`.
 
 - [ ] **Step 3: Commit**
 
@@ -364,7 +364,7 @@ git add firebase/firestore.rules
 git commit -m "feat(rules): Firestore security rules for groups, members, expenses, transfers, history and invites"
 ```
 
-### Task 3: Tests de grupos
+### Task 3: Group tests
 
 `firebase/rules-test/test/groups.test.mjs`:
 ```js
@@ -466,13 +466,13 @@ describe('join and leave', () => {
 });
 ```
 
-- [ ] **Step 1:** Escribir el archivo.
-- [ ] **Step 2: Ejecutar**
+- [ ] **Step 1:** Write the file.
+- [ ] **Step 2: Run**
 
 ```bash
 cd firebase && npx --yes firebase-tools@15.32.1 emulators:exec --only firestore --project demo-owlsplit "npm --prefix rules-test test" 2>&1 | tail -15; cd ..
 ```
-Expected: `groups.test.mjs` 16 tests en verde. Si alguno falla, leer el motivo que da el emulador (`evaluation error at L…`) y corregir la regla, no el test, salvo que el test contradiga FIREBASE.md.
+Expected: `groups.test.mjs` 16 tests green. If any fails, read the reason given by the emulator (`evaluation error at L…`) and fix the rule, not the test, unless the test contradicts FIREBASE.md.
 
 - [ ] **Step 3: Commit**
 
@@ -481,7 +481,7 @@ git add firebase/rules-test/test/groups.test.mjs
 git commit -m "test(rules): groups — create, read, edit, archive, join and leave"
 ```
 
-### Task 4: Tests de subcolecciones
+### Task 4: Subcollection tests
 
 `firebase/rules-test/test/subcollections.test.mjs`:
 ```js
@@ -557,8 +557,8 @@ describe('transfers', () => {
 });
 ```
 
-- [ ] **Step 1:** Escribir el archivo.
-- [ ] **Step 2:** Ejecutar el mismo comando que en la Tarea 3. Expected: 11 tests más en verde.
+- [ ] **Step 1:** Write the file.
+- [ ] **Step 2:** Run the same command as in Task 3. Expected: 11 more tests green.
 - [ ] **Step 3: Commit**
 
 ```bash
@@ -566,7 +566,7 @@ git add firebase/rules-test/test/subcollections.test.mjs
 git commit -m "test(rules): members, expenses and transfers"
 ```
 
-### Task 5: Historial, invitaciones y usuarios
+### Task 5: History, invites and users
 
 `firebase/rules-test/test/misc.test.mjs`:
 ```js
@@ -626,8 +626,8 @@ describe('users', () => {
 });
 ```
 
-- [ ] **Step 1:** Escribir el archivo.
-- [ ] **Step 2:** Ejecutar. Expected: los tres archivos en verde (16 + 11 + 5 = 32 tests).
+- [ ] **Step 1:** Write the file.
+- [ ] **Step 2:** Run. Expected: all three files green (16 + 11 + 5 = 32 tests).
 - [ ] **Step 3: Commit**
 
 ```bash
@@ -635,11 +635,11 @@ git add firebase/rules-test/test/misc.test.mjs
 git commit -m "test(rules): history, invites and user profiles"
 ```
 
-### Task 6: CI, despliegue a dev y documentación
+### Task 6: CI, deployment to dev and documentation
 
-- [ ] **Step 1: Job de CI**
+- [ ] **Step 1: CI job**
 
-En `.github/workflows/ci.yml`, añadir:
+In `.github/workflows/ci.yml`, add:
 ```yaml
   firestore-rules:
     name: Firestore rules (emulator)
@@ -658,20 +658,20 @@ En `.github/workflows/ci.yml`, añadir:
         run: npx --yes firebase-tools@15.32.1 emulators:exec --only firestore --project demo-owlsplit "npm --prefix rules-test test"
 ```
 
-- [ ] **Step 2: Desplegar a dev**
+- [ ] **Step 2: Deploy to dev**
 
 ```bash
 cd firebase && npx --yes firebase-tools@15.32.1 deploy --only firestore --project dev; cd ..
 ./scripts/run-firebase-smoke.sh 2>&1 | grep -E "BUILD|Finished"
 ```
-Expected: `Deploy complete!` y la prueba de humo sigue pasando (la regla `smoke/{uid}` se conserva).
+Expected: `Deploy complete!` and the smoke test still passes (the `smoke/{uid}` rule is kept).
 
-- [ ] **Step 3: Documentación**
+- [ ] **Step 3: Documentation**
 
-- `docs/FIREBASE.md`, sección "Reglas": la unión se escribe con `arrayUnion`/`increment`/`serverTimestamp`; las reglas validan forma, tipos y rangos, **no** las sumas (garantizadas por el cliente y defendidas por `ObserveGroupBalances`); `invites` permite `get` pero no `list`; nada se borra salvo invitaciones; los tests están en `firebase/rules-test` (`npm test` dentro de `emulators:exec`).
-- `docs/plans/README.md`: P5 → `Hecho`.
+- `docs/FIREBASE.md`, section "Rules": the join is written with `arrayUnion`/`increment`/`serverTimestamp`; the rules validate shape, types and ranges, **not** the sums (guaranteed by the client and defended by `ObserveGroupBalances`); `invites` allows `get` but not `list`; nothing is deleted except invites; the tests are in `firebase/rules-test` (`npm test` inside `emulators:exec`).
+- `docs/plans/README.md`: P5 → `Done`.
 
-- [ ] **Step 4: Commit, push y PR**
+- [ ] **Step 4: Commit, push and PR**
 
 ```bash
 git add -A
@@ -680,7 +680,7 @@ git push -u origin p5/firestore-rules
 gh pr create --title "P5: Firestore rules" --body "Implements docs/plans/2026-10-07-p05-firestore-rules.md"
 ```
 
-## Verificación final de P5
+## Final verification of P5
 
-- 32 tests de reglas en verde en local y en el job `Firestore rules (emulator)`.
-- Reglas desplegadas en `owlsplit-dev`; la prueba de humo de P2 sigue en verde.
+- 32 rules tests green locally and in the `Firestore rules (emulator)` job.
+- Rules deployed to `owlsplit-dev`; the P2 smoke test is still green.

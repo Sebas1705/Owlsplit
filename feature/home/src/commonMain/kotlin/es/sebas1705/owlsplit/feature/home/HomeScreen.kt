@@ -293,7 +293,7 @@ private fun Archived(groups: List<Group>, onOpen: (String) -> Unit) {
     }
 }
 
-/** A newer release: its APK opens in the browser, which downloads it; "Ahora no" waits for the next one. */
+/** A newer release: its APK opens in the browser, which downloads it; "Not now" waits for the next one. */
 @Composable
 private fun Update(release: LatestRelease, onEvent: (HomeIntent) -> Unit) {
     val uri = LocalUriHandler.current

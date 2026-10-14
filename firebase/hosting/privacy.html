@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy · Owlsplit</title>
+  <meta name="description" content="What data Owlsplit stores, why, and how to delete it.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="/brand.css">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="alternate" hreflang="es" href="/privacidad">
+</head>
+<body>
+<main class="narrow doc">
+  <div class="page-top">
+    <a class="brand" href="/"><img src="/favicon.svg" alt="" width="30" height="30">owlsplit</a>
+    <a class="lang-link" href="/privacidad" hreflang="es" lang="es">Español</a>
+  </div>
+  <h1>Privacy policy</h1>
+  <p class="updated">Last updated: 13 October 2026</p>
+  <p>Owlsplit is an open-source app for splitting group expenses (<a href="https://github.com/Sebas1705/Owlsplit">github.com/Sebas1705/Owlsplit</a>), developed by Sebas1705. It has no ads, does not sell data and does not use it to profile you.</p>
+
+  <h2>What data it stores</h2>
+  <ul>
+    <li><strong>Account:</strong> an anonymous identifier created when you open the app. If you link Google, also your Google account (Firebase Authentication stores its email address and identifier). The app never asks for passwords.</li>
+    <li><strong>Profile:</strong> the name you choose, your avatar colour, your preferred currency and, if you add them, your payment details (Bizum phone number, PayPal.me or Revolut username).</li>
+    <li><strong>Groups:</strong> name, members, expenses (description, amount, currency, date, category, note), payments between members, the change history and the invite code.</li>
+    <li><strong>Errors:</strong> if the app crashes, Firebase Crashlytics receives the technical report (Android model and version, app version and the error trace), without the contents of your groups.</li>
+  </ul>
+
+  <h2>What for</h2>
+  <ul>
+    <li>Syncing your groups across your devices and with the other members.</li>
+    <li>Showing your payment details to whoever owes you money, so they can pay you.</li>
+    <li>Finding and fixing bugs in the app.</li>
+  </ul>
+
+  <h2>Who sees it</h2>
+  <ul>
+    <li>The members of each group see its expenses, payments, history and names, and the payment details of anyone who has added them.</li>
+    <li>The data is stored in Google Firebase (Authentication, Cloud Firestore and Crashlytics), which acts as data processor. It always travels encrypted (HTTPS/TLS).</li>
+    <li>To convert currencies, the app looks up public ECB exchange rates at frankfurter.dev. It only sends the currency codes, never any data about you.</li>
+    <li>Nobody else: there are no advertisers, no third-party analytics and no sale of data.</li>
+  </ul>
+
+  <h2>For how long</h2>
+  <p>For as long as you use the app. Deleting your account removes your profile and your account, and you leave all your groups. The expenses you shared stay in those groups under your member's name, no longer linked to any account, because they are part of everyone else's balances. Error reports are deleted automatically after 90 days.</p>
+
+  <h2>Your rights</h2>
+  <p>You can view and change your data in the app, export each group (CSV or PDF) and delete your account at any time: <a href="/delete-account">how to delete your account</a>. For any other request about your data (access, rectification, objection), open an issue on <a href="https://github.com/Sebas1705/Owlsplit/issues/new">GitHub</a> (without including personal data: it is public) and we will reply there.</p>
+
+  <h2>Children</h2>
+  <p>Owlsplit is not directed at children under 13.</p>
+
+  <h2>Changes</h2>
+  <p>If this policy changes, the new version will be published here with its new date.</p>
+</main>
+</body>
+</html>

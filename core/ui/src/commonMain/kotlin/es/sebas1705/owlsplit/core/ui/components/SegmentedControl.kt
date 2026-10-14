@@ -20,7 +20,7 @@ import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
 import es.sebas1705.owlsplit.core.ui.theme.OwlsplitShapes
 import es.sebas1705.owlsplit.core.ui.theme.Sizes
 
-/** Pill with the selected option raised onto the surface colour (Gastos · Saldos · Saldar). */
+/** Pill with the selected option raised onto the surface colour (Expenses · Balances · Settle up). */
 @Composable
 fun SegmentedControl(
     options: List<String>,

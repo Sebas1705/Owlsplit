@@ -50,7 +50,7 @@ object GroupReport {
     const val CSV_MIME = "text/csv"
     const val PDF_MIME = "application/pdf"
 
-    /** "Viaje a Ibiza" → "viaje-a-ibiza.csv"; letters and digits only, accents dropped. */
+    /** "Trip to Ibiza" → "trip-to-ibiza.csv"; letters and digits only, accents dropped. */
     fun fileName(groupName: String, extension: String): String {
         val slug = groupName.lowercase().map { ACCENTS[it] ?: it }.joinToString("")
             .replace(Regex("[^a-z0-9]+"), "-").trim('-').take(MAX_SLUG)

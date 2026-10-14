@@ -1,47 +1,47 @@
-# P7 · Sistema de diseño — Implementation Plan
+# P7 · Design system — Implementation Plan
 
 > **For agentic workers:** Use `mobiai-mobile-executing-plans-with-subagents` (recommended) or `mobiai-mobile-executing-plans` to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
-**Goal:** Implementar en `core:ui` el sistema de diseño fintech de [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md): tokens (color claro/oscuro, acentos de grupo, tipografía Inter con cifras tabulares, formas, espaciado), `OwlsplitTheme`, formato de importes, logotipo y los componentes del catálogo, más una pantalla de catálogo visible en la app y capturas de pantalla automáticas en claro y oscuro.
+**Goal:** Implement in `core:ui` the fintech design system from [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md): tokens (light/dark colour, group accents, Inter typography with tabular figures, shapes, spacing), `OwlsplitTheme`, amount formatting, the logo and the catalogue components, plus a catalogue screen visible in the app and automatic light and dark screenshots.
 
-**Architecture:** `core:ui` pasa a depender de `core:money` (para formatear importes) y de Tabler Icons. Los componentes **no contienen textos fijos**: reciben las cadenas ya localizadas (la i18n llega en P11). `OwlsplitTheme` expone los tokens propios por `CompositionLocal` (`Owlsplit.colors`, `Owlsplit.type`) y además alimenta `MaterialTheme` para que los componentes de Material 3 hereden la marca. La app muestra el catálogo hasta que P9 monte la navegación real.
+**Architecture:** `core:ui` now depends on `core:money` (to format amounts) and on Tabler Icons. Components **contain no hard-coded text**: they receive already-localised strings (i18n arrives in P11). `OwlsplitTheme` exposes its own tokens through `CompositionLocal` (`Owlsplit.colors`, `Owlsplit.type`) and also feeds `MaterialTheme` so Material 3 components inherit the brand. The app shows the catalogue until P9 sets up the real navigation.
 
-**Tech Stack:** Compose Multiplatform 1.11.1 (material3 1.9.0, recursos multiplataforma para fuentes), Tabler Icons KMP (`br.com.devsrsouza.compose.icons:tabler-icons` 1.1.1), Inter 4.1 (OFL), Roborazzi 1.76.0 + Robolectric 4.17 para capturas.
+**Tech Stack:** Compose Multiplatform 1.11.1 (material3 1.9.0, multiplatform resources for fonts), Tabler Icons KMP (`br.com.devsrsouza.compose.icons:tabler-icons` 1.1.1), Inter 4.1 (OFL), Roborazzi 1.76.0 + Robolectric 4.17 for screenshots.
 
-**Platform:** KMP (código común; capturas en la JVM de Android)
+**Platform:** KMP (common code; screenshots on the Android JVM)
 
-**Depende de:** P1. Independiente de P2–P6.
+**Depends on:** P1. Independent of P2–P6.
 
 ---
 
-## Contexto para quien ejecuta
+## Context for the implementer
 
-- Rama `p7/design-system` desde `main`. Mismo entorno que P1.
-- Ruta base: `core/ui/src/commonMain/kotlin/es/sebas1705/owlsplit/core/ui/`.
-- Colores y medidas: los de [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md); si algo no cuadra, manda ese documento.
-- **Descarga de fuentes**: Inter se obtiene del release oficial `https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip` (33,7 MB). Pedir permiso al usuario antes de descargarlo; solo se copian 4 TTF estáticos (~300 KB cada uno) y la licencia.
-- Detekt: `ignorePropertyDeclaration` ya está activo para `MagicNumber`; los literales de color van en propiedades. Los `@Composable` están exentos de `FunctionNaming`.
+- Branch `p7/design-system` from `main`. Same environment as P1.
+- Base path: `core/ui/src/commonMain/kotlin/es/sebas1705/owlsplit/core/ui/`.
+- Colours and measurements: those in [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md); if something does not match, that document wins.
+- **Font download**: Inter comes from the official release `https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip` (33.7 MB). Ask the user for permission before downloading it; only 4 static TTFs (~300 KB each) and the licence are copied.
+- Detekt: `ignorePropertyDeclaration` is already enabled for `MagicNumber`; colour literals go in properties. `@Composable` functions are exempt from `FunctionNaming`.
 
-## Mapa de archivos
+## File map
 
-| Acción | Ruta |
+| Action | Path |
 |---|---|
-| Modificar | `gradle/libs.versions.toml`, `build.gradle.kts`, `core/ui/build.gradle.kts`, `composeApp/src/commonMain/kotlin/es/sebas1705/owlsplit/App.kt`, `composeApp/src/commonMain/kotlin/es/sebas1705/owlsplit/config/EnvironmentBadge.kt`, `.github/workflows/ci.yml`, `docs/DESIGN_SYSTEM.md`, `MODULE_MAP.md`, `docs/plans/README.md` |
-| Borrar | `core/ui/.../theme/Color.kt`, `Shape.kt`, `Theme.kt`, `Type.kt` (tema de la plantilla) |
-| Crear | `core/ui/src/commonMain/composeResources/font/inter_{regular,medium,semibold,bold}.ttf`, `docs/licenses/Inter-OFL.txt` |
-| Crear | `theme/Tokens.kt`, `theme/Typography.kt`, `theme/Dimens.kt`, `theme/OwlsplitTheme.kt` |
-| Crear | `format/MoneyFormat.kt`; test `core/ui/src/commonTest/kotlin/.../format/MoneyFormatTest.kt` |
-| Crear | `components/`: `OwlsplitLogo.kt`, `Avatar.kt`, `Containers.kt`, `Buttons.kt`, `SegmentedControl.kt`, `AmountText.kt`, `BalanceHero.kt`, `SyncStatusChip.kt`, `Rows.kt`, `AmountKeypad.kt`, `AvatarToggle.kt`, `EmptyState.kt` |
-| Crear | `catalog/DesignCatalog.kt` |
-| Test | `core/ui/src/androidUnitTest/kotlin/es/sebas1705/owlsplit/core/ui/DesignCatalogScreenshotTest.kt`, `core/ui/screenshots/*.png` (generadas) |
+| Modify | `gradle/libs.versions.toml`, `build.gradle.kts`, `core/ui/build.gradle.kts`, `composeApp/src/commonMain/kotlin/es/sebas1705/owlsplit/App.kt`, `composeApp/src/commonMain/kotlin/es/sebas1705/owlsplit/config/EnvironmentBadge.kt`, `.github/workflows/ci.yml`, `docs/DESIGN_SYSTEM.md`, `MODULE_MAP.md`, `docs/plans/README.md` |
+| Delete | `core/ui/.../theme/Color.kt`, `Shape.kt`, `Theme.kt`, `Type.kt` (template theme) |
+| Create | `core/ui/src/commonMain/composeResources/font/inter_{regular,medium,semibold,bold}.ttf`, `docs/licenses/Inter-OFL.txt` |
+| Create | `theme/Tokens.kt`, `theme/Typography.kt`, `theme/Dimens.kt`, `theme/OwlsplitTheme.kt` |
+| Create | `format/MoneyFormat.kt`; test `core/ui/src/commonTest/kotlin/.../format/MoneyFormatTest.kt` |
+| Create | `components/`: `OwlsplitLogo.kt`, `Avatar.kt`, `Containers.kt`, `Buttons.kt`, `SegmentedControl.kt`, `AmountText.kt`, `BalanceHero.kt`, `SyncStatusChip.kt`, `Rows.kt`, `AmountKeypad.kt`, `AvatarToggle.kt`, `EmptyState.kt` |
+| Create | `catalog/DesignCatalog.kt` |
+| Test | `core/ui/src/androidUnitTest/kotlin/es/sebas1705/owlsplit/core/ui/DesignCatalogScreenshotTest.kt`, `core/ui/screenshots/*.png` (generated) |
 
 ---
 
-### Task 1: Fuentes e iconos
+### Task 1: Fonts and icons
 
-- [ ] **Step 1: 👤 Permiso y descarga de Inter**
+- [ ] **Step 1: 👤 Permission and Inter download**
 
-Pedir permiso al usuario (archivo `Inter-4.1.zip`, 33,7 MB, release oficial de rsms/inter en GitHub). Con el sí:
+Ask the user for permission (file `Inter-4.1.zip`, 33.7 MB, official rsms/inter release on GitHub). Once they agree:
 ```bash
 T="$(mktemp -d)"
 curl -sL -o "$T/inter.zip" https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip
@@ -55,9 +55,9 @@ unzip -p "$T/inter.zip" extras/ttf/Inter-Bold.ttf     > "$F/inter_bold.ttf"
 unzip -p "$T/inter.zip" LICENSE.txt > docs/licenses/Inter-OFL.txt
 ls -la "$F"; rm -rf "$T"
 ```
-Expected: cuatro TTF de 300–420 KB. Si las rutas del zip difieren, usar las que muestre el `unzip -l`.
+Expected: four TTFs of 300–420 KB. If the paths inside the zip differ, use the ones `unzip -l` shows.
 
-- [ ] **Step 2: Catálogo y plugin de capturas**
+- [ ] **Step 2: Version catalog and screenshot plugin**
 
 `gradle/libs.versions.toml`:
 - `[versions]`: `compose-icons = "1.1.1"`, `roborazzi = "1.76.0"`, `robolectric = "4.17"`, `androidx-compose-test = "1.11.3"`, `junit4 = "4.13.2"`.
@@ -73,7 +73,7 @@ junit4                     = { module = "junit:junit", version.ref = "junit4" }
 ```
 - `[plugins]`: `roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }`.
 
-En `build.gradle.kts` (raíz), dentro de `plugins {}`: `alias(libs.plugins.roborazzi) apply false`.
+In the root `build.gradle.kts`, inside `plugins {}`: `alias(libs.plugins.roborazzi) apply false`.
 
 - [ ] **Step 3: `core/ui/build.gradle.kts`**
 
@@ -121,7 +121,7 @@ compose.resources {
 }
 ```
 
-- [ ] **Step 4: Compilar y commit**
+- [ ] **Step 4: Build and commit**
 
 ```bash
 ./gradlew :core:ui:assembleDebug --console=plain | tail -2
@@ -129,9 +129,9 @@ git add gradle/libs.versions.toml build.gradle.kts core/ui/build.gradle.kts core
 git commit -m "build(ui): Inter fonts, Tabler icons and Roborazzi"
 ```
 
-### Task 2: Formato de importes
+### Task 2: Amount formatting
 
-**Files:** Create `format/MoneyFormat.kt`; Test `format/MoneyFormatTest.kt` (en `commonTest`).
+**Files:** Create `format/MoneyFormat.kt`; Test `format/MoneyFormatTest.kt` (in `commonTest`).
 
 - [ ] **Step 1: Test**
 
@@ -181,12 +181,12 @@ class MoneyFormatTest {
 }
 ```
 
-- [ ] **Step 2: Ver que falla**
+- [ ] **Step 2: Watch it fail**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "*MoneyFormatTest"`
-Expected: FAIL (`MoneyFormat` no existe).
+Expected: FAIL (`MoneyFormat` does not exist).
 
-- [ ] **Step 3: Implementar**
+- [ ] **Step 3: Implement**
 
 `format/MoneyFormat.kt`:
 ```kotlin
@@ -255,7 +255,7 @@ data class MoneyFormat(
 }
 ```
 
-- [ ] **Step 4: Ver que pasa y commit**
+- [ ] **Step 4: Watch it pass and commit**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "*MoneyFormatTest"` → PASS (5 tests).
 ```bash
@@ -263,17 +263,17 @@ git add core/ui/src
 git commit -m "feat(ui): locale-style money formatting"
 ```
 
-### Task 3: Tokens y tema
+### Task 3: Tokens and theme
 
 **Files:** Delete `theme/Color.kt`, `theme/Shape.kt`, `theme/Theme.kt`, `theme/Type.kt`; Create `theme/Tokens.kt`, `theme/Typography.kt`, `theme/Dimens.kt`, `theme/OwlsplitTheme.kt`; Modify `App.kt`.
 
-- [ ] **Step 1: Borrar el tema de la plantilla**
+- [ ] **Step 1: Delete the template theme**
 
 ```bash
 git rm -q core/ui/src/commonMain/kotlin/es/sebas1705/owlsplit/core/ui/theme/{Color,Shape,Theme,Type}.kt
 grep -rn "AppTheme\|AppTypography\|AppShapes\|core.ui.theme.Primary" --include=*.kt . | grep -v /build/
 ```
-Expected: solo `App.kt` usa `AppTheme` (se cambia en el Step 6).
+Expected: only `App.kt` uses `AppTheme` (changed in Step 6).
 
 - [ ] **Step 2: `theme/Tokens.kt`**
 
@@ -568,11 +568,11 @@ private fun OwlsplitColors.toColorScheme(): ColorScheme {
 }
 ```
 
-- [ ] **Step 6: Usar el tema nuevo en `App.kt`**
+- [ ] **Step 6: Use the new theme in `App.kt`**
 
-Sustituir `import es.sebas1705.owlsplit.core.ui.theme.AppTheme` por `import es.sebas1705.owlsplit.core.ui.theme.OwlsplitTheme` y `AppTheme(modifier) {` por `OwlsplitTheme {` (el `modifier` pasa al `Surface`: `Surface(modifier.fillMaxSize())`).
+Replace `import es.sebas1705.owlsplit.core.ui.theme.AppTheme` with `import es.sebas1705.owlsplit.core.ui.theme.OwlsplitTheme` and `AppTheme(modifier) {` with `OwlsplitTheme {` (the `modifier` moves to the `Surface`: `Surface(modifier.fillMaxSize())`).
 
-- [ ] **Step 7: Compilar y commit**
+- [ ] **Step 7: Build and commit**
 
 ```bash
 ./gradlew :composeApp:assembleDebug detekt --console=plain | grep -E "BUILD|\.kt:"
@@ -580,11 +580,11 @@ git add -A
 git commit -m "feat(ui): Owlsplit theme tokens, Inter typography and shapes"
 ```
 
-### Task 4: Componentes básicos
+### Task 4: Basic components
 
 **Files:** Create `components/OwlsplitLogo.kt`, `Avatar.kt`, `Containers.kt`, `Buttons.kt`, `SegmentedControl.kt`.
 
-- [ ] **Step 1: Logotipo**
+- [ ] **Step 1: Logo**
 
 `components/OwlsplitLogo.kt`:
 ```kotlin
@@ -686,7 +686,7 @@ internal fun initials(name: String): String =
         .ifEmpty { "?" }
 ```
 
-- [ ] **Step 3: Contenedor y botones**
+- [ ] **Step 3: Container and buttons**
 
 `components/Containers.kt`:
 ```kotlin
@@ -795,7 +795,7 @@ fun QuickActionButton(icon: ImageVector, label: String, onClick: () -> Unit, mod
 }
 ```
 
-- [ ] **Step 4: Control segmentado**
+- [ ] **Step 4: Segmented control**
 
 `components/SegmentedControl.kt`:
 ```kotlin
@@ -851,7 +851,7 @@ fun SegmentedControl(options: List<String>, selectedIndex: Int, onSelect: (Int) 
 }
 ```
 
-- [ ] **Step 5: Compilar y commit**
+- [ ] **Step 5: Build and commit**
 
 ```bash
 ./gradlew :core:ui:assembleDebug detekt --console=plain | grep -E "BUILD|\.kt:"
@@ -859,11 +859,11 @@ git add core/ui/src
 git commit -m "feat(ui): logo, avatar, container, buttons and segmented control"
 ```
 
-### Task 5: Importes, saldo principal y estado de sincronización
+### Task 5: Amounts, main balance and sync status
 
 **Files:** Create `components/AmountText.kt`, `BalanceHero.kt`, `SyncStatusChip.kt`.
 
-- [ ] **Step 1: `components/AmountText.kt`** (importe con decimales al 60 % y número que rueda)
+- [ ] **Step 1: `components/AmountText.kt`** (amount with decimals at 60 % and a rolling number)
 
 ```kotlin
 package es.sebas1705.owlsplit.core.ui.components
@@ -1044,7 +1044,7 @@ fun BalanceHero(
 }
 ```
 
-- [ ] **Step 4: Compilar y commit**
+- [ ] **Step 4: Build and commit**
 
 ```bash
 ./gradlew :core:ui:assembleDebug detekt --console=plain | grep -E "BUILD|\.kt:"
@@ -1052,7 +1052,7 @@ git add core/ui/src
 git commit -m "feat(ui): rolling amounts, balance hero and sync status chip"
 ```
 
-### Task 6: Filas, teclado, avatares conmutables y estado vacío
+### Task 6: Rows, keypad, avatar toggles and empty state
 
 **Files:** Create `components/Rows.kt`, `AmountKeypad.kt`, `AvatarToggle.kt`, `EmptyState.kt`.
 
@@ -1370,7 +1370,7 @@ fun EmptyState(title: String, body: String, actionLabel: String, onAction: () ->
 }
 ```
 
-- [ ] **Step 5: Compilar y commit**
+- [ ] **Step 5: Build and commit**
 
 ```bash
 ./gradlew :core:ui:assembleDebug detekt --console=plain | grep -E "BUILD|\.kt:"
@@ -1378,11 +1378,11 @@ git add core/ui/src
 git commit -m "feat(ui): group, member and settle rows, keypad, avatar toggle and empty state"
 ```
 
-### Task 7: Catálogo visible en la app
+### Task 7: Catalogue visible in the app
 
 **Files:** Create `catalog/DesignCatalog.kt`; Modify `App.kt`, `config/EnvironmentBadge.kt`.
 
-- [ ] **Step 1: `catalog/DesignCatalog.kt`** (datos de ejemplo del mockup; textos de demostración, no de producto)
+- [ ] **Step 1: `catalog/DesignCatalog.kt`** (sample data from the mockup; demo strings, not product copy)
 
 ```kotlin
 package es.sebas1705.owlsplit.core.ui.catalog
@@ -1496,9 +1496,9 @@ fun DesignCatalog(modifier: Modifier = Modifier) {
     }
 }
 ```
-Añadir `import androidx.compose.ui.unit.dp`.
+Add `import androidx.compose.ui.unit.dp`.
 
-- [ ] **Step 2: Mostrar el catálogo y respetar los márgenes del sistema**
+- [ ] **Step 2: Show the catalogue and respect the system insets**
 
 `App.kt`:
 ```kotlin
@@ -1521,9 +1521,9 @@ fun App(modifier: Modifier = Modifier) {
     }
 }
 ```
-En `config/EnvironmentBadge.kt`, añadir al `Surface` de la insignia `Modifier.safeDrawingPadding()` antes del `padding` que ya tenga (la insignia se solapaba con la barra de estado en P1).
+In `config/EnvironmentBadge.kt`, add `Modifier.safeDrawingPadding()` to the badge's `Surface`, before its existing `padding` (the badge overlapped the status bar in P1).
 
-- [ ] **Step 3: Probar en el emulador**
+- [ ] **Step 3: Try it on the emulator**
 
 ```bash
 ./gradlew :composeApp:installDebug
@@ -1533,7 +1533,7 @@ En `config/EnvironmentBadge.kt`, añadir al `Surface` de la insignia `Modifier.s
 "$ANDROID_HOME/platform-tools/adb" exec-out screencap -p > /tmp/p7-dark.png
 "$ANDROID_HOME/platform-tools/adb" shell cmd uimode night no
 ```
-Expected: catálogo con Inter, balance verde "+42,30 €", tarjetas de grupo, barras, teclado; en oscuro, fondo negro y superficies grafito. Comparar a ojo con `docs/mockups/owlsplit-fintech-v3.html`. Pulsar "Gasto" y ver el saldo rodar.
+Expected: catalogue in Inter, green balance "+42,30 €", group cards, bars, keypad; in dark mode, black background and graphite surfaces. Compare by eye with `docs/mockups/owlsplit-fintech-v3.html`. Tap "Gasto" (Expense) and watch the balance roll.
 
 - [ ] **Step 4: Commit**
 
@@ -1542,7 +1542,7 @@ git add -A
 git commit -m "feat(ui): design catalog shown by the app"
 ```
 
-### Task 8: Capturas automáticas
+### Task 8: Automatic screenshots
 
 **Files:** Test `core/ui/src/androidUnitTest/kotlin/es/sebas1705/owlsplit/core/ui/DesignCatalogScreenshotTest.kt`; Create `core/ui/screenshots/*.png`.
 
@@ -1583,23 +1583,23 @@ class DesignCatalogScreenshotTest {
     }
 }
 ```
-`androidx.test.ext:junit` está en el catálogo desde P2 (`libs.androidx.test.ext.junit`); añadirlo a `androidUnitTest.dependencies` de `core/ui`.
+`androidx.test.ext:junit` has been in the version catalog since P2 (`libs.androidx.test.ext.junit`); add it to the `androidUnitTest.dependencies` of `core/ui`.
 
-- [ ] **Step 2: Grabar y revisar**
+- [ ] **Step 2: Record and review**
 
 ```bash
 ./gradlew :core:ui:recordRoborazziDebug --console=plain | tail -3
 ls core/ui/screenshots
 ```
-Expected: `catalog_light.png` y `catalog_dark.png`. Abrirlas y comprobar que se ven como en el emulador. Si fallan con un error de carga de fuentes de recursos en Robolectric, pasar `fontFamily = FontFamily.Default` a `OwlsplitTheme` en el test y anotarlo en el commit.
+Expected: `catalog_light.png` and `catalog_dark.png`. Open them and check they look as on the emulator. If they fail with a resource font loading error in Robolectric, pass `fontFamily = FontFamily.Default` to `OwlsplitTheme` in the test and note it in the commit.
 
-- [ ] **Step 3: Verificación local**
+- [ ] **Step 3: Local verification**
 
-Run: `./gradlew :core:ui:verifyRoborazziDebug` → PASS (sin cambios).
+Run: `./gradlew :core:ui:verifyRoborazziDebug` → PASS (no changes).
 
-- [ ] **Step 4: CI publica las capturas como artefacto**
+- [ ] **Step 4: CI publishes the screenshots as an artifact**
 
-En `.github/workflows/ci.yml`, job `android`, añadir tras el paso de Gradle:
+In `.github/workflows/ci.yml`, job `android`, add after the Gradle step:
 ```yaml
       - run: ./gradlew :core:ui:recordRoborazziDebug
       - uses: actions/upload-artifact@v6
@@ -1607,7 +1607,7 @@ En `.github/workflows/ci.yml`, job `android`, añadir tras el paso de Gradle:
           name: ui-screenshots
           path: core/ui/screenshots/
 ```
-(Las capturas no se comparan en CI: el renderizado de texto varía entre Windows y Linux. La comparación es local con `verifyRoborazziDebug`.)
+(Screenshots are not compared in CI: text rendering differs between Windows and Linux. Comparison happens locally with `verifyRoborazziDebug`.)
 
 - [ ] **Step 5: Commit**
 
@@ -1616,12 +1616,12 @@ git add core/ui .github/workflows/ci.yml
 git commit -m "test(ui): Roborazzi screenshots of the design catalog in light and dark"
 ```
 
-### Task 9: Documentación y cierre
+### Task 9: Documentation and wrap-up
 
-- [ ] `docs/DESIGN_SYSTEM.md`: en "Componentes", añadir `OwlsplitLogo`, `AmountText` (decimales al 60 % y número que rueda) y `KeypadKey`; anotar que **reducir movimiento** se conecta en P11 (Compose Multiplatform no lo expone en común; `AmountText(animate = false)` ya lo permite).
-- [ ] `MODULE_MAP.md`: `core:ui` → "`OwlsplitTheme`, tokens, `MoneyFormat`, componentes y `DesignCatalog`".
-- [ ] `docs/plans/README.md`: P7 → `Hecho`.
-- [ ] Verificación: `./gradlew detekt testDebugUnitTest verifySqlDelightMigration :composeApp:assembleDebug` verde.
+- [ ] `docs/DESIGN_SYSTEM.md`: under "Components", add `OwlsplitLogo`, `AmountText` (decimals at 60 % and a rolling number) and `KeypadKey`; note that **reduce motion** is wired up in P11 (Compose Multiplatform does not expose it in common code; `AmountText(animate = false)` already supports it).
+- [ ] `MODULE_MAP.md`: `core:ui` → "`OwlsplitTheme`, tokens, `MoneyFormat`, components and `DesignCatalog`".
+- [ ] `docs/plans/README.md`: P7 → `Done`.
+- [ ] Verification: `./gradlew detekt testDebugUnitTest verifySqlDelightMigration :composeApp:assembleDebug` green.
 - [ ] Commit, push, PR:
 
 ```bash
@@ -1631,16 +1631,16 @@ git push -u origin p7/design-system
 gh pr create --title "P7: design system" --body "Implements docs/plans/2026-10-07-p07-design-system.md"
 ```
 
-## Verificación final de P7
+## P7 final verification
 
-- La app muestra el catálogo en claro y oscuro con Inter y los colores del mockup.
-- `MoneyFormatTest` (5) en verde; capturas grabadas y verificadas en local.
-- Ningún color literal fuera de `theme/Tokens.kt` y `OwlsplitLogo` (`grep -rn "Color(0x" core/ui/src/commonMain | grep -v theme/Tokens.kt` vacío).
+- The app shows the catalogue in light and dark with Inter and the mockup's colours.
+- `MoneyFormatTest` (5) green; screenshots recorded and verified locally.
+- No colour literals outside `theme/Tokens.kt` and `OwlsplitLogo` (`grep -rn "Color(0x" core/ui/src/commonMain | grep -v theme/Tokens.kt` empty).
 
-## Desviaciones durante la ejecución (2026-10-07)
+## Deviations during execution (2026-10-07)
 
-- **Token nuevo `segmentSelected`** (`#FFFFFF` / `#2C303B`): en oscuro, `surface` es más oscuro que `surfaceVariant` y la opción activa del control segmentado quedaba hundida. Añadido también a DESIGN_SYSTEM.md.
-- **Fondo de borde a borde**: el fondo se aplica en `App` antes de `safeDrawingPadding()`, para que llegue por detrás de las barras del sistema (en claro la barra de estado salía gris).
-- **Detekt**: `MagicNumber.ignoreEnums` (colores de `GroupAccent`) y `LongParameterList.ignoreAnnotated: [Composable]` + `ignoreDataClasses`; `SyncStatus` y `KeypadKey` en archivos propios (`MatchingDeclarationName`); `DesignCatalog` partido en secciones (`LongMethod`).
-- **Catálogo**: `mutableStateMapOf` no conserva el orden de inserción; los avatares se recorren desde una lista fija. Lo detectaron las capturas de Roborazzi.
-- Las fuentes Inter cargan bien en Robolectric: no hizo falta `FontFamily.Default` en los tests.
+- **New token `segmentSelected`** (`#FFFFFF` / `#2C303B`): in dark mode, `surface` is darker than `surfaceVariant`, so the active option of the segmented control looked sunken. Also added to DESIGN_SYSTEM.md.
+- **Edge-to-edge background**: the background is applied in `App` before `safeDrawingPadding()`, so it extends behind the system bars (in light mode the status bar showed grey).
+- **Detekt**: `MagicNumber.ignoreEnums` (`GroupAccent` colours) and `LongParameterList.ignoreAnnotated: [Composable]` + `ignoreDataClasses`; `SyncStatus` and `KeypadKey` in their own files (`MatchingDeclarationName`); `DesignCatalog` split into sections (`LongMethod`).
+- **Catalogue**: `mutableStateMapOf` does not keep insertion order; the avatars are iterated from a fixed list. Caught by the Roborazzi screenshots.
+- The Inter fonts load fine in Robolectric: `FontFamily.Default` was not needed in the tests.

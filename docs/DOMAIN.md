@@ -1,85 +1,85 @@
-# Dominio
+# Domain
 
-Reglas de negocio de Owlsplit. Todo lo que aquí se describe vive en `core:money` y `domain:usecases` (Kotlin común puro) y debe producir **exactamente** el mismo resultado en todos los dispositivos.
+Owlsplit's business rules. Everything described here lives in `core:money` and `domain:usecases` (pure common Kotlin) and must produce **exactly** the same result on every device.
 
-## Entidades
+## Entities
 
-| Entidad | Campos | Notas |
+| Entity | Fields | Notes |
 |---|---|---|
-| `User` | `uid`, `displayName`, `avatar`, `preferredCurrency`, `linkedProviders`, `createdAt` | Uno por cuenta de Firebase Auth |
-| `Group` | `id`, `name`, `icon`, `accent`, `baseCurrency`, `startDate?`, `endDate?`, `inviteCode`, `memberUids[]`, `createdBy`, `archivedBy[]`, metadatos de sync | `baseCurrency` no se puede cambiar si hay gastos (MVP) |
-| `Member` | `id`, `groupId`, `name`, `avatar`, `defaultWeight`, `userUid?`, `active`, `sortKey`, metadatos de sync | `userUid` nulo = fantasma; un usuario tiene como mucho un miembro por grupo |
-| `Expense` | `id`, `groupId`, `title`, `category`, `note?`, `date`, `currency`, `amountMinor`, `fxRateToBase`, `payers`, `split`, `receiptUrl?`, `recurrenceId?`, `createdBy`, metadatos de sync | |
-| `Transfer` | `id`, `groupId`, `fromMemberId`, `toMemberId`, `amountMinor`, `currency`, `fxRateToBase`, `date`, `note?`, `createdBy`, metadatos de sync | |
-| `ChangeLogEntry` | `id`, `groupId`, `entityType`, `entityId`, `action`, `authorUid`, `diff`, `createdAt` | Solo se añade, nunca se edita |
+| `User` | `uid`, `displayName`, `avatar`, `preferredCurrency`, `linkedProviders`, `createdAt` | One per Firebase Auth account |
+| `Group` | `id`, `name`, `icon`, `accent`, `baseCurrency`, `startDate?`, `endDate?`, `inviteCode`, `memberUids[]`, `createdBy`, `archivedBy[]`, sync metadata | `baseCurrency` cannot be changed once there are expenses (MVP) |
+| `Member` | `id`, `groupId`, `name`, `avatar`, `defaultWeight`, `userUid?`, `active`, `sortKey`, sync metadata | null `userUid` = ghost; a user has at most one member per group |
+| `Expense` | `id`, `groupId`, `title`, `category`, `note?`, `date`, `currency`, `amountMinor`, `fxRateToBase`, `payers`, `split`, `receiptUrl?`, `recurrenceId?`, `createdBy`, sync metadata | |
+| `Transfer` | `id`, `groupId`, `fromMemberId`, `toMemberId`, `amountMinor`, `currency`, `fxRateToBase`, `date`, `note?`, `createdBy`, sync metadata | |
+| `ChangeLogEntry` | `id`, `groupId`, `entityType`, `entityId`, `action`, `authorUid`, `diff`, `createdAt` | Append-only, never edited |
 
-**Metadatos de sync** (todas las entidades editables): `updatedAt` (hora del servidor), `version` (entero, empieza en 1), `deleted` (booleano), `updatedBy` (uid).
+**Sync metadata** (all editable entities): `updatedAt` (server time), `version` (integer, starts at 1), `deleted` (boolean), `updatedBy` (uid).
 
-**Identificadores**: UUID v4 generados en el cliente, para poder crear offline sin colisiones.
+**Identifiers**: client-generated UUID v4, so entities can be created offline without collisions.
 
-**Fechas**: `date` es una fecha local (`LocalDate`) sin hora: el gasto “es del 12 de julio” en cualquier zona horaria. `createdAt` y `updatedAt` son instantes UTC.
+**Dates**: `date` is a local date (`LocalDate`) with no time: the expense "is from July 12" in any time zone. `createdAt` and `updatedAt` are UTC instants.
 
-**Categorías del MVP** (lista fija, con icono): comida, supermercado, transporte, alojamiento, ocio, compras, hogar, suministros, salud, regalos, otros.
+**MVP categories** (fixed list, with icon): food, groceries, transport, accommodation, leisure, shopping, home, utilities, health, gifts, other.
 
-## Dinero
+## Money
 
-- Un importe es `Money(amountMinor: Long, currency: Currency)`. **Nunca** se usan `Float` ni `Double` para dinero.
-- `Currency` incluye el código ISO 4217 y sus **decimales** (EUR 2, JPY 0, KWD 3), tomados de una tabla embebida.
-- Importe máximo por gasto: 10¹² unidades mínimas (evita desbordes en sumas de grupo).
-- Solo se suman importes de la misma divisa; mezclar divisas sin conversión es un error de programación (excepción).
+- An amount is `Money(amountMinor: Long, currency: Currency)`. `Float` and `Double` are **never** used for money.
+- `Currency` holds the ISO 4217 code and its **decimals** (EUR 2, JPY 0, KWD 3), taken from an embedded table.
+- Maximum amount per expense: 10¹² minor units (avoids overflow in group sums).
+- Only amounts in the same currency are added; mixing currencies without conversion is a programming error (exception).
 
-## Reparto
+## Split
 
-Entrada: `amountMinor` del gasto, lista de beneficiarios ordenada por `sortKey` y luego por `id`, y el tipo de reparto. Salida: `shares: Map<MemberId, Long>` cuya suma es **exactamente** `amountMinor`.
+Input: the expense `amountMinor`, the list of beneficiaries ordered by `sortKey` then `id`, and the split type. Output: `shares: Map<MemberId, Long>` whose sum is **exactly** `amountMinor`.
 
-| Tipo | Valor por miembro | Cálculo |
+| Type | Value per member | Calculation |
 |---|---|---|
-| `EQUAL` | — (incluido o no) | `amount / n` a cada uno; resto por restos mayores |
-| `WEIGHTS` | entero ≥ 1 | `amount * w_i / Σw` (parte entera); resto por restos mayores |
-| `EXACT` | importe en unidades mínimas | Validación: la suma debe ser igual a `amount`; si no, no se puede guardar |
-| `PERCENT` | porcentaje en centésimas (0–10000) | Validación: la suma debe ser 10000; luego como `WEIGHTS` con esos valores |
+| `EQUAL` | — (included or not) | `amount / n` each; remainder by largest remainders |
+| `WEIGHTS` | integer ≥ 1 | `amount * w_i / Σw` (integer part); remainder by largest remainders |
+| `EXACT` | amount in minor units | Validation: the sum must equal `amount`; otherwise it cannot be saved |
+| `PERCENT` | percentage in hundredths (0–10000) | Validation: the sum must be 10000; then as `WEIGHTS` with those values |
 
-**Asignación del resto (método de restos mayores, determinista)**: tras la división entera, las unidades sobrantes `r` se reparten de una en una a los `r` miembros con **mayor resto fraccionario** (`amount * w_i mod Σw`); a igual resto, gana el primero en el orden (`sortKey`, `id`). Así, 10,00 € entre 3 da 3,34 / 3,33 / 3,33 siempre al mismo miembro en todos los dispositivos.
+**Remainder allocation (largest remainder method, deterministic)**: after integer division, the `r` leftover units are handed out one by one to the `r` members with the **largest fractional remainder** (`amount * w_i mod Σw`); on equal remainders, the first in order (`sortKey`, `id`) wins. So €10.00 split among 3 always gives 3.34 / 3.33 / 3.33 with the extra cent going to the same member on every device.
 
-**Pagadores**: `payers: Map<MemberId, Long>` debe sumar `amountMinor`. Con un solo pagador, el importe completo.
+**Payers**: `payers: Map<MemberId, Long>` must sum to `amountMinor`. With a single payer, the full amount.
 
-## Divisas
+## Currencies
 
-- Cada gasto y transferencia guarda `fxRateToBase`: cuántas unidades de la divisa base vale **una unidad mayor** de la divisa del gasto, como decimal escalado `Long` con **escala 10⁹** (p. ej. 1 USD = 0,923456789 EUR → `923456789`).
-- Si la divisa del gasto es la base, `fxRateToBase = 10⁹`.
-- El tipo se **congela** al elegir la divisa del gasto (fuente: Frankfurter, tipos del BCE). El usuario puede editarlo. Si no hay tipo disponible (sin red y sin caché, o divisa no cubierta por el BCE), el usuario debe introducirlo; nunca se usa un tipo inventado.
-- Implementación (`data:fx`, P9b): el tipo se lee como texto y se convierte a punto fijo (nunca pasa por `Double`); caché por par en DataStore durante `FX_CACHE_SECONDS` del perfil (0 en desarrollo, 12 h en staging y producción). Si la red falla se usa el último tipo guardado aunque haya caducado, indicando su fecha.
-- **Conversión de un gasto a la base, sin romper la suma cero**:
-  1. Se calcula el **neto por miembro en la divisa del gasto**: `pagado_i − parte_i` (enteros; suman 0).
-  2. Cada neto se convierte: `neto_i × rate × 10^(dec_base − dec_gasto) / 10⁹`, redondeado hacia cero.
-  3. El descuadre resultante (suma ≠ 0) se reparte de unidad en unidad por restos mayores, con el mismo desempate determinista. Resultado: netos en base que suman exactamente 0.
-- Con aritmética `Long` y valores acotados no hay desbordamiento; si un producto intermedio pudiera desbordar, se usa multiplicación con 128 bits emulada (`multiplyHigh`), cubierta por tests.
+- Each expense and transfer stores `fxRateToBase`: how many units of the base currency **one major unit** of the expense currency is worth, as a scaled decimal `Long` with **scale 10⁹** (e.g. 1 USD = 0.923456789 EUR → `923456789`).
+- If the expense currency is the base currency, `fxRateToBase = 10⁹`.
+- The rate is **frozen** when the expense currency is chosen (source: Frankfurter, ECB rates). The user can edit it. If no rate is available (no network and no cache, or a currency not covered by the ECB), the user must enter it; a made-up rate is never used.
+- Implementation (`data:fx`, P9b): the rate is read as text and converted to fixed point (it never goes through `Double`); cached per pair in DataStore for the profile's `FX_CACHE_SECONDS` (0 in development, 12 h in staging and production). If the network fails, the last stored rate is used even if expired, showing its date.
+- **Converting an expense to the base currency without breaking zero-sum**:
+  1. Compute the **net per member in the expense currency**: `paid_i − share_i` (integers; they sum to 0).
+  2. Convert each net: `net_i × rate × 10^(dec_base − dec_expense) / 10⁹`, rounded toward zero.
+  3. The resulting imbalance (sum ≠ 0) is distributed unit by unit by largest remainders, with the same deterministic tie-break. Result: base-currency nets that sum to exactly 0.
+- With `Long` arithmetic and bounded values there is no overflow; if an intermediate product could overflow, emulated 128-bit multiplication (`multiplyHigh`) is used, covered by tests.
 
-## Saldos
+## Balances
 
-`saldo_i = Σ (netos en base de gastos no borrados) + Σ (transferencias: +importe a quien paga, −importe a quien recibe, en base)`.
+`balance_i = Σ (base-currency nets of non-deleted expenses) + Σ (transfers: +amount to the payer, −amount to the recipient, in base currency)`.
 
-Invariante: **Σ saldo_i = 0** siempre. Se comprueba en tests de propiedades y con una aserción en debug.
+Invariant: **Σ balance_i = 0** always. Checked in property tests and with a debug assertion.
 
-Convención de signo: saldo positivo = **le deben**; negativo = **debe**.
+Sign convention: positive balance = **is owed**; negative = **owes**.
 
-## Simplificación de deudas
+## Debt simplification
 
-Algoritmo voraz determinista (el de Settle Up):
+Deterministic greedy algorithm (the one Settle Up uses):
 
-1. Separar acreedores (saldo > 0) y deudores (saldo < 0); descartar saldo 0.
-2. Ordenar ambos por importe absoluto descendente; a igual importe, por `sortKey` e `id`.
-3. Emparejar el mayor deudor con el mayor acreedor; pago = mínimo de ambos absolutos; restar; reinsertar el que quede con saldo; repetir.
+1. Split creditors (balance > 0) and debtors (balance < 0); discard zero balances.
+2. Sort both by absolute amount descending; on equal amounts, by `sortKey` and `id`.
+3. Match the largest debtor with the largest creditor; payment = minimum of both absolute values; subtract; reinsert whichever still has a balance; repeat.
 
-Propiedades garantizadas (y testeadas): conserva exactamente los saldos netos; como mucho `n − 1` pagos; mismo resultado ante cualquier permutación de entrada. No garantiza el mínimo absoluto de pagos (problema NP-difícil); es la misma aproximación que usan las apps del sector.
+Guaranteed (and tested) properties: preserves net balances exactly; at most `n − 1` payments; same result for any permutation of the input. It does not guarantee the absolute minimum number of payments (an NP-hard problem); it is the same approximation used by apps in this space.
 
-Opcional del MVP: si el usuario lo desactiva en el grupo, “Cómo saldar” muestra las deudas sin simplificar (cada deudor paga a quien le adelantó).
+MVP option: if the user turns it off for the group, "Cómo saldar" ("How to settle") shows the debts unsimplified (each debtor pays whoever covered for them).
 
-## Invariantes de validación (cliente y reglas)
+## Validation invariants (client and rules)
 
-- `title`: 1–80 caracteres; `note`: ≤ 500.
-- `amountMinor` > 0 y ≤ 10¹².
-- `payers` y `shares`: claves = miembros existentes del grupo, valores ≥ 0, sumas exactas.
-- Un gasto debe tener al menos un beneficiario con parte > 0.
-- `fromMemberId ≠ toMemberId` en transferencias.
-- `defaultWeight` entre 1 y 100.
+- `title`: 1–80 characters; `note`: ≤ 500.
+- `amountMinor` > 0 and ≤ 10¹².
+- `payers` and `shares`: keys = existing members of the group, values ≥ 0, exact sums.
+- An expense must have at least one beneficiary with a share > 0.
+- `fromMemberId ≠ toMemberId` in transfers.
+- `defaultWeight` between 1 and 100.

@@ -302,7 +302,7 @@ internal fun NumberField(
     )
 }
 
-/** "2026-10-07" as "7 oct" (or as it came, if it is not a date). */
+/** "2026-10-07" as "Oct 7" (or as it came, if it is not a date). */
 @Composable
 private fun readableDay(day: String): String =
     runCatching { LocalDate.parse(day) }.getOrNull()?.let { dayLabel(it, Today.System()) } ?: day

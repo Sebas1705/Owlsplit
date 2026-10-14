@@ -127,7 +127,7 @@ private sealed interface RootState {
     data object Ready : RootState
 }
 
-/** Onboarding until there is a profile; then the tabs (Inicio · Actividad · Perfil) and their screens. */
+/** Onboarding until there is a profile; then the tabs (Home · Activity · Profile) and their screens. */
 @Composable
 fun AppRoot(modifier: Modifier = Modifier) {
     val observeAccount = koinInject<ObserveAccount>()

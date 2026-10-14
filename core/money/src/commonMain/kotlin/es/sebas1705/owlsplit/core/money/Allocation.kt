@@ -1,6 +1,6 @@
 package es.sebas1705.owlsplit.core.money
 
-/** Deterministic integer splitting (largest-remainder method). See docs/DOMAIN.md#reparto. */
+/** Deterministic integer splitting (largest-remainder method). See docs/DOMAIN.md#split. */
 object Allocation {
     /**
      * Splits [total] (≥ 0) proportionally to [weights] so the parts sum exactly to [total].

@@ -10,7 +10,7 @@ import es.sebas1705.owlsplit.data.models.SyncMeta
 import es.sebas1705.owlsplit.data.models.SyncState
 
 /**
- * Shared write path (docs/SYNC.md, "Escritura local"). Must be called inside `db.transaction {}`.
+ * Shared write path (docs/SYNC.md, "Local write"). Must be called inside `db.transaction {}`.
  */
 internal class Writer(private val db: AppDatabase, private val ctx: RepositoryContext) {
 

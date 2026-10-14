@@ -1,125 +1,125 @@
-# Sistema de diseño
+# Design system
 
-Dirección **fintech limpia** (estilo Revolut/Monzo), decidida en [ADR 0006](adr/0006-fintech-visual-direction.md). Mockup de referencia: [mockups/owlsplit-fintech-v3.html](mockups/owlsplit-fintech-v3.html).
+**Clean fintech** direction (Revolut/Monzo style), decided in [ADR 0006](adr/0006-fintech-visual-direction.md). Reference mockup: [mockups/owlsplit-fintech-v3.html](mockups/owlsplit-fintech-v3.html).
 
-## Principios
+## Principles
 
-1. **Las cifras mandan.** El importe o saldo relevante es siempre lo más grande de la pantalla.
-2. **Un solo acento.** El azul se reserva para la acción principal y la selección. Todo lo demás es neutro.
-3. **Verde para lo bueno, nunca rojo para las deudas.** Lo que te deben va en verde; lo que debes, en el color de texto normal con signo “−”. Sin alarmismo.
-4. **Contenedores, no tarjetas sueltas.** Listas en filas dentro de contenedores redondeados sobre fondo gris claro (o grafito sobre negro).
-5. **Claro y oscuro son de primera.** Toda pantalla se diseña y prueba en ambos.
+1. **Numbers rule.** The relevant amount or balance is always the largest thing on the screen.
+2. **A single accent.** Blue is reserved for the main action and selection. Everything else is neutral.
+3. **Green for the good, never red for debts.** What you are owed is green; what you owe is in the normal text color with a "−" sign. No alarmism.
+4. **Containers, not loose cards.** Lists as rows inside rounded containers on a light gray background (or graphite on black).
+5. **Light and dark are first-class.** Every screen is designed and tested in both.
 
-Se implementa sobre **Material 3** de Compose Multiplatform con un `OwlsplitTheme` propio (`core:ui`): los componentes de M3 reciben los tokens de abajo y los componentes propios solo usan tokens, nunca colores literales.
+Built on Compose Multiplatform **Material 3** with a custom `OwlsplitTheme` (`core:ui`): M3 components receive the tokens below and custom components only use tokens, never literal colors.
 
 ## Color
 
-| Token | Claro | Oscuro | Uso |
+| Token | Light | Dark | Use |
 |---|---|---|---|
-| `background` | `#F2F3F7` | `#0B0C10` | Fondo de pantalla |
-| `surface` | `#FFFFFF` | `#16181F` | Contenedores, barra inferior |
-| `surfaceVariant` | `#E4E6EE` | `#1C1E26` | Campo de búsqueda, control segmentado, chips |
-| `segmentSelected` | `#FFFFFF` | `#2C303B` | Opción activa del control segmentado (más clara que su carril en ambos temas) |
-| `divider` | `#ECEEF3` | `#22252E` | Separadores y pistas de barras |
-| `textPrimary` | `#0B0C10` | `#F5F6FA` | Texto e importes; también deudas |
-| `textSecondary` | `#5B5F6B` | `#8A8E99` | Subtítulos, etiquetas |
-| `textMuted` | `#696D78` | `#80848F` | Pistas, marcadores de posición y metadatos; contraste AA (≥ 4,5:1) sobre fondo y superficie (P11a) |
-| `accent` | `#3B4BF5` | `#3B4BF5` | Botón principal, selección, avatares incluidos |
-| `onAccent` | `#FFFFFF` | `#FFFFFF` | Texto sobre `accent` (contraste 6:1) |
-| `accentText` | `#3B4BF5` | `#8C96FF` | Enlaces y texto de acento sobre superficies |
-| `accentContainer` | `#E8EBFF` | `#232750` | Fondo de iconos de acción y de grupo por defecto |
-| `positive` | `#087A54` | `#34C38F` | Saldos a favor (contraste ≥ 4.5:1 en ambos temas) |
-| `positiveFill` | `#0E9F6E` | `#34C38F` | Barras de saldo a favor (elemento gráfico) |
-| `negativeFill` | `#0B0C10` | `#F5F6FA` | Barras de saldo en contra |
-| `warning` | `#9A5B00` | `#F2B84B` | Pendiente de sincronizar, conflictos |
-| `error` | `#C4372B` | `#FF7A6E` | Solo errores de validación o de sistema, nunca deudas |
-| `brandBeak` | `#E8B04B` | `#E8B04B` | Exclusivo del logotipo |
+| `background` | `#F2F3F7` | `#0B0C10` | Screen background |
+| `surface` | `#FFFFFF` | `#16181F` | Containers, bottom bar |
+| `surfaceVariant` | `#E4E6EE` | `#1C1E26` | Search field, segmented control, chips |
+| `segmentSelected` | `#FFFFFF` | `#2C303B` | Active option of the segmented control (lighter than its track in both themes) |
+| `divider` | `#ECEEF3` | `#22252E` | Separators and bar tracks |
+| `textPrimary` | `#0B0C10` | `#F5F6FA` | Text and amounts; debts too |
+| `textSecondary` | `#5B5F6B` | `#8A8E99` | Subtitles, labels |
+| `textMuted` | `#696D78` | `#80848F` | Hints, placeholders and metadata; AA contrast (≥ 4.5:1) on background and surface (P11a) |
+| `accent` | `#3B4BF5` | `#3B4BF5` | Main button, selection, included avatars |
+| `onAccent` | `#FFFFFF` | `#FFFFFF` | Text on `accent` (6:1 contrast) |
+| `accentText` | `#3B4BF5` | `#8C96FF` | Links and accent text on surfaces |
+| `accentContainer` | `#E8EBFF` | `#232750` | Background of action icons and of the default group icon |
+| `positive` | `#087A54` | `#34C38F` | Balances in your favor (contrast ≥ 4.5:1 in both themes) |
+| `positiveFill` | `#0E9F6E` | `#34C38F` | Bars for balances in your favor (graphic element) |
+| `negativeFill` | `#0B0C10` | `#F5F6FA` | Bars for balances against you |
+| `warning` | `#9A5B00` | `#F2B84B` | Pending sync, conflicts |
+| `error` | `#C4372B` | `#FF7A6E` | Only validation or system errors, never debts |
+| `brandBeak` | `#E8B04B` | `#E8B04B` | Logo only |
 
-**Acentos de grupo** (fondo del icono / color del icono), en claro: azul `#E8EBFF/#3B4BF5`, naranja `#FFF1E5/#D9661A`, violeta `#F3E8FF/#8B3FD9`, verde `#E3F5EE/#087A54`, rosa `#FDE8F0/#C2306A`, ámbar `#FFF4D6/#9A6400`, cian `#E0F4FA/#0A7893`, grafito `#ECEEF3/#3A3E4A`. En oscuro, fondo con el color al 18 % sobre `surface` y el icono un tono más claro. Solo tiñen el icono del grupo, nunca la pantalla.
+**Group accents** (icon background / icon color), in light: blue `#E8EBFF/#3B4BF5`, orange `#FFF1E5/#D9661A`, violet `#F3E8FF/#8B3FD9`, green `#E3F5EE/#087A54`, pink `#FDE8F0/#C2306A`, amber `#FFF4D6/#9A6400`, cyan `#E0F4FA/#0A7893`, graphite `#ECEEF3/#3A3E4A`. In dark, the background is the color at 18 % over `surface` and the icon one shade lighter. They only tint the group icon, never the screen.
 
-## Tipografía
+## Typography
 
-**Inter** (OFL, embebida en `core:ui`) con cifras tabulares (`fontFeatureSettings = "tnum"`) en todo importe.
+**Inter** (OFL, embedded in `core:ui`) with tabular figures (`fontFeatureSettings = "tnum"`) on every amount.
 
-| Estilo | Tamaño / peso | Uso |
+| Style | Size / weight | Use |
 |---|---|---|
-| `amountDisplay` | 44 sp / 700, tracking −3 % | Importe del editor, balance de Inicio |
-| `amountHeadline` | 30 sp / 700, tracking −3 % | Saldo en la cabecera del grupo |
-| `title` | 17 sp / 600 | Títulos de pantalla |
-| `bodyStrong` | 14 sp / 600 | Nombre en filas, importes en filas |
-| `body` | 14 sp / 400 | Texto general |
-| `label` | 12 sp / 500 | Botones secundarios, chips, pestañas |
-| `caption` | 11 sp / 400 | Metadatos (“5 personas · hace 2 h”) |
+| `amountDisplay` | 44 sp / 700, tracking −3 % | Editor amount, Home balance |
+| `amountHeadline` | 30 sp / 700, tracking −3 % | Balance in the group header |
+| `title` | 17 sp / 600 | Screen titles |
+| `bodyStrong` | 14 sp / 600 | Names in rows, amounts in rows |
+| `body` | 14 sp / 400 | General text |
+| `label` | 12 sp / 500 | Secondary buttons, chips, tabs |
+| `caption` | 11 sp / 400 | Metadata ("5 personas · hace 2 h" — "5 people · 2 h ago") |
 
-En los importes grandes la parte decimal se muestra al 60 % del tamaño (y en `textSecondary` en el editor), como en el mockup.
+In large amounts the decimal part is shown at 60 % of the size (and in `textSecondary` in the editor), as in the mockup.
 
-## Forma y espaciado
+## Shape and spacing
 
-- Radios: contenedores **16 dp**, controles segmentados y chips **12 dp**, botones principales en **píldora**, botones de acción rápida y avatares **circulares**.
-- Escala de espaciado: 4 · 8 · 12 · 16 · 24 · 32 dp. Margen lateral de pantalla 16 dp; contenedores a 12 dp del borde.
-- Filas de lista: 56 dp de alto mínimo; avatar o icono de 36 dp.
-- Áreas táctiles ≥ 48 dp aunque el elemento visible sea menor.
-- Sin sombras: la profundidad viene del contraste entre `background` y `surface`.
-  - Menús desplegables (`OwlsplitDropdownMenu`): sin sombra, borde de 1 dp en `divider` y esquinas de control (12 dp); la opción elegida lleva ✓ (`OwlsplitMenuItem(selected = …)`).
-  - Diálogos: esquinas de 24 dp (`OwlsplitShapes.dialog`, `extraLarge` de Material). Los botones nunca se elevan, tampoco al pasar el puntero o con foco.
-  - **Sombra al pulsar**: sigue la forma que se ve. Los contenedores recortan sus filas (la fila se ilumina entera y respeta las esquinas); píldoras, chips y teclas recortan a su forma (`clip` antes de `clickable`); cuando la zona táctil es mayor que la forma (círculo con etiqueta: accesos rápidos, avatares, colores, iconos de grupo) se usa `rememberPress()` + `pressFeedback(press, CircleShape)` para que la sombra quede en el círculo. El relleno lateral va dentro de la zona pulsable, nunca fuera.
-  - **Acciones críticas con doble confirmación**: registrar un pago (saldar o a mano) y salir de un grupo piden una segunda confirmación; salir avisa además del saldo que se queda. Los pagos se pueden eliminar desde «Pagos registrados» y restaurar desde el historial (30 días).
-  - El tema completa todos los contenedores de Material con `surface` y quita el tinte tonal (`surfaceTint = surface`): ningún componente de Material introduce un color propio.
-- Acción principal fija abajo (`BottomActionBar`): fondo `background` y una línea `divider` encima solo cuando la lista sigue por debajo, para que nada parezca cortado.
-- Listas horizontales dentro de una columna con margen (`Modifier.bleedHorizontally`): llegan al borde de la pantalla y conservan el margen como relleno; abren en el elemento elegido.
-- Interruptores (`SwitchRow`): toda la fila conmuta; apagado con pista `surfaceVariant` y borde `textMuted`, encendido en `accent`.
-- Colores de miembro (`memberAccent`): el de su perfil o uno estable derivado del id; el mismo en Miembros, Saldos y "¿Quién eres?".
-- Botones de texto en línea con contenido: se desplazan su relleno interno (12 dp) para que la etiqueta quede alineada con el texto o las tarjetas.
+- Radii: containers **16 dp**, segmented controls and chips **12 dp**, main buttons as **pills**, quick action buttons and avatars **circular**.
+- Spacing scale: 4 · 8 · 12 · 16 · 24 · 32 dp. Screen side margin 16 dp; containers 12 dp from the edge.
+- List rows: 56 dp minimum height; 36 dp avatar or icon.
+- Touch targets ≥ 48 dp even if the visible element is smaller.
+- No shadows: depth comes from the contrast between `background` and `surface`.
+  - Dropdown menus (`OwlsplitDropdownMenu`): no shadow, 1 dp border in `divider` and control corners (12 dp); the chosen option has a ✓ (`OwlsplitMenuItem(selected = …)`).
+  - Dialogs: 24 dp corners (`OwlsplitShapes.dialog`, Material's `extraLarge`). Buttons never elevate, not even on hover or focus.
+  - **Press shadow**: follows the visible shape. Containers clip their rows (the whole row lights up and respects the corners); pills, chips and keys clip to their shape (`clip` before `clickable`); when the touch area is larger than the shape (circle with a label: quick actions, avatars, colors, group icons) `rememberPress()` + `pressFeedback(press, CircleShape)` is used so the shadow stays on the circle. Side padding goes inside the pressable area, never outside.
+  - **Critical actions with double confirmation**: recording a payment (settle or manual) and leaving a group ask for a second confirmation; leaving also warns about the remaining balance. Payments can be deleted from «Pagos registrados» ("Recorded payments") and restored from the history (30 days).
+  - The theme fills every Material container with `surface` and removes the tonal tint (`surfaceTint = surface`): no Material component introduces a color of its own.
+- Main action pinned at the bottom (`BottomActionBar`): `background` fill and a `divider` line on top only when the list continues below, so nothing looks cut off.
+- Horizontal lists inside a column with margin (`Modifier.bleedHorizontally`): they reach the screen edge and keep the margin as padding; they open on the chosen item.
+- Switches (`SwitchRow`): the whole row toggles; off with `surfaceVariant` track and `textMuted` border, on in `accent`.
+- Member colors (`memberAccent`): the one from their profile or a stable one derived from the id; the same in Members, Balances and "¿Quién eres?" ("Who are you?").
+- Inline text buttons next to content: shifted by their internal padding (12 dp) so the label lines up with the text or the cards.
 
-## Iconografía
+## Iconography
 
-**Tabler Icons** en estilo contorno (MIT), vía el port KMP `compose-icons`. Trazo 1.75–2 px, tamaños 20 y 24 dp. Las categorías de gasto y los iconos de grupo salen del mismo set.
+**Tabler Icons** in outline style (MIT), via the KMP port `compose-icons`. Stroke 1.75–2 px, sizes 20 and 24 dp. Expense categories and group icons come from the same set.
 
-## Logotipo
+## Logo
 
-Búho geométrico: cuadrado redondeado en `accent` con dos anillos blancos por ojos y un pico en `brandBeak`. Usos: icono de la app, splash, estados vacíos y pantalla de bienvenida. **No** aparece como mascota ilustrada dentro de las pantallas de trabajo. Geometría, archivos e iconos: [BRAND](BRAND.md); los colores de esta página salen de `brand/tokens.json`.
+Geometric owl: rounded square in `accent` with two white rings for eyes and a beak in `brandBeak`. Uses: app icon, splash, empty states and welcome screen. It does **not** appear as an illustrated mascot inside working screens. Geometry, files and icons: [BRAND](BRAND.md); the colors on this page come from `brand/tokens.json`.
 
-## Componentes (`core:ui`)
+## Components (`core:ui`)
 
-| Componente | Descripción |
+| Component | Description |
 |---|---|
-| `BalanceHero` | Balance grande centrado, etiqueta y chip de estado de sync |
-| `QuickActionButton` | Botón circular de 48 dp sobre `surface` con etiqueta debajo |
-| `OwlsplitContainer` | Contenedor `surface` de 16 dp con título opcional |
-| `GroupRow` | Icono de grupo, nombre, metadatos y saldo coloreado |
-| `SegmentedControl` | Píldora `surfaceVariant` con la opción activa en `segmentSelected` |
-| `MemberBalanceRow` | Avatar, nombre, barra fina de 4 dp proporcional y saldo |
-| `SettleSuggestionRow` | “X te debe Y” con botón píldora “Saldar” |
-| `AmountDisplay` | Importe con decimales reducidos y selector de divisa |
-| `AmountKeypad` | Teclado numérico propio con separador decimal local y borrar |
-| `AvatarToggle` | Avatar que alterna incluido (`accent`) / excluido (`surfaceVariant`) |
-| `SyncStatusChip` | Sincronizado · N pendientes · Sin conexión · Error |
-| `PrimaryPillButton` | Botón principal ancho en píldora, `accent` |
-| `EmptyState` | Logotipo, titular, una línea y una acción opcional |
-| `ProfileAvatar` | Iniciales sobre el color elegido (`accent:<COLOR>`); a partir de 64 dp la inicial usa el estilo `title` |
-| `OwlsplitTextField` | Campo de una línea sobre `surface`, etiqueta encima y error debajo |
-| `TextActionButton` | Acción secundaria en texto (`accentText` o el color que se pase, p. ej. `error` en diálogos destructivos) |
-| `ExpenseRow` | Icono de categoría, concepto, quién pagó, importe y "tu parte" |
-| `GroupIcons`, `categoryIcon`, `categoryName` | Los 12 iconos de grupo (clave guardada en `Group.icon`) y los iconos y nombres de las 11 categorías |
-| `CurrencyPicker` | Diálogo con todas las divisas soportadas y búsqueda por código |
-| `DateField` | Fila de fecha que abre el selector de Material 3 (días en UTC para que no se desplacen) |
-| `AccentPicker` | Fila de los 8 colores de `GroupAccent`, cada uno con nombre para lectores de pantalla (`accentName`) |
-| `Avatar` | Foto o iniciales sobre tono neutro; 24, 30, 36 y 48 dp |
-| `OwlsplitLogo` | El búho geométrico dibujado en Canvas (sin imágenes) |
-| `AmountText` | Importe con los decimales al 60 % y número que rueda al cambiar (`animate = false` lo desactiva) |
-| `MoneyFormat` | Formato de importes sin APIs de plataforma: `Spanish` (1.284,60 €) e `English` (€1,284.60), signo menos U+2212 |
+| `BalanceHero` | Large centered balance, label and sync status chip |
+| `QuickActionButton` | 48 dp circular button on `surface` with a label below |
+| `OwlsplitContainer` | 16 dp `surface` container with optional title |
+| `GroupRow` | Group icon, name, metadata and colored balance |
+| `SegmentedControl` | `surfaceVariant` pill with the active option in `segmentSelected` |
+| `MemberBalanceRow` | Avatar, name, thin proportional 4 dp bar and balance |
+| `SettleSuggestionRow` | "X te debe Y" ("X owes you Y") with a "Saldar" ("Settle") pill button |
+| `AmountDisplay` | Amount with reduced decimals and currency picker |
+| `AmountKeypad` | Custom numeric keypad with locale decimal separator and delete |
+| `AvatarToggle` | Avatar that toggles included (`accent`) / excluded (`surfaceVariant`) |
+| `SyncStatusChip` | Synced · N pending · Offline · Error |
+| `PrimaryPillButton` | Wide main pill button, `accent` |
+| `EmptyState` | Logo, headline, one line and an optional action |
+| `ProfileAvatar` | Initials on the chosen color (`accent:<COLOR>`); from 64 dp up the initial uses the `title` style |
+| `OwlsplitTextField` | Single-line field on `surface`, label above and error below |
+| `TextActionButton` | Secondary text action (`accentText` or the color passed in, e.g. `error` in destructive dialogs) |
+| `ExpenseRow` | Category icon, description, who paid, amount and "tu parte" ("your share") |
+| `GroupIcons`, `categoryIcon`, `categoryName` | The 12 group icons (key stored in `Group.icon`) and the icons and names of the 11 categories |
+| `CurrencyPicker` | Dialog with all supported currencies and search by code |
+| `DateField` | Date row that opens the Material 3 picker (days in UTC so they don't shift) |
+| `AccentPicker` | Row of the 8 `GroupAccent` colors, each with a name for screen readers (`accentName`) |
+| `Avatar` | Photo or initials on a neutral tone; 24, 30, 36 and 48 dp |
+| `OwlsplitLogo` | The geometric owl drawn in Canvas (no images) |
+| `AmountText` | Amount with decimals at 60 % and a number that rolls on change (`animate = false` disables it) |
+| `MoneyFormat` | Amount formatting without platform APIs: `Spanish` (1.284,60 €) and `English` (€1,284.60), minus sign U+2212 |
 
-Los componentes no llevan textos fijos: reciben las cadenas ya localizadas. Implementación en `core:ui` y catálogo vivo en `DesignCatalog` (capturas en `core/ui/screenshots/`).
+Components carry no hard-coded text: they receive already localized strings. Implementation in `core:ui` and live catalog in `DesignCatalog` (screenshots in `core/ui/screenshots/`).
 
-Cada componente tiene preview en claro y oscuro y test de captura.
+Every component has a light and dark preview and a screenshot test.
 
-## Movimiento
+## Motion
 
-- Saldos que cambian: el número **rueda** hasta el nuevo valor (300 ms, desaceleración).
-- Saldar: la fila se desliza y desaparece y el saldo de la cabecera rueda a su nuevo valor; confirmación háptica ligera.
-- Transiciones de pantalla estándar de la plataforma (gesto atrás nativo en iOS).
-- Con “reducir movimiento” activo: cambios instantáneos, sin rodar ni deslizar. Compose Multiplatform no expone esa preferencia en código común; se conecta en P11 por plataforma (`AmountText(animate = false)` ya lo admite).
+- Changing balances: the number **rolls** to the new value (300 ms, deceleration).
+- Settle: the row slides out and disappears and the header balance rolls to its new value; light haptic confirmation.
+- Standard platform screen transitions (native back gesture on iOS).
+- With "reduce motion" on: instant changes, no rolling or sliding. Compose Multiplatform does not expose that preference in common code; it is wired per platform in P11 (`AmountText(animate = false)` already supports it).
 
-## Tono del texto
+## Text tone
 
-Cercano y directo, en segunda persona y sin tecnicismos: “Te deben 23,50 €”, “Luis te debe”, “Todo saldado”, “1 cambio pendiente”. Sin signos de exclamación en mensajes del sistema. Errores: qué pasó y qué hacer (“Los importes no suman el total. Faltan 3,20 €.”).
+Friendly and direct, in the second person and without jargon: "Te deben 23,50 €" ("You are owed €23.50"), "Luis te debe" ("Luis owes you"), "Todo saldado" ("All settled"), "1 cambio pendiente" ("1 pending change"). No exclamation marks in system messages. Errors: what happened and what to do ("Los importes no suman el total. Faltan 3,20 €." — "The amounts don't add up to the total. €3.20 missing.").

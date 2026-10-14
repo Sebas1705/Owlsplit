@@ -10,7 +10,7 @@ fun interface ErrorReporter {
 }
 
 /**
- * Errors nobody expected (spec 9: "Crashlytics no fatal + mensaje genérico"). ViewModels send
+ * Errors nobody expected (spec 9: "Crashlytics (non-fatal) + generic message"). ViewModels send
  * here whatever escapes their work; the app root shows a generic message for each one. The app
  * sets [reporter] at startup.
  */

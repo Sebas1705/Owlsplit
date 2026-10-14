@@ -20,7 +20,7 @@ import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
 import es.sebas1705.owlsplit.core.ui.theme.OwlsplitShapes
 import es.sebas1705.owlsplit.core.ui.theme.Spacing
 
-/** Small pill with the sync state; [text] comes localised from the caller ("1 cambio pendiente"). */
+/** Small pill with the sync state; [text] comes localised from the caller ("1 pending change"). */
 @Composable
 fun SyncStatusChip(status: SyncStatus, text: String, modifier: Modifier = Modifier) {
     val colors = Owlsplit.colors
