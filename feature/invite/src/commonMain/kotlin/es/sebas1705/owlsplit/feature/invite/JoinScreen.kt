@@ -1,13 +1,7 @@
 package es.sebas1705.owlsplit.feature.invite
 
-import es.sebas1705.owlsplit.feature.invite.resources.cancel
-import es.sebas1705.owlsplit.feature.invite.resources.reclaim_confirm
-import es.sebas1705.owlsplit.feature.invite.resources.reclaim_body
-import es.sebas1705.owlsplit.feature.invite.resources.reclaim_title
 import es.sebas1705.owlsplit.feature.invite.resources.ghost_left_google
 import es.sebas1705.owlsplit.feature.invite.resources.ghost_left
-import es.sebas1705.owlsplit.core.ui.components.TextActionButton
-import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -183,38 +177,6 @@ private fun ColumnScope.Preview(state: JoinState, onEvent: (JoinIntent) -> Unit)
 @Composable
 private fun ColumnScope.PickMember(state: JoinState, onEvent: (JoinIntent) -> Unit) {
     Heading(stringResource(Res.string.who_are_you))
-    state.confirmGhost?.let { ghost ->
-        AlertDialog(
-            onDismissRequest = { onEvent(JoinIntent.DismissPick) },
-            containerColor = Owlsplit.colors.surface,
-            title = {
-                Text(
-                    stringResource(Res.string.reclaim_title, ghost.name),
-                    style = Owlsplit.type.title,
-                    color = Owlsplit.colors.textPrimary
-                )
-            },
-            text = {
-                Text(
-                    stringResource(Res.string.reclaim_body, ghost.name),
-                    style = Owlsplit.type.body,
-                    color = Owlsplit.colors.textSecondary
-                )
-            },
-            confirmButton = {
-                TextActionButton(
-                    stringResource(Res.string.reclaim_confirm, ghost.name),
-                    { onEvent(JoinIntent.ConfirmPick) }
-                )
-            },
-            dismissButton = {
-                TextActionButton(
-                    stringResource(Res.string.cancel),
-                    { onEvent(JoinIntent.DismissPick) }
-                )
-            },
-        )
-    }
     val ghosts = state.ghosts
     if (ghosts == null) {
         Busy(stringResource(Res.string.waiting_members))

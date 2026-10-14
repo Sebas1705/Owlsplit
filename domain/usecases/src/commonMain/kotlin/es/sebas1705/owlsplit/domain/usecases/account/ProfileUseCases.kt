@@ -119,6 +119,23 @@ class LinkGoogle(
     }
 }
 
+/**
+ * Removes Google from the account: one Google at a time, and only after unlinking can another be
+ * linked. The groups stay; my members stop showing "linked to Google".
+ */
+class UnlinkGoogle(
+    private val accounts: AccountService,
+    private val profiles: ProfileRepository,
+    private val members: MemberRepository? = null,
+) {
+    suspend operator fun invoke(): AccountResult = accounts.unlinkGoogle().also {
+        if (it == AccountResult.Done) {
+            profiles.uploadCurrent()
+            members?.publishMyLinked(false)
+        }
+    }
+}
+
 /** Fresh Google sign-in that deleting a linked account may ask for. */
 class ReauthenticateGoogle(private val google: GoogleCredentials, private val accounts: AccountService) {
     suspend operator fun invoke(): GoogleOutcome = google.withToken(accounts::reauthenticateGoogle)

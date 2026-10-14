@@ -33,6 +33,11 @@
     <string name="design_catalog">Catálogo de diseño</string>
     <string name="msg_linked">Cuenta vinculada con Google.</string>
     <string name="msg_credential_in_use">Esa cuenta de Google ya tiene datos de Owlsplit.</string>
+    <string name="unlink_google">Desvincular Google</string>
+    <string name="unlink_title">¿Desvincular Google?</string>
+    <string name="unlink_body">Sigues con tus grupos en este móvil, pero si lo pierdes o borras la app no podrás recuperarlos hasta que vincules otra vez. Después podrás vincular otra cuenta de Google.</string>
+    <string name="unlink_confirm">Desvincular</string>
+    <string name="msg_unlinked">Google desvinculado. Puedes vincular otra cuenta.</string>
     <string name="switch_title">Ya tienes una cuenta con este Google</string>
     <string name="switch_body">Entra con ella para recuperar tus grupos. Los grupos de este móvil se vienen contigo: con tu mismo nombre, tus gastos y tu saldo.</string>
     <string name="switch_confirm">Entrar con esa cuenta</string>

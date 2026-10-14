@@ -44,6 +44,7 @@ import compose.icons.TablerIcons
 import compose.icons.tablericons.ChevronDown
 import compose.icons.tablericons.ChevronRight
 import compose.icons.tablericons.Logout
+import compose.icons.tablericons.Unlink
 import compose.icons.tablericons.Palette
 import compose.icons.tablericons.ShieldCheck
 import compose.icons.tablericons.Trash
@@ -76,6 +77,11 @@ import es.sebas1705.owlsplit.feature.profile.resources.link_unavailable
 import es.sebas1705.owlsplit.feature.profile.resources.linked_google
 import es.sebas1705.owlsplit.feature.profile.resources.msg_credential_in_use
 import es.sebas1705.owlsplit.feature.profile.resources.switch_body
+import es.sebas1705.owlsplit.feature.profile.resources.msg_unlinked
+import es.sebas1705.owlsplit.feature.profile.resources.unlink_body
+import es.sebas1705.owlsplit.feature.profile.resources.unlink_confirm
+import es.sebas1705.owlsplit.feature.profile.resources.unlink_google
+import es.sebas1705.owlsplit.feature.profile.resources.unlink_title
 import es.sebas1705.owlsplit.feature.profile.resources.switch_confirm
 import es.sebas1705.owlsplit.feature.profile.resources.switch_title
 import es.sebas1705.owlsplit.feature.profile.resources.msg_failed
@@ -194,6 +200,7 @@ private fun Header(state: ProfileState) {
 private fun Message(message: ProfileMessage?) {
     val text = when (message) {
         ProfileMessage.LINKED -> stringResource(Res.string.msg_linked)
+        ProfileMessage.UNLINKED -> stringResource(Res.string.msg_unlinked)
         ProfileMessage.SAVED -> stringResource(Res.string.msg_saved)
         ProfileMessage.CREDENTIAL_IN_USE -> stringResource(Res.string.msg_credential_in_use)
         ProfileMessage.OFFLINE -> stringResource(Res.string.msg_offline)
@@ -399,6 +406,12 @@ private fun Session(state: ProfileState, onEvent: (ProfileIntent) -> Unit) {
                 onEvent(ProfileIntent.SignOut)
             }
         }
+        // One Google at a time: to link another, this one has to go first.
+        if (state.linkedGoogle) {
+            ActionRow(TablerIcons.Unlink, stringResource(Res.string.unlink_google), enabled = !state.busy) {
+                onEvent(ProfileIntent.AskUnlink)
+            }
+        }
         ActionRow(TablerIcons.Trash, stringResource(Res.string.delete_account), Owlsplit.colors.error, !state.busy) {
             onEvent(ProfileIntent.AskDelete)
         }
@@ -445,6 +458,14 @@ private fun Dialogs(state: ProfileState, onEvent: (ProfileIntent) -> Unit) {
             stringResource(Res.string.reauth_confirm),
             destructive = false,
             onConfirm = { onEvent(ProfileIntent.Reauthenticate) },
+            onDismiss = { onEvent(ProfileIntent.DismissDialog) },
+        )
+        ProfileDialog.CONFIRM_UNLINK -> ConfirmDialog(
+            stringResource(Res.string.unlink_title),
+            stringResource(Res.string.unlink_body),
+            stringResource(Res.string.unlink_confirm),
+            destructive = true,
+            onConfirm = { onEvent(ProfileIntent.ConfirmUnlink) },
             onDismiss = { onEvent(ProfileIntent.DismissDialog) },
         )
         ProfileDialog.SWITCH_ACCOUNT -> ConfirmDialog(

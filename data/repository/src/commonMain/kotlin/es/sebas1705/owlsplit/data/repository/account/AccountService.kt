@@ -17,6 +17,12 @@ interface AccountService {
     /** Links Google to the current (anonymous) user: same uid, same data. */
     suspend fun linkGoogle(idToken: String, accessToken: String? = null): AccountResult
 
+    /**
+     * Removes Google from the current user: same uid and data, but no longer recoverable through it
+     * (the session reads as anonymous again, and another Google can be linked).
+     */
+    suspend fun unlinkGoogle(): AccountResult
+
     /** Replaces the current session with an existing Google account (fresh install). */
     suspend fun signInWithGoogle(idToken: String, accessToken: String? = null): AccountResult
 

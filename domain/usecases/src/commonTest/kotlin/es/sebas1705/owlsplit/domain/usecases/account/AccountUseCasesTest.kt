@@ -52,6 +52,7 @@ class AccountUseCasesTest {
         override fun currentSession() = current
         override suspend fun signInAnonymously() = AccountResult.Done
         override suspend fun linkGoogle(idToken: String, accessToken: String?) = AccountResult.Done
+        override suspend fun unlinkGoogle() = AccountResult.Done
         override suspend fun signInWithGoogle(idToken: String, accessToken: String?) = AccountResult.Done
         override suspend fun reauthenticateGoogle(idToken: String, accessToken: String?) = AccountResult.Done
         override suspend fun signOut() {

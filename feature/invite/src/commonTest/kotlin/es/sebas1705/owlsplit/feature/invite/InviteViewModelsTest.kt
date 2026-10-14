@@ -19,6 +19,7 @@ import es.sebas1705.owlsplit.domain.usecases.invite.PreviewInvite
 import es.sebas1705.owlsplit.domain.usecases.invite.RegenerateInvite
 import es.sebas1705.owlsplit.domain.usecases.invite.ShareInvite
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -115,6 +116,25 @@ class InviteViewModelsTest {
         vm.onEvent(JoinIntent.Pick(luis))
         assertEquals(g, vm.uiState.value.joinedGroupId)
         assertEquals("uid-luis", ledger.members.observeMembers(g).first().first { it.id == luis }.userUid)
+    }
+
+    @Test
+    fun anyMemberWithoutAnAccountCanBeTakenWithOneTap() = runTest {
+        val (g, luis) = sharedGroupAsLuis()
+        // Pablo was deactivated; Marta's account left the group.
+        val pablo = ledger.members.add(g, MemberInput("Pablo"))
+        ledger.members.setActive(pablo, false)
+        val marta = ledger.members.add(g, MemberInput("Marta"))
+        ledger.memberList.update { list ->
+            list.map { if (it.id == marta) it.copy(pastUids = listOf("uid-marta")) else it }
+        }
+        val vm = joinVm("ABCDEFGH")
+        vm.onEvent(JoinIntent.Join)
+        assertEquals(setOf(luis, pablo, marta), vm.uiState.value.ghosts?.map { it.id }?.toSet())
+
+        vm.onEvent(JoinIntent.Pick(marta))
+        assertEquals(g, vm.uiState.value.joinedGroupId)
+        assertEquals("uid-luis", ledger.members.observeMembers(g).first().first { it.id == marta }.userUid)
     }
 
     @Test

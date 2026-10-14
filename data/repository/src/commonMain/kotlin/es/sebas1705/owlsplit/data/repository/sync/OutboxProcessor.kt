@@ -51,7 +51,7 @@ internal class OutboxProcessor(
     private suspend fun onRejected(entry: Outbox, type: OutboxType, version: Long): Boolean =
         when (val found = remote.fetch(type, entry.group_id, entry.entity_id)) {
             FetchResult.NoAccess -> {
-                local.markAccessLost(entry.group_id)
+                local.setAccessLost(entry.group_id, lost = true)
                 local.scheduleRetry(entry, local.now() + RECHECK_MILLIS, "access lost")
                 false
             }
