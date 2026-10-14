@@ -95,6 +95,8 @@ Geometric owl: rounded square in `accent` with two white rings for eyes and a be
 | `AvatarToggle` | Avatar that toggles included (`accent`) / excluded (`surfaceVariant`) |
 | `SyncStatusChip` | Synced · N pending · Offline · Error |
 | `PrimaryPillButton` | Wide main pill button, `accent` |
+| `CompactPillButton` | Pill as wide as its label, for a primary action inside a card |
+| `CalloutCard` | Suggestion card (icon, title, text, "not now" + action aligned to the end): link your account, a new version |
 | `EmptyState` | Logo, headline, one line and an optional action |
 | `ProfileAvatar` | Initials on the chosen color (`accent:<COLOR>`); from 64 dp up the initial uses the `title` style |
 | `OwlsplitTextField` | Single-line field on `surface`, label above and error below |
