@@ -55,7 +55,7 @@ internal class OutboxProcessor(
                 local.scheduleRetry(entry, local.now() + RECHECK_MILLIS, "access lost")
                 false
             }
-            FetchResult.Transient -> {
+            FetchResult.Transient, FetchResult.Unreadable -> {
                 retry(entry, "transient")
                 false
             }

@@ -11,4 +11,10 @@ interface SyncControl {
     suspend fun flush(): Boolean
 
     fun isAccessLost(groupId: String): Boolean
+
+    /**
+     * The group is on screen: catch up with what no live listener covers (an archived group, the
+     * personal fields of members). Returns at once; the engine does it in the background, throttled.
+     */
+    fun refreshGroup(groupId: String) = Unit
 }

@@ -69,6 +69,8 @@ targets:
         basedOnDependencyAnalysis: false
     dependencies:
       - package: Firebase
+        product: FirebaseAppCheck
+      - package: Firebase
         product: FirebaseCore
       - package: Firebase
         product: FirebaseAuth

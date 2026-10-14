@@ -107,6 +107,10 @@ kotlin {
 
 dependencies {
     debugImplementation(libs.leakcanary)
+    // App Check (docs/FIREBASE.md#app-check): each build type installs its provider from
+    // src/androidDebug or src/androidRelease, so the debug provider never ships in a release.
+    debugImplementation(libs.firebase.appcheck.debug)
+    releaseImplementation(libs.firebase.appcheck.playintegrity)
 }
 
 compose.resources {

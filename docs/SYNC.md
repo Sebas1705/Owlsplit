@@ -46,14 +46,14 @@ Compaction: if there are several offline edits of the same document, only the la
 
 ## Download (Firestore → local)
 
-- For each group that is **open or recently active** (last 30 days, max. 20) there are listeners on `members`, `expenses`, `transfers` and the group document, with `where("updatedAt", ">=", cursor - 5 min)`, ordered by `updatedAt`. The margin covers server clocks of concurrent writes; idempotency makes repeats harmless.
-- The remaining groups are synced with a one-off query when the app or the group is opened.
+- Group documents come from the *my groups* listener (`memberUids array-contains uid`). For each of those groups **not archived by me** there is **one** more listener, on its `changelog`, with `where("updatedAt", ">=", cursor - 5 min)`. The margin covers server clocks of concurrent writes; idempotency makes repeats harmless. Members, expenses and transfers have no listener: each new history entry names the document to fetch (details and read costs in [Download driven by the history](#download-driven-by-the-history-quota)).
+- Archived groups have no listener at all: they catch up when opened, or from their cursor once unarchived.
 - For each received document:
   - If `remote.version > local.serverVersion` and there is no local pending entry → it is overwritten locally.
   - If there is a local pending entry → the remote `serverVersion` is stored; the pending upload will fail on version and enter the conflict flow. To avoid waiting, it is resolved right away with the same flow.
   - If `remote.version <= local.serverVersion` → ignored.
 - The cursor advances to the largest applied `updatedAt` (after the local transaction commits).
-- New group (join): full paginated download before showing it as synced.
+- New group (join, or a new device): one full download by query, from cursor 0.
 
 ## Deletions
 
@@ -107,3 +107,37 @@ Engine in `data:repository`, package `sync`: `RemoteStore` (port to the server; 
 ## Conflicts in the UI (P9c)
 
 The history's conflict entry (and the "Cambios por revisar" ("Changes to review") section of Activity) offers **Reaplicar mi cambio** ("Reapply my change") and **Descartar** ("Discard"). Reapply reads the losing version stored in `conflict` and writes it through the normal repositories (`ConflictRepositoryImpl`): it is just another edit, with a new version on top of the winner, which is uploaded, recorded in the history and may clash again. Discard only deletes the `conflict` row. Deleted expenses can be restored from the history for 30 days.
+
+## Download driven by the history (quota)
+
+The Spark plan allows 50K Firestore reads a day, and an empty query or a listener with nothing new still costs one read. With one listener per collection, every app start (and every listener re-attach) cost `1 + G + 4 × G` reads for `G` groups even when nothing had changed.
+
+**Why the history is enough.** Every change people see (members, expenses, transfers, conflicts) writes a `changelog` entry in the same transaction as the document, and the outbox uploads it **after** the document (strict per-group FIFO; the entry is enqueued second). So when an entry reaches the server, the document it names is already there. What writes no entry:
+
+| Write | Covered by |
+|---|---|
+| Group document (edit, archive, invite code, join, leave) | the *my groups* listener, which already delivers every group document |
+| `publishMyPayMethods` / `publishMyLinked` (personal member fields, out of the history on purpose) | a members query when the group is opened |
+
+**How it works** (`GroupPuller`):
+
+1. **Bootstrap**, once per group (meta key `pulled:<group>`): one query per collection from its cursor, **changelog first**, then members, expenses and transfers. Since documents precede their entries, the documents of every entry stored here come in the queries right after. A new group or a new device downloads everything (cursor 0); installs that synced with one listener per collection go through it once and catch up from their cursors.
+2. **Listen** to the changelog. For the entries that are new here (not in `change_log`: those were written on this device or already handled), `get` each named document by id (10 in parallel; group entries are skipped) and apply it; **only then** store the entries and advance the changelog cursor. If a `get` fails (offline), nothing is stored, the listener restarts with backoff from the same cursor and the same entries come again: nothing is skipped. A `get` is strongly consistent, so there is no margin problem for the documents.
+3. **Archived by me** (`archivedBy` contains my uid): no listener. When the group is opened, `ObserveGroupDetail` calls `SyncControl.refreshGroup`; the engine pulls the changelog from its cursor once and fetches what it names, as in 2. Unarchiving starts the listener from the same cursor, which delivers everything that happened meanwhile.
+4. **Opening any group** also runs a members query from the members cursor (personal fields). Refreshes run in the background (the UI never waits) and at most once per group every 5 minutes.
+
+Conflicts are detected exactly as before: a fetched document goes through the same `receive` (echo of our upload, or `RemoteApplier` with the pending-edit check), and uploads keep their version check.
+
+**Reads**, `G` groups of which `A` are not archived, `m` = history entries in the 5-minute margin before each cursor (re-delivered on every start, as before):
+
+| | Before | After |
+|---|---|---|
+| App start, nothing new | `G` (my groups) + `4 × G` + margin | `G` + `A` + `m` |
+| A change by someone else (app open) | 1 (document) + 1 (entry) | 1 (entry) + 1 (`get`) |
+| A change of mine coming back | 1 + 1 | 1 (entry; known here, no `get`) |
+| Opening a group | 0 | 1 (members query; throttled) + for an archived group 1 (changelog) + 1 per changed document |
+| First start after updating | — | 4 per group, once |
+
+E.g. 10 groups, 3 archived: an idle start goes from about 50 reads to about 17. `SyncEngineTest` checks the listeners, the queries and the billed reads with `FakeRemoteStore`, which counts reads as Firestore does.
+
+**Assumptions.** A client that writes a member, expense or transfer without its history entry would only be seen at the next bootstrap or members query: every write path in `data:repository` logs (or is one of the personal fields above), and older app versions write the same entries in the same order. A history entry whose `get` finds nothing (the write was rejected) or an unreadable document (from a newer app version) is stored without applying anything.

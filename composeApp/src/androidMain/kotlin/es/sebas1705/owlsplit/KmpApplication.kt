@@ -5,6 +5,7 @@ import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.apps
 import es.sebas1705.owlsplit.account.AndroidGoogleCredentials
 import es.sebas1705.owlsplit.account.ResumedActivity
+import es.sebas1705.owlsplit.appcheck.AppCheckSetup
 import es.sebas1705.owlsplit.core.security.appContext
 import es.sebas1705.owlsplit.core.ui.components.QrScanner
 import es.sebas1705.owlsplit.core.ui.components.FilePicker
@@ -37,6 +38,8 @@ class KmpApplication : Application() {
         appContext = this
         val activities = ResumedActivity().also(::registerActivityLifecycleCallbacks)
         val firebase = FirebaseStatus(configured = Firebase.apps(this).isNotEmpty())
+        // Before Firestore or Auth make their first request, so that every request carries a token.
+        if (firebase.configured) AppCheckSetup.install()
         CrashReporting.start(firebase.configured)
 
         val koin = startKoin {

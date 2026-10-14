@@ -135,6 +135,27 @@ Doppler `owlsplit/prd` stores everything: `GOOGLE_SERVICES_JSON` (both Android a
 
 Distribution to testers: [RELEASE.md](RELEASE.md).
 
+## App Check
+
+The apps send App Check tokens, but **nothing is enforced yet**: until enforcement is turned on in the console, requests without a valid token still go through and only show up as unverified in the metrics. The point is to protect the Spark quota (50K reads/day) from scripts that use the public config.
+
+| Build | Provider | Code |
+|---|---|---|
+| Android release (`es.sebas1705.owlsplit`) | Play Integrity | `composeApp/src/androidRelease/.../appcheck/AppCheckSetup.kt` (`firebase-appcheck-playintegrity`, native SDK: GitLive has no App Check module) |
+| Android debug (`es.sebas1705.owlsplit.debug`) | Debug provider; logs its debug token at start-up (logcat tag `DebugAppCheckProvider`, plus `OwlsplitAppCheck` while it is not registered) | `composeApp/src/androidDebug/.../appcheck/AppCheckSetup.kt` (`firebase-appcheck-debug`, debug builds only) |
+| iOS debug | Debug provider; the token is printed in the Xcode console | `iosApp/iosApp/iOSApp.swift` |
+| iOS release | DeviceCheck. **Pending**: needs the Apple Team ID (DeviceCheck key, or App Attest with its entitlement) | `iosApp/iosApp/iOSApp.swift` |
+
+Owner steps in the console (Firebase → **App Check**):
+
+1. **Apps → Android `es.sebas1705.owlsplit` → Play Integrity → Register.** SHA-256 of the release key: `99:0B:AD:25:1C:E0:37:EE:8A:CB:2D:70:57:07:E5:F4:96:83:8E:5C:25:A4:0A:67:DD:FE:27:21:FC:3A:18:C3`. If Play App Signing re-signs the app, also add the **app signing key** SHA-256 from Play Console (Test and release → App integrity). In Play Console, App integrity → Play Integrity API, link the `owlsplit` Cloud project.
+2. **Debug tokens**: run a debug build, copy the token from logcat (`adb logcat -s DebugAppCheckProvider`) or the Xcode console, and add it under the `.debug` Android app (or the iOS app) → ⋮ → **Manage debug tokens**. One per install (clearing the app data makes a new one). Emulator tests (`FirestoreSyncEmulatorTest`) do not need it: the emulators ignore App Check.
+3. **Watch the metrics** (App Check → APIs → Cloud Firestore and Authentication) for one or two weeks: the share of verified requests should be close to 100 % before enforcing.
+   - Builds from **App Distribution** are not installed by Play, so Play Integrity does not recognise them: their requests stay unverified. Before enforcing, testers must install from the Play testing track (or get a debug token each).
+   - Older app versions send no token at all: enforcing cuts them off.
+4. **Enforce** for Cloud Firestore first (APIs → Cloud Firestore → Enforce); then Authentication if the metrics stay clean. It can be undone from the same screen, and it takes up to 15 minutes to apply.
+5. iOS: register DeviceCheck (or App Attest) once there is an Apple Team ID, before enforcing, or iOS users are blocked.
+
 ## Deployments
 
 - Every push to `main` that touches `firebase/` deploys rules, indexes and Hosting (`.github/workflows/deploy-firebase.yml`, account `owlsplit-ci`). The rules already passed their tests in the PR. Manually: `cd firebase && npx firebase-tools deploy --only firestore,hosting`.

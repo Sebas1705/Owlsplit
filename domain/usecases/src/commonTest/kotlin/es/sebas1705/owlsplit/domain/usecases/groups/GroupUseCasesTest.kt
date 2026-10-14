@@ -2,6 +2,7 @@ package es.sebas1705.owlsplit.domain.usecases.groups
 
 import es.sebas1705.owlsplit.core.testing.account.FakeAccounts
 import es.sebas1705.owlsplit.core.testing.account.FakeProfiles
+import es.sebas1705.owlsplit.core.testing.account.FakeSync
 import es.sebas1705.owlsplit.core.testing.ledger.InMemoryLedger
 import es.sebas1705.owlsplit.data.models.ExpenseCategory
 import es.sebas1705.owlsplit.data.models.GroupInput
@@ -60,6 +61,24 @@ class GroupUseCasesTest {
         val draft = ExpenseDrafts.new(members, ana).copy(amountMinor = 3_000, title = "Cena")
         assertTrue(save(groupId, null, draft, "EUR", members))
         return ana to luis
+    }
+
+    @Test
+    fun watchingAGroupAsksTheSyncEngineToCatchItUp() = runTest {
+        val sync = FakeSync()
+        val g = trip()
+        val watched =
+            ObserveGroupDetail(
+                ledger.groups,
+                ledger.members,
+                ledger.expenses,
+                ledger.transfers,
+                balances,
+                accounts,
+                sync
+            )
+        assertEquals("Ibiza 2026", watched(g).first()!!.group.name)
+        assertEquals(listOf(g), sync.refreshed)
     }
 
     @Test
