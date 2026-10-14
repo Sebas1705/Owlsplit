@@ -16,6 +16,8 @@ import es.sebas1705.owlsplit.di.dataModule
 import es.sebas1705.owlsplit.di.groupsModule
 import es.sebas1705.owlsplit.di.inviteModule
 import es.sebas1705.owlsplit.domain.usecases.account.GoogleCredentials
+import es.sebas1705.owlsplit.domain.usecases.update.NoStoreUpdates
+import es.sebas1705.owlsplit.domain.usecases.update.StoreUpdates
 import es.sebas1705.owlsplit.navigation.IncomingInvites
 import es.sebas1705.owlsplit.platform.GoogleSignInBridge
 import es.sebas1705.owlsplit.platform.IosGoogleCredentials
@@ -49,6 +51,8 @@ fun MainViewController(googleSignIn: GoogleSignInBridge?) = ComposeUIViewControl
                     single<FileSharer> { IosFileSharer() }
                     single<FilePicker> { IosFilePicker() }
                     single<QrScanner> { IosQrScanner() }
+                    // TestFlight and the App Store tell about updates themselves.
+                    single<StoreUpdates> { NoStoreUpdates }
                 },
             )
         }.koin

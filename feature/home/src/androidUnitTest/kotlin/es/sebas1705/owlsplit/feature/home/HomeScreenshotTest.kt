@@ -13,6 +13,7 @@ import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.data.models.SyncMeta
 import es.sebas1705.owlsplit.data.models.SyncState
 import es.sebas1705.owlsplit.domain.usecases.groups.HomeGroup
+import es.sebas1705.owlsplit.domain.usecases.update.StoreUpdate
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -76,4 +77,18 @@ class HomeScreenshotTest {
     @Test
     @Config(qualifiers = "en-w411dp-h891dp-xxhdpi")
     fun groupsEnglish() = capture("groups_en", withGroups, format = MoneyFormat.English)
+
+    @Test
+    fun storeUpdateAvailable() = capture(
+        "store_update",
+        withGroups.copy(suggestLinking = false, storeUpdate = StoreUpdate.Available(200)),
+    )
+
+    @Test
+    @Config(qualifiers = "en-w411dp-h891dp-xxhdpi")
+    fun storeUpdateDownloaded() = capture(
+        "store_update_downloaded_en",
+        withGroups.copy(suggestLinking = false, storeUpdate = StoreUpdate.Downloaded(200)),
+        format = MoneyFormat.English,
+    )
 }

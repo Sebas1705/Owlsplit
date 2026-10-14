@@ -86,8 +86,14 @@ import es.sebas1705.owlsplit.feature.home.resources.total_balance
 import es.sebas1705.owlsplit.feature.home.resources.update_action
 import es.sebas1705.owlsplit.feature.home.resources.update_body
 import es.sebas1705.owlsplit.feature.home.resources.update_title
+import es.sebas1705.owlsplit.feature.home.resources.store_update_body
+import es.sebas1705.owlsplit.feature.home.resources.store_update_ready_body
+import es.sebas1705.owlsplit.feature.home.resources.store_update_ready_title
+import es.sebas1705.owlsplit.feature.home.resources.store_update_restart
+import es.sebas1705.owlsplit.feature.home.resources.store_update_title
 import androidx.compose.ui.platform.LocalUriHandler
 import es.sebas1705.owlsplit.data.models.LatestRelease
+import es.sebas1705.owlsplit.domain.usecases.update.StoreUpdate
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -125,6 +131,7 @@ fun HomeScreen(
         }
         if (!state.loaded) return@Column
         state.update?.let { Update(it, onEvent) }
+        state.storeUpdate?.let { StoreUpdateNotice(it, onEvent) }
         if (state.groups.isEmpty()) {
             NoGroups(state, navigation)
             return@Column
@@ -314,6 +321,41 @@ private fun Update(release: LatestRelease, onEvent: (HomeIntent) -> Unit) {
                     { uri.openUri(release.url) },
                     Modifier.weight(1f)
                 )
+            }
+        }
+    }
+}
+
+/**
+ * An update from Google Play: "Update" lets Play download it in the background ("Not now" waits for the
+ * next one); once downloaded, "Restart" installs it. Play does not tell the version name.
+ */
+@Composable
+private fun StoreUpdateNotice(update: StoreUpdate, onEvent: (HomeIntent) -> Unit) {
+    val downloaded = update is StoreUpdate.Downloaded
+    val title = if (downloaded) Res.string.store_update_ready_title else Res.string.store_update_title
+    val body = if (downloaded) Res.string.store_update_ready_body else Res.string.store_update_body
+    OwlsplitContainer(title = stringResource(title)) {
+        Column(Modifier.padding(horizontal = Spacing.m), verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
+            Text(stringResource(body), style = Owlsplit.type.body, color = Owlsplit.colors.textSecondary)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s)
+            ) {
+                if (downloaded) {
+                    PrimaryPillButton(
+                        stringResource(Res.string.store_update_restart),
+                        { onEvent(HomeIntent.CompleteStoreUpdate) },
+                        Modifier.weight(1f)
+                    )
+                } else {
+                    TextActionButton(stringResource(Res.string.nudge_dismiss), { onEvent(HomeIntent.DismissUpdate) })
+                    PrimaryPillButton(
+                        stringResource(Res.string.update_action),
+                        { onEvent(HomeIntent.StartStoreUpdate) },
+                        Modifier.weight(1f)
+                    )
+                }
             }
         }
     }
