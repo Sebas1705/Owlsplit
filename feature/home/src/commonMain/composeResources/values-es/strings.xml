@@ -35,4 +35,9 @@
     <string name="update_title">Nueva versión: %1$s</string>
     <string name="update_body">Descárgala y ábrela para instalarla encima de esta; tus grupos se quedan.</string>
     <string name="update_action">Actualizar</string>
+    <string name="store_update_title">Nueva versión disponible</string>
+    <string name="store_update_body">Google Play la descarga mientras sigues usando la app.</string>
+    <string name="store_update_ready_title">Actualización descargada</string>
+    <string name="store_update_ready_body">Reinicia Owlsplit para instalarla; tus grupos se quedan.</string>
+    <string name="store_update_restart">Reiniciar</string>
 </resources>

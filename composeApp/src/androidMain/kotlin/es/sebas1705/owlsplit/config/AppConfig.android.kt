@@ -12,7 +12,8 @@ actual val updatableVersionCode: Long?
 
 private const val PLAY_STORE = "com.android.vending"
 
-private fun installedFromPlay(): Boolean {
+/** Installed by the Play Store: Play updates it, and can do so from inside the app (`PlayStoreUpdates`). */
+internal fun installedFromPlay(): Boolean {
     val packages = appContext.packageManager
     val name = appContext.packageName
     val installer = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {

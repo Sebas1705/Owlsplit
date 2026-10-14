@@ -39,8 +39,9 @@ fun CalloutCard(
     body: String,
     actionLabel: String,
     onAction: () -> Unit,
-    dismissLabel: String,
-    onDismiss: () -> Unit,
+    /** Null when the suggestion cannot be put off (e.g. an update already downloaded). */
+    dismissLabel: String? = null,
+    onDismiss: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -78,7 +79,7 @@ fun CalloutCard(
             horizontalArrangement = Arrangement.spacedBy(Spacing.s, Alignment.End),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            TextActionButton(dismissLabel, onDismiss)
+            if (dismissLabel != null && onDismiss != null) TextActionButton(dismissLabel, onDismiss)
             CompactPillButton(actionLabel, onAction)
         }
     }
