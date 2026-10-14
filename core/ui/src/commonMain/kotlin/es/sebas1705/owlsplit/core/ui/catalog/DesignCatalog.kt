@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import compose.icons.TablerIcons
 import compose.icons.tablericons.ArrowsLeftRight
+import compose.icons.tablericons.BellRinging
 import compose.icons.tablericons.Gift
 import compose.icons.tablericons.Home
 import compose.icons.tablericons.Plane
@@ -38,6 +39,7 @@ import es.sebas1705.owlsplit.core.ui.components.KeypadKey
 import es.sebas1705.owlsplit.core.ui.components.MemberBalanceRow
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitContainer
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitLogo
+import es.sebas1705.owlsplit.core.ui.components.RowAction
 import es.sebas1705.owlsplit.core.ui.components.QuickActionButton
 import es.sebas1705.owlsplit.core.ui.components.SegmentedControl
 import es.sebas1705.owlsplit.core.ui.components.SettleSuggestionRow
@@ -119,6 +121,7 @@ private fun GroupSection() {
             actionLabel = "Saldar",
             icon = TablerIcons.ArrowsLeftRight,
             onAction = {},
+            secondary = RowAction(TablerIcons.BellRinging, "Recordar a Luis", {}),
         )
     }
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {

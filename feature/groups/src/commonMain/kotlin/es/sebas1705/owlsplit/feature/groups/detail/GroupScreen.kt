@@ -46,6 +46,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import compose.icons.TablerIcons
 import compose.icons.tablericons.ArrowsLeftRight
+import compose.icons.tablericons.BellRinging
+import es.sebas1705.owlsplit.core.ui.components.RowAction
+import es.sebas1705.owlsplit.feature.groups.resources.remind_description
 import compose.icons.tablericons.DotsVertical
 import compose.icons.tablericons.Pencil
 import compose.icons.tablericons.Users
@@ -364,6 +367,7 @@ private fun LazyListScope.settle(
                         actionLabel = stringResource(Res.string.settle),
                         icon = TablerIcons.ArrowsLeftRight,
                         onAction = { onEvent(GroupIntent.AskSettle(payment)) },
+                        secondary = remindAction(payment, detail, currency, format, onEvent),
                     )
                 }
             }
@@ -408,6 +412,24 @@ private fun LazyListScope.settle(
     }
 }
 
+/** The bell on a suggested payment: only someone who owes me can be reminded. */
+@Composable
+private fun remindAction(
+    payment: SuggestedPayment,
+    detail: GroupDetail,
+    currency: Currency,
+    format: MoneyFormat,
+    onEvent: (GroupIntent) -> Unit,
+): RowAction? {
+    if (payment.toMemberId != detail.myMemberId) return null
+    val description = stringResource(
+        Res.string.remind_description,
+        detail.members.nameOf(payment.fromMemberId),
+        format.format(payment.amountMinor, currency),
+    )
+    return RowAction(TablerIcons.BellRinging, description) { onEvent(GroupIntent.Remind(payment)) }
+}
+
 @Composable
 private fun memberLabel(id: String, detail: GroupDetail): String =
     if (id == detail.myMemberId) stringResource(Res.string.you) else detail.members.nameOf(id)
@@ -446,11 +468,12 @@ private fun Dialogs(
             detail,
             currency,
             format,
-            sharer,
+            onRemind = { onEvent(GroupIntent.Remind(payment)) },
             onConfirm = { onEvent(GroupIntent.ConfirmSettle) },
             onDismiss = dismiss,
         )
     }
+    ReminderEffect(state.reminder, detail, currency, format, sharer) { onEvent(GroupIntent.ReminderSent) }
     state.finalSettle?.let { payment ->
         ConfirmDialog(
             stringResource(Res.string.settle_final_title),

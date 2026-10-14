@@ -112,6 +112,27 @@ class GroupsViewModelsTest {
     }
 
     @Test
+    fun onlySomeoneWhoOwesMeCanBeRemindedOnce() = runTest {
+        val g = dinnerGroup()
+        val vm = GroupViewModel(g, GroupTab.SETTLE, detail, SettleUp(ledger.transfers), actions)
+        // Ana paid the dinner: Luis owes her.
+        val owedToMe = vm.uiState.value.detail!!.balances!!.suggestedPayments.single()
+        assertEquals(vm.uiState.value.detail!!.myMemberId, owedToMe.toMemberId)
+
+        vm.onEvent(GroupIntent.Remind(owedToMe))
+        assertEquals(owedToMe, vm.uiState.value.reminder)
+        vm.onEvent(GroupIntent.ReminderSent)
+        assertNull(vm.uiState.value.reminder)
+        // Reminding records nothing.
+        assertTrue(ledger.transferList.value.isEmpty())
+
+        // A debt that is mine, not theirs, has nobody to remind.
+        val iOwe = owedToMe.copy(fromMemberId = owedToMe.toMemberId, toMemberId = owedToMe.fromMemberId)
+        vm.onEvent(GroupIntent.Remind(iOwe))
+        assertNull(vm.uiState.value.reminder)
+    }
+
+    @Test
     fun aRecordedPaymentCanBeDeletedAfterConfirming() = runTest {
         val g = dinnerGroup()
         val vm = GroupViewModel(

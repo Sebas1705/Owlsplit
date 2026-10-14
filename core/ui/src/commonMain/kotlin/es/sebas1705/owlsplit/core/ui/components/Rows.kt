@@ -132,7 +132,11 @@ fun MemberBalanceRow(
     }
 }
 
-/** "Luis owes you €23.50" with a pill action to settle it. */
+/** A secondary icon action on a row; [description] is what screen readers announce. */
+class RowAction(val icon: ImageVector, val description: String, val onClick: () -> Unit)
+
+/** "Luis owes you €23.50" with a pill action to settle it and an optional [secondary] icon action. */
+@Suppress("LongParameterList") // Text, action and the optional secondary action.
 @Composable
 fun SettleSuggestionRow(
     text: String,
@@ -141,6 +145,7 @@ fun SettleSuggestionRow(
     icon: ImageVector,
     onAction: () -> Unit,
     modifier: Modifier = Modifier,
+    secondary: RowAction? = null,
 ) {
     val colors = Owlsplit.colors
     Row(
@@ -161,12 +166,41 @@ fun SettleSuggestionRow(
             Text(text, style = Owlsplit.type.bodyStrong, color = colors.textPrimary)
             Text(subtitle, style = Owlsplit.type.caption, color = colors.textSecondary)
         }
-        TextButton(
-            onClick = onAction,
-            shape = OwlsplitShapes.pill,
-            colors = ButtonDefaults.textButtonColors(containerColor = colors.accent, contentColor = colors.onAccent),
-        ) {
-            Text(actionLabel, style = Owlsplit.type.label)
+        // No gap between the actions: the icon's 48 dp touch target already separates them.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            secondary?.let { SecondaryIconAction(it) }
+            TextButton(
+                onClick = onAction,
+                shape = OwlsplitShapes.pill,
+                colors = ButtonDefaults.textButtonColors(
+                    containerColor = colors.accent,
+                    contentColor = colors.onAccent
+                ),
+            ) {
+                Text(actionLabel, style = Owlsplit.type.label)
+            }
+        }
+    }
+}
+
+/** A bare icon with a 48 dp touch target; the press shadow stays on the circle around the icon. */
+@Composable
+private fun SecondaryIconAction(action: RowAction) {
+    val press = rememberPress()
+    Box(
+        Modifier
+            .size(Sizes.touchTarget)
+            .clickable(interactionSource = press, indication = null, role = Role.Button, onClick = action.onClick)
+            .semantics { contentDescription = action.description },
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(Modifier.size(Sizes.iconTile).pressFeedback(press, CircleShape), contentAlignment = Alignment.Center) {
+            Icon(
+                action.icon,
+                contentDescription = null,
+                tint = Owlsplit.colors.accentText,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }
