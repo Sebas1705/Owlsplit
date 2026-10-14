@@ -93,17 +93,44 @@ class GroupsScreenshotTest {
         GroupState(loaded = true, detail = detail, myShares = mapOf("e1" to 3_120L, "e2" to 1_200L, "e3" to 14_000L))
     private val navigation = GroupNavigation({}, {}, {}, {}, {}, {}, {}, {}, {})
 
-    private fun group(name: String, tab: GroupTab, dark: Boolean = false, format: MoneyFormat = MoneyFormat.Spanish) {
+    private fun group(
+        name: String,
+        tab: GroupTab,
+        dark: Boolean = false,
+        format: MoneyFormat = MoneyFormat.Spanish,
+        shown: GroupState = state,
+    ) {
         compose.setContent {
             OwlsplitTheme(darkTheme = dark) {
                 CompositionLocalProvider(LocalMoneyFormat provides format) {
-                    GroupScreen(state.copy(tab = tab), {}, navigation, { true }, today = today)
+                    GroupScreen(shown.copy(tab = tab), {}, navigation, { true }, today = today)
                 }
             }
         }
         compose.assertAccessible()
         compose.onRoot().captureRoboImage("screenshots/group_$name.png")
     }
+
+    /** Luis owes me (a bell to remind him) and also owes Marta (nothing to remind there). */
+    private val owedToMe = state.copy(
+        detail = detail.copy(
+            balances = GroupBalances(
+                "EUR",
+                mapOf("ana" to 7_000L, "luis" to -10_400L, "marta" to 3_400L, "pablo" to 0L),
+                listOf(SuggestedPayment("luis", "ana", 7_000), SuggestedPayment("luis", "marta", 3_400)),
+                emptyList(),
+            ),
+        ),
+    )
+
+    @Test
+    fun settleRemind() = group("settle_remind", GroupTab.SETTLE, shown = owedToMe)
+
+    @Test
+    fun settleRemindDark() = group("settle_remind_dark", GroupTab.SETTLE, dark = true, shown = owedToMe)
+
+    @Test
+    fun settleRemindLargeText() = largeText { group("settle_remind_large_text", GroupTab.SETTLE, shown = owedToMe) }
 
     @Test
     fun expenses() = group("expenses", GroupTab.EXPENSES)

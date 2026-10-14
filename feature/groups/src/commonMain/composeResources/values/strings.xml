@@ -88,12 +88,18 @@
     <string name="you_suffix">%1$s (you)</string>
     <string name="pay_with">Pay with %1$s</string>
     <string name="pay_bizum_copied">Phone %1$s copied. Send %2$s to %3$s by Bizum from your bank and come back to mark it as paid.</string>
-    <string name="pay_request_action">Ask to be paid</string>
-    <string name="pay_hint_add_yours">Add your Bizum, PayPal or Revolut in your profile to ask for the payment with a message.</string>
-    <string name="pay_request">Hi %1$s, you owe me %2$s in “%3$s”. You can pay me by:</string>
-    <string name="pay_request_line_bizum">Bizum: %1$s</string>
-    <string name="pay_request_line_paypal">PayPal: %1$s</string>
-    <string name="pay_request_line_revolut">Revolut: %1$s</string>
+    <string name="remind_action">Send a reminder</string>
+    <string name="remind_description">Remind %1$s they owe you %2$s</string>
+    <string name="pay_hint_add_yours">Add your Bizum, PayPal or Revolut in your profile and reminders will say how to pay you.</string>
+    <!-- Reminder message sent through other apps: %1$s name, %2$s group, %3$s amount. -->
+    <string name="remind_intro">Hi %1$s! You owe me %3$s in “%2$s”.</string>
+    <string name="remind_pay_by">You can pay me %1$s.</string>
+    <string name="remind_bizum">by Bizum at %1$s</string>
+    <string name="remind_paypal">with PayPal at %1$s</string>
+    <string name="remind_revolut">with Revolut at %1$s</string>
+    <string name="remind_list_more">%1$s, %2$s</string>
+    <string name="remind_list_last">%1$s or %2$s</string>
+    <string name="remind_thanks">Thanks!</string>
     <string name="stats_title">Summary</string>
     <string name="stats_total">Total</string>
     <string name="stats_expenses">Expenses</string>

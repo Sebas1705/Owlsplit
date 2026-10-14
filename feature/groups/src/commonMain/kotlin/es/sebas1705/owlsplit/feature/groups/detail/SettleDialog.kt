@@ -33,10 +33,9 @@ import compose.icons.TablerIcons
 import compose.icons.tablericons.BrandPaypal
 import compose.icons.tablericons.CreditCard
 import compose.icons.tablericons.DeviceMobile
-import compose.icons.tablericons.Send
+import compose.icons.tablericons.BellRinging
 import es.sebas1705.owlsplit.core.money.Currency
 import es.sebas1705.owlsplit.core.ui.components.TextActionButton
-import es.sebas1705.owlsplit.core.ui.components.TextSharer
 import es.sebas1705.owlsplit.core.ui.format.MoneyFormat
 import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
 import es.sebas1705.owlsplit.core.ui.theme.Sizes
@@ -50,12 +49,8 @@ import es.sebas1705.owlsplit.feature.groups.resources.Res
 import es.sebas1705.owlsplit.feature.groups.resources.cancel
 import es.sebas1705.owlsplit.feature.groups.resources.pay_bizum_copied
 import es.sebas1705.owlsplit.feature.groups.resources.pay_hint_add_yours
-import es.sebas1705.owlsplit.feature.groups.resources.pay_request
-import es.sebas1705.owlsplit.feature.groups.resources.pay_request_action
-import es.sebas1705.owlsplit.feature.groups.resources.pay_request_line_bizum
-import es.sebas1705.owlsplit.feature.groups.resources.pay_request_line_paypal
-import es.sebas1705.owlsplit.feature.groups.resources.pay_request_line_revolut
 import es.sebas1705.owlsplit.feature.groups.resources.pay_with
+import es.sebas1705.owlsplit.feature.groups.resources.remind_action
 import es.sebas1705.owlsplit.feature.groups.resources.settle_body
 import es.sebas1705.owlsplit.feature.groups.resources.settle_confirm
 import es.sebas1705.owlsplit.feature.groups.resources.settle_title
@@ -64,9 +59,9 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * Settling one suggested payment. When I am the one paying and the other person published how to be
  * paid, their services are a tap away (the payment is still recorded here by hand: the app never
- * sees money move). When I am the one being paid, I can send them a message with my details.
+ * sees money move). When I am the one being paid, I can send them a reminder with my details.
  */
-@Suppress("LongParameterList") // What the dialog shows and its two outcomes.
+@Suppress("LongParameterList") // What the dialog shows, the reminder and its two outcomes.
 @Composable
 internal fun SettleDialog(
     payment: SuggestedPayment,
@@ -74,12 +69,11 @@ internal fun SettleDialog(
     detail: GroupDetail,
     currency: Currency,
     format: MoneyFormat,
-    sharer: TextSharer,
+    onRemind: () -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val payee = detail.members.firstOrNull { it.id == payment.toMemberId }
-    val payer = detail.members.firstOrNull { it.id == payment.fromMemberId }
     val payeeMethods = payee?.payMethods
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -101,8 +95,7 @@ internal fun SettleDialog(
                 when {
                     payment.fromMemberId == detail.myMemberId && payeeMethods != null ->
                         PayOptions(payee.name, payeeMethods, payment.amountMinor, currency, format)
-                    payment.toMemberId == detail.myMemberId && payer != null ->
-                        RequestPayment(payer.name, detail, payment.amountMinor, currency, format, sharer)
+                    payment.toMemberId == detail.myMemberId -> RequestPayment(detail, onRemind)
                 }
             }
         },
@@ -146,46 +139,18 @@ private fun PayOptions(name: String, methods: PayMethods, amountMinor: Long, cur
     }
 }
 
-@Suppress("LongParameterList") // The message needs who, how much, where and my details.
+/** The same reminder as the bell on the row; without my pay methods it only says what I am owed. */
 @Composable
-private fun RequestPayment(
-    payerName: String,
-    detail: GroupDetail,
-    amountMinor: Long,
-    currency: Currency,
-    format: MoneyFormat,
-    sharer: TextSharer,
-) {
+private fun RequestPayment(detail: GroupDetail, onRemind: () -> Unit) {
+    OptionRow(TablerIcons.BellRinging, stringResource(Res.string.remind_action), onRemind)
     val mine = detail.members.firstOrNull { it.id == detail.myMemberId }?.payMethods
-    if (mine == null) {
+    if (PayLinks.available(mine).isEmpty()) {
         Text(
             stringResource(Res.string.pay_hint_add_yours),
             style = Owlsplit.type.caption,
             color = Owlsplit.colors.textMuted,
         )
-        return
     }
-    val lines = PayLinks.available(mine).map { method ->
-        when (method) {
-            PayMethod.BIZUM -> stringResource(Res.string.pay_request_line_bizum, mine.bizum.orEmpty())
-            PayMethod.PAYPAL -> stringResource(
-                Res.string.pay_request_line_paypal,
-                PayLinks.paypalUrl(mine.paypal.orEmpty(), amountMinor, currency),
-            )
-            PayMethod.REVOLUT -> stringResource(
-                Res.string.pay_request_line_revolut,
-                PayLinks.revolutUrl(mine.revolut.orEmpty()),
-            )
-        }
-    }
-    val intro = stringResource(
-        Res.string.pay_request,
-        payerName,
-        format.format(amountMinor, currency),
-        detail.group.name
-    )
-    val message = (listOf(intro) + lines).joinToString("\n")
-    OptionRow(TablerIcons.Send, stringResource(Res.string.pay_request_action)) { sharer.share(message) }
 }
 
 @Composable

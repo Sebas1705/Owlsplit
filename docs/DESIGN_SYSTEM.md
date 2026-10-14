@@ -89,7 +89,7 @@ Geometric owl: rounded square in `accent` with two white rings for eyes and a be
 | `GroupRow` | Group icon, name, metadata and colored balance |
 | `SegmentedControl` | `surfaceVariant` pill with the active option in `segmentSelected` |
 | `MemberBalanceRow` | Avatar, name, thin proportional 4 dp bar and balance |
-| `SettleSuggestionRow` | "X te debe Y" ("X owes you Y") with a "Saldar" ("Settle") pill button |
+| `SettleSuggestionRow` | "X te debe Y" ("X owes you Y") with a "Saldar" ("Settle") pill button and an optional secondary icon action (`RowAction`, 48 dp target, e.g. the reminder bell) |
 | `AmountDisplay` | Amount with reduced decimals and currency picker |
 | `AmountKeypad` | Custom numeric keypad with locale decimal separator and delete |
 | `AvatarToggle` | Avatar that toggles included (`accent`) / excluded (`surfaceVariant`) |
