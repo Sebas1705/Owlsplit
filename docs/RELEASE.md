@@ -19,7 +19,9 @@ Debug builds (`es.sebas1705.owlsplit.debug`, `./gradlew :composeApp:installDebug
 git tag v1.0.0 && git push origin v1.0.0
 ```
 
-It can also be triggered manually from Actions with the version (`X.Y.Z-beta.1` creates a prerelease). The AAB is ready for Google Play.
+It can also be triggered manually from Actions with the version (`X.Y.Z-beta.1` creates a prerelease). The AAB goes to Google Play's `PLAY_TRACK` channel (see [the Play Console guide](play/PLAY-CONSOLE-GUIDE.md)).
+
+**Release notes** are written once: GitHub generates them from the merged PRs, and `scripts/release-notes.mjs` turns the user-facing ones (`feat`/`fix`/`perf` titles, prefix removed; `docs`/`ci`/`chore`/… left out) into the short en-US and es-ES notes that App Distribution and Google Play show (500 characters each). So **PR titles are the changelog**: write them for users.
 
 When the Release finishes, `deploy-firebase.yml` redeploys Hosting with that version's APK. That way **[owlsplit.web.app](https://owlsplit.web.app)** always offers the latest download, betas included:
 
