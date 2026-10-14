@@ -110,12 +110,21 @@ class LinkGoogle(
 ) {
     val isAvailable: Boolean get() = google.isAvailable
 
-    suspend operator fun invoke(): GoogleOutcome = google.withToken(accounts::linkGoogle).also {
-        // users/{uid} lists the linked providers; my groups show the account is linked.
-        if (it is GoogleOutcome.Done) {
+    suspend operator fun invoke(): GoogleOutcome {
+        val outcome = google.withToken(accounts::linkGoogle)
+        if (outcome !is GoogleOutcome.Done) return outcome
+        // What the cloud has wins over this phone: it comes down and replaces the local profile (and
+        // how I am paid in my groups). With nothing in the cloud, this phone's profile goes up.
+        // Either way users/{uid} ends up listing the linked providers.
+        val cloud = profiles.restore()
+        if (cloud != null) {
+            profiles.save(cloud)
+            members?.publishMyPayMethods(cloud.payMethods.orNull())
+        } else {
             profiles.uploadCurrent()
-            members?.publishMyLinked(true)
         }
+        members?.publishMyLinked(true)
+        return GoogleOutcome.Done(cloud)
     }
 }
 
