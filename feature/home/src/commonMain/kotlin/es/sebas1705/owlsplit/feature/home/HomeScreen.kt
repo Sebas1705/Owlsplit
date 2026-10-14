@@ -36,16 +36,18 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import compose.icons.TablerIcons
 import compose.icons.tablericons.ArrowsLeftRight
+import compose.icons.tablericons.Download
+import compose.icons.tablericons.ShieldCheck
 import compose.icons.tablericons.Link
 import compose.icons.tablericons.Plus
 import compose.icons.tablericons.UserPlus
 import es.sebas1705.owlsplit.core.money.Currency
+import es.sebas1705.owlsplit.core.ui.components.CalloutCard
 import es.sebas1705.owlsplit.core.ui.components.BalanceHero
 import es.sebas1705.owlsplit.core.ui.components.EmptyState
 import es.sebas1705.owlsplit.core.ui.components.GroupRow
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitContainer
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitLogo
-import es.sebas1705.owlsplit.core.ui.components.PrimaryPillButton
 import es.sebas1705.owlsplit.core.ui.components.QuickActionButton
 import es.sebas1705.owlsplit.core.ui.components.SyncStatus
 import es.sebas1705.owlsplit.core.ui.components.SyncStatusChip
@@ -304,26 +306,15 @@ private fun Archived(groups: List<Group>, onOpen: (String) -> Unit) {
 @Composable
 private fun Update(release: LatestRelease, onEvent: (HomeIntent) -> Unit) {
     val uri = LocalUriHandler.current
-    OwlsplitContainer(title = stringResource(Res.string.update_title, release.version)) {
-        Column(Modifier.padding(horizontal = Spacing.m), verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
-            Text(
-                stringResource(Res.string.update_body),
-                style = Owlsplit.type.body,
-                color = Owlsplit.colors.textSecondary
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.s)
-            ) {
-                TextActionButton(stringResource(Res.string.nudge_dismiss), { onEvent(HomeIntent.DismissUpdate) })
-                PrimaryPillButton(
-                    stringResource(Res.string.update_action),
-                    { uri.openUri(release.url) },
-                    Modifier.weight(1f)
-                )
-            }
-        }
-    }
+    CalloutCard(
+        icon = TablerIcons.Download,
+        title = stringResource(Res.string.update_title, release.version),
+        body = stringResource(Res.string.update_body),
+        actionLabel = stringResource(Res.string.update_action),
+        onAction = { uri.openUri(release.url) },
+        dismissLabel = stringResource(Res.string.nudge_dismiss),
+        onDismiss = { onEvent(HomeIntent.DismissUpdate) },
+    )
 }
 
 /**
@@ -363,23 +354,15 @@ private fun StoreUpdateNotice(update: StoreUpdate, onEvent: (HomeIntent) -> Unit
 
 @Composable
 private fun Nudge(onEvent: (HomeIntent) -> Unit, onLink: () -> Unit) {
-    OwlsplitContainer(title = stringResource(Res.string.nudge_title)) {
-        Column(Modifier.padding(horizontal = Spacing.m), verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
-            Text(
-                stringResource(Res.string.nudge_body),
-                style = Owlsplit.type.body,
-                color = Owlsplit.colors.textSecondary
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.s)
-            ) {
-                TextActionButton(stringResource(Res.string.nudge_dismiss), { onEvent(HomeIntent.DismissNudge) })
-                // All the width left: with large text the label still fits.
-                PrimaryPillButton(stringResource(Res.string.nudge_action), onLink, Modifier.weight(1f))
-            }
-        }
-    }
+    CalloutCard(
+        icon = TablerIcons.ShieldCheck,
+        title = stringResource(Res.string.nudge_title),
+        body = stringResource(Res.string.nudge_body),
+        actionLabel = stringResource(Res.string.nudge_action),
+        onAction = onLink,
+        dismissLabel = stringResource(Res.string.nudge_dismiss),
+        onDismiss = { onEvent(HomeIntent.DismissNudge) },
+    )
 }
 
 @Composable
