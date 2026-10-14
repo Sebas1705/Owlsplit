@@ -92,26 +92,6 @@ data class GroupStats(
         }
 
         private fun LocalDate.daysUntil(other: LocalDate): Int = (other.toEpochDays() - toEpochDays()).toInt()
-
-        private fun monthsBetween(first: LocalDate?, last: LocalDate?): List<Pair<Int, Int>> {
-            if (first == null || last == null) return emptyList()
-            val months = mutableListOf<Pair<Int, Int>>()
-            var year = first.year
-            var month = first.month.ordinal + 1
-            val end = last.year * MONTHS + last.month.ordinal
-            while (year * MONTHS + month - 1 <= end) {
-                months += year to month
-                if (month == MONTHS) {
-                    year++
-                    month = 1
-                } else {
-                    month++
-                }
-            }
-            return months
-        }
-
-        private const val MONTHS = 12
     }
 }
 
@@ -129,3 +109,24 @@ fun Expense.sharesInBase(members: List<LedgerMember>, base: Currency): Map<Strin
     val result = ShareCalculator.shares(amountMinor, split, members) as? SplitResult.Ok ?: return null
     return result.shares.mapValues { inBase(it.value, base) }
 }
+
+/** Every (year, month 1..12) from the month of [first] to that of [last], in order; none without dates. */
+internal fun monthsBetween(first: LocalDate?, last: LocalDate?): List<Pair<Int, Int>> {
+    if (first == null || last == null) return emptyList()
+    val months = mutableListOf<Pair<Int, Int>>()
+    var year = first.year
+    var month = first.month.ordinal + 1
+    val end = last.year * MONTHS + last.month.ordinal
+    while (year * MONTHS + month - 1 <= end) {
+        months += year to month
+        if (month == MONTHS) {
+            year++
+            month = 1
+        } else {
+            month++
+        }
+    }
+    return months
+}
+
+private const val MONTHS = 12

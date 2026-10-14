@@ -2,6 +2,7 @@
 <resources>
     <string name="tab_home">Inicio</string>
     <string name="tab_activity">Actividad</string>
+    <string name="tab_stats">Estadísticas</string>
     <string name="tab_profile">Perfil</string>
     <string name="firebase_missing">Falta la configuración de Firebase de este entorno (google-services.json).</string>
     <string name="back">Atrás</string>

@@ -156,4 +156,23 @@
     <string name="close">Cerrar</string>
     <string name="with_google">Cuenta con Google</string>
     <string name="left_group">Salió del grupo</string>
+    <string name="stats_open">Ver el resumen</string>
+    <string name="stats_spent">Total gastado</string>
+    <string name="spending_title">Estadísticas</string>
+    <string name="period_month">Este mes</string>
+    <string name="period_year">Este año</string>
+    <string name="period_all">Todo</string>
+    <string name="spending_mine">Mi parte</string>
+    <string name="spending_paid">He pagado</string>
+    <string name="spending_hint">Tu parte de cada gasto: lo que consumiste, no lo que pagaste por otros.</string>
+    <string name="spending_approximate">Los grupos en otras divisas se convierten al cambio de hoy.</string>
+    <string name="spending_unconverted">Sin incluir, no hay tipo de cambio: %1$s</string>
+    <string name="spending_groups">Por grupo</string>
+    <string name="spending_empty_title">Nada gastado en este periodo</string>
+    <string name="spending_empty_body">Aquí verás tu parte de los gastos de tus grupos.</string>
+    <plurals name="stats_count">
+        <item quantity="one">%1$d gasto</item>
+        <item quantity="other">%1$d gastos</item>
+    </plurals>
+    <string name="stats_per_day_value">%1$s al día</string>
 </resources>

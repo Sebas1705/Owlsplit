@@ -20,6 +20,7 @@ import es.sebas1705.owlsplit.domain.usecases.groups.MemberActions
 import es.sebas1705.owlsplit.domain.usecases.groups.ObserveGroupDetail
 import es.sebas1705.owlsplit.domain.usecases.groups.ObserveHome
 import es.sebas1705.owlsplit.domain.usecases.fx.ConvertTotal
+import es.sebas1705.owlsplit.domain.usecases.stats.ObserveMySpending
 import es.sebas1705.owlsplit.domain.usecases.fx.GetFxRate
 import es.sebas1705.owlsplit.domain.usecases.groups.RecordTransfer
 import es.sebas1705.owlsplit.domain.usecases.history.HistoryDescriber
@@ -34,6 +35,7 @@ import es.sebas1705.owlsplit.feature.groups.detail.GroupViewModel
 import es.sebas1705.owlsplit.feature.groups.editor.GroupEditorViewModel
 import es.sebas1705.owlsplit.feature.groups.members.MembersViewModel
 import es.sebas1705.owlsplit.feature.groups.importer.ImportViewModel
+import es.sebas1705.owlsplit.feature.groups.stats.MySpendingViewModel
 import es.sebas1705.owlsplit.feature.groups.stats.StatsViewModel
 import es.sebas1705.owlsplit.feature.groups.transfer.TransferViewModel
 import es.sebas1705.owlsplit.feature.history.HistoryViewModel
@@ -65,6 +67,7 @@ val groupsModule = module {
     single<ReleaseFeed> { HostingReleaseFeed(buildHttpClient(), AppConfig.LATEST_RELEASE_URL) }
     factory { CheckForUpdate(get(), updatableVersionCode) }
     factory { ConvertTotal(get()) }
+    factory { ObserveMySpending(get(), get(), get(), get(), get(), get()) }
     factory { HistoryDescriber(get(), get(), get(), get(), get()) }
     factory { ObserveHistory(get(), get(), get(), get()) }
     factory { ObserveActivity(get(), get(), get(), get(), get()) }
@@ -79,6 +82,7 @@ val groupsModule = module {
     viewModel { (groupId: String) -> MembersViewModel(groupId, get(), get()) }
     viewModel { (groupId: String) -> TransferViewModel(groupId, get(), get()) }
     viewModel { (groupId: String) -> StatsViewModel(groupId, get()) }
+    viewModel { MySpendingViewModel(get()) }
     viewModel { ImportViewModel(get(), get(), get()) }
     viewModel { (groupId: String?) -> HistoryViewModel(groupId, get(), get(), get(), get()) }
     viewModel { (groupId: String, expenseId: String?, separator: Char) ->

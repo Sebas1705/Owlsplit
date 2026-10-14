@@ -35,6 +35,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Activity
+import compose.icons.tablericons.ChartBar
 import compose.icons.tablericons.ArrowLeft
 import compose.icons.tablericons.Home
 import compose.icons.tablericons.User
@@ -50,6 +51,7 @@ import es.sebas1705.owlsplit.feature.groups.editor.GroupEditorRoute
 import es.sebas1705.owlsplit.feature.groups.members.MembersRoute
 import es.sebas1705.owlsplit.feature.groups.transfer.TransferRoute
 import es.sebas1705.owlsplit.feature.groups.importer.ImportRoute
+import es.sebas1705.owlsplit.feature.groups.stats.MySpendingRoute
 import es.sebas1705.owlsplit.feature.groups.stats.StatsRoute
 import es.sebas1705.owlsplit.feature.history.HistoryRoute
 import es.sebas1705.owlsplit.feature.home.HomeNavigation
@@ -64,6 +66,7 @@ import es.sebas1705.owlsplit.resources.back
 import es.sebas1705.owlsplit.resources.tab_activity
 import es.sebas1705.owlsplit.resources.tab_home
 import es.sebas1705.owlsplit.resources.tab_profile
+import es.sebas1705.owlsplit.resources.tab_stats
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.StringResource
@@ -75,6 +78,9 @@ private data object HomeTab
 
 @Serializable
 private data object ActivityTab
+
+@Serializable
+private data object StatsTab
 
 @Serializable
 private data object ProfileTab
@@ -118,6 +124,7 @@ private data class ExpenseDest(val groupId: String, val expenseId: String? = nul
 private enum class Tab(val route: Any, val icon: ImageVector, val label: StringResource) {
     HOME(HomeTab, TablerIcons.Home, Res.string.tab_home),
     ACTIVITY(ActivityTab, TablerIcons.Activity, Res.string.tab_activity),
+    STATS(StatsTab, TablerIcons.ChartBar, Res.string.tab_stats),
     PROFILE(ProfileTab, TablerIcons.User, Res.string.tab_profile),
 }
 
@@ -127,7 +134,7 @@ private sealed interface RootState {
     data object Ready : RootState
 }
 
-/** Onboarding until there is a profile; then the tabs (Home · Activity · Profile) and their screens. */
+/** Onboarding until there is a profile; then the tabs (Home · Activity · Stats · Profile) and their screens. */
 @Composable
 fun AppRoot(modifier: Modifier = Modifier) {
     val observeAccount = koinInject<ObserveAccount>()
@@ -185,6 +192,7 @@ private fun Tabs(modifier: Modifier, startChoice: StartChoice?, onStartHandled: 
         NavHost(nav, startDestination = HomeTab, modifier = Modifier.padding(padding)) {
             composable<HomeTab> { HomeRoute(homeNavigation(nav)) }
             composable<ActivityTab> { HistoryRoute(groupId = null, onBack = null) }
+            composable<StatsTab> { MySpendingRoute(onOpenGroup = { nav.navigate(GroupDest(it)) }) }
             composable<ProfileTab> {
                 val catalog = if (isDebugBuild) ({ nav.navigate(CatalogRoute) }) else null
                 ProfileRoute(onOpenCatalog = catalog)
