@@ -2,7 +2,7 @@
 
 | Module | Contents | Plan that extends it |
 |---|---|---|
-| `composeApp` | Android/iOS entry point (iOS: `iosApp/project.yml` with XcodeGen; sharing, scanner, Google via `GoogleSignInBridge`), root DI, `AppConfig` and `isDebugBuild`, Crashlytics (`CrashReporting`), App Check (`AppCheckSetup` per Android build type, `iOSApp.swift`), app language (`LocalAppLocale`), navigation (onboarding → Home · Activity · Profile tabs), `SyncStarter`, Google with Credential Manager, `TextSharer` (share sheet), `AndroidQrScanner`, App Links (`IncomingInvites`), Google Play In-App Updates on Play installs (`PlayStoreUpdates`, flexible flow) | P9 |
+| `composeApp` | Android/iOS entry point (iOS: `iosApp/project.yml` with XcodeGen; sharing, scanner, Google via `GoogleSignInBridge`), root DI, `AppConfig` and `isDebugBuild`, Crashlytics (`CrashReporting`), App Check (`AppCheckSetup` per Android build type, `iOSApp.swift`), app language (`LocalAppLocale`), navigation (onboarding → Home · Activity · Stats · Profile tabs), `SyncStarter`, Google with Credential Manager, `TextSharer` (share sheet), `AndroidQrScanner`, App Links (`IncomingInvites`), Google Play In-App Updates on Play installs (`PlayStoreUpdates`, flexible flow) | P9 |
 | `core:common` | MVI base (`execute` errors go to `UnexpectedErrors`), `AppResult`, utilities | — |
 | `core:ui` | `OwlsplitTheme` (tokens, Inter, shapes), `MoneyFormat` and `LocalMoneyFormat`, components (including `QrCode` and `SwitchRow`) and `DesignCatalog`; Roborazzi screenshots | P9 |
 | `core:security` | `SecureStorage` | — |
@@ -20,7 +20,7 @@
 | `feature:onboarding` | Welcome → name and avatar → first group; "Ya tengo cuenta" (I already have an account) with Google | P9, P10 |
 | `feature:profile` | Profile tab: profile, link Google, preferred currency, theme, sign out, delete account | P11 |
 | `feature:home` | Home: total balance, sync status, quick actions, groups, link reminder | P9b (converted balance) |
-| `feature:groups` | Group screen (Expenses · Balances · Settle up), group and member editor | P9b, P10 |
+| `feature:groups` | Group screen (summary card, Expenses · Balances · Settle up), group and member editor, group summary (`StatsScreen`, exports) and the Stats tab (`MySpendingScreen`: my part across groups by period, group, category and month) | P9b, P10 |
 | `feature:history` | Group history and Activity tab: readable changes, restore deletions, reapply or discard conflicts | P11 |
 | `feature:expense` | Expense editor: custom keypad, category, payer and the four split types with live validation | P9b (currencies, multiple payers, date) |
 | `feature:invite` | Invite (QR, code, link, share, regenerate) and Join (scan, code or link → preview → join → claim member or add me) | — |

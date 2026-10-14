@@ -6,6 +6,12 @@ import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
 import es.sebas1705.owlsplit.core.testing.ui.assertAccessible
+import es.sebas1705.owlsplit.domain.usecases.stats.MySpending
+import es.sebas1705.owlsplit.domain.usecases.stats.SpendingGroup
+import es.sebas1705.owlsplit.domain.usecases.stats.SpendingPeriod
+import es.sebas1705.owlsplit.domain.usecases.stats.SpendingSource
+import es.sebas1705.owlsplit.feature.groups.stats.MySpendingScreen
+import es.sebas1705.owlsplit.feature.groups.stats.MySpendingState
 import es.sebas1705.owlsplit.core.ui.format.LocalMoneyFormat
 import es.sebas1705.owlsplit.core.ui.format.MoneyFormat
 import es.sebas1705.owlsplit.core.ui.theme.GroupAccent
@@ -230,4 +236,47 @@ class GroupsScreenshotTest {
         compose.assertAccessible()
         compose.onRoot().captureRoboImage("screenshots/group_record_payment.png")
     }
+
+    /** Ibiza plus a flat in another month: my part across both, by group, category and month. */
+    private fun spending(period: SpendingPeriod = SpendingPeriod.ALL): MySpendingState {
+        val flat = group.copy(id = "g2", name = "Piso Lavapiés", icon = "home", accent = "ORANGE")
+        val rent = expense("r1", "Alquiler", ExpenseCategory.HOME, 120_000, "ana", LocalDate(2026, 9, 1))
+            .copy(groupId = "g2")
+        val source = SpendingSource(
+            listOf(
+                SpendingGroup(group, members, detail.expenses, "ana"),
+                SpendingGroup(flat, members, listOf(rent), "ana"),
+            ),
+            "EUR",
+            emptyMap(),
+        )
+        return MySpendingState(loaded = true, period = period, spending = MySpending.of(source, period, today))
+    }
+
+    private fun mySpending(name: String, shown: MySpendingState, dark: Boolean = false) {
+        compose.setContent {
+            OwlsplitTheme(darkTheme = dark) {
+                MySpendingScreen(shown, {}, {})
+            }
+        }
+        compose.assertAccessible()
+        compose.onRoot().captureRoboImage("screenshots/my_spending_$name.png")
+    }
+
+    @Test
+    fun mySpending() = mySpending("all", spending())
+
+    @Test
+    fun mySpendingDark() = mySpending("all_dark", spending(), dark = true)
+
+    @Test
+    fun mySpendingLargeText() = largeText { mySpending("all_large_text", spending()) }
+
+    @Test
+    fun mySpendingEmptyMonth() = mySpending(
+        "empty",
+        spending(SpendingPeriod.MONTH).let {
+            it.copy(spending = it.spending!!.copy(expenseCount = 0))
+        }
+    )
 }

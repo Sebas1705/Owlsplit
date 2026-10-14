@@ -8,12 +8,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -24,14 +22,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import compose.icons.TablerIcons
-import compose.icons.tablericons.CalendarEvent
 import compose.icons.tablericons.Share
 import es.sebas1705.owlsplit.core.money.Currency
 import es.sebas1705.owlsplit.core.ui.components.EmptyState
@@ -45,7 +38,6 @@ import es.sebas1705.owlsplit.core.ui.format.rememberDateTexts
 import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
 import es.sebas1705.owlsplit.core.ui.theme.Sizes
 import es.sebas1705.owlsplit.core.ui.theme.Spacing
-import es.sebas1705.owlsplit.core.ui.theme.categoryIcon
 import es.sebas1705.owlsplit.core.ui.theme.categoryName
 import es.sebas1705.owlsplit.data.models.ExpenseCategory
 import es.sebas1705.owlsplit.domain.usecases.groups.GroupDetail
@@ -130,8 +122,8 @@ fun StatsScreen(
         ) {
             item { Figures(stats, currency, format) }
             item { People(detail, stats, currency, format) }
-            item { Categories(stats, currency, format) }
-            if (stats.months.size > 1) item { Months(stats, currency, format) }
+            item { CategoryBars(stats.categories, currency, format) }
+            if (stats.months.size > 1) item { MonthBars(stats.months, currency, format) }
         }
     }
 }
@@ -182,14 +174,6 @@ private fun Figures(stats: GroupStats, currency: Currency, format: MoneyFormat) 
 }
 
 @Composable
-private fun Figure(label: String, value: String, modifier: Modifier) {
-    Column(modifier.semantics(mergeDescendants = true) {}) {
-        Text(label, style = Owlsplit.type.caption, color = Owlsplit.colors.textSecondary)
-        Text(value, style = Owlsplit.type.bodyStrong, color = Owlsplit.colors.textPrimary)
-    }
-}
-
-@Composable
 private fun People(detail: GroupDetail, stats: GroupStats, currency: Currency, format: MoneyFormat) {
     OwlsplitContainer(title = stringResource(Res.string.stats_people)) {
         stats.members.forEach { member ->
@@ -225,65 +209,6 @@ private fun People(detail: GroupDetail, stats: GroupStats, currency: Currency, f
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun Categories(stats: GroupStats, currency: Currency, format: MoneyFormat) {
-    val largest = stats.categories.maxOfOrNull { it.amountMinor } ?: return
-    OwlsplitContainer(title = stringResource(Res.string.stats_categories)) {
-        stats.categories.forEach {
-            BarRow(
-                categoryIcon(it.category.name),
-                categoryName(it.category.name),
-                format.format(it.amountMinor, currency),
-                it.amountMinor.toFloat() / largest,
-            )
-        }
-    }
-}
-
-@Composable
-private fun Months(stats: GroupStats, currency: Currency, format: MoneyFormat) {
-    val dates = rememberDateTexts()
-    val largest = stats.months.maxOf { it.amountMinor }.coerceAtLeast(1)
-    OwlsplitContainer(title = stringResource(Res.string.stats_months)) {
-        stats.months.forEach {
-            BarRow(
-                TablerIcons.CalendarEvent,
-                dates.month(it.year, it.month),
-                format.format(it.amountMinor, currency),
-                it.amountMinor.toFloat() / largest,
-            )
-        }
-    }
-}
-
-/** An icon, a label over a bar as long as [fraction] of the largest, and the amount. */
-@Composable
-private fun BarRow(icon: ImageVector, label: String, amount: String, fraction: Float) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = Sizes.rowMinHeight)
-            .padding(horizontal = Spacing.m, vertical = Spacing.s)
-            .clearAndSetSemantics { contentDescription = "$label, $amount" },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.m),
-    ) {
-        Icon(icon, null, tint = Owlsplit.colors.textSecondary, modifier = Modifier.size(20.dp))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            Text(label, style = Owlsplit.type.body, color = Owlsplit.colors.textPrimary)
-            Box(Modifier.fillMaxWidth().height(BAR_HEIGHT).background(Owlsplit.colors.surfaceVariant, BAR_SHAPE)) {
-                Box(
-                    Modifier
-                        .fillMaxWidth(fraction.coerceIn(MIN_BAR, 1f))
-                        .height(BAR_HEIGHT)
-                        .background(Owlsplit.colors.accent, BAR_SHAPE),
-                )
-            }
-        }
-        Text(amount, style = Owlsplit.type.bodyStrong, color = Owlsplit.colors.textPrimary)
     }
 }
 
@@ -328,7 +253,3 @@ private fun reportLabels(): ReportLabels {
         transferTitle = { from, to -> transferTitle.replace("\u0001", from).replace("\u0002", to) },
     )
 }
-
-private val BAR_HEIGHT = 6.dp
-private val BAR_SHAPE = RoundedCornerShape(3.dp)
-private const val MIN_BAR = 0.02f
