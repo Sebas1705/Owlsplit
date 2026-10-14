@@ -1,5 +1,6 @@
 package es.sebas1705.owlsplit.data.repository
 
+import es.sebas1705.owlsplit.data.repository.sync.accessLostKey
 import es.sebas1705.owlsplit.data.models.MemberInput
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
@@ -77,7 +78,7 @@ class MemberRepositoryImpl(
 
     override suspend fun publishMyLinked(linked: Boolean) = withContext(io) {
         db.transaction {
-            db.memberEntityQueries.selectByUser(writer.uid()).executeAsList().map { it.toModel() }
+            myMembersInMyGroups()
                 .filter { it.linked != linked }
                 .forEach { old ->
                     save(
@@ -93,7 +94,7 @@ class MemberRepositoryImpl(
 
     override suspend fun publishMyPayMethods(methods: PayMethods?) = withContext(io) {
         db.transaction {
-            db.memberEntityQueries.selectByUser(writer.uid()).executeAsList().map { it.toModel() }
+            myMembersInMyGroups()
                 .filter { it.payMethods != methods }
                 .forEach { old ->
                     val new = old.copy(payMethods = methods, meta = writer.editedMeta(old.meta))
@@ -101,6 +102,15 @@ class MemberRepositoryImpl(
                 }
         }
     }
+
+    /**
+     * My members, only in groups I can still write: a group that dropped me stops reaching this device,
+     * so the sync engine marks it (access lost) instead of updating it.
+     */
+    private fun myMembersInMyGroups(): List<Member> =
+        db.memberEntityQueries.selectByUser(writer.uid()).executeAsList().map { it.toModel() }.filter { member ->
+            db.metaQueries.get(accessLostKey(member.groupId)).executeAsOneOrNull() != "1"
+        }
 
     private suspend fun edit(id: String, change: (Member) -> Member) = withContext(io) {
         db.transaction {

@@ -39,7 +39,8 @@ class SyncEngine(
     private val pushLock = Mutex()
 
     /** Number of writes waiting to be uploaded. */
-    override val pendingCount: Flow<Long> = db.outboxQueries.countAll().asFlow().mapToOne(io)
+    /** Pending changes that can still be uploaded: writes to groups that dropped me never will. */
+    override val pendingCount: Flow<Long> = db.outboxQueries.countUploadable().asFlow().mapToOne(io)
 
     override fun isAccessLost(groupId: String): Boolean = local.isAccessLost(groupId)
 

@@ -185,6 +185,31 @@ class SyncEngineTest {
     }
 
     @Test
+    fun `writes stuck in a group that dropped me are not shown as pending, and my flags skip it`() = runTest {
+        val h = Harness(this)
+        val g = h.env.groups.create(trip, "Ana")
+        val ana = h.env.members.observeMembersOnce(g).single().id
+        val job = h.engine.start(this, "uid-ana")
+        h.settle()
+        val doc = h.remote.doc(OutboxType.GROUP, g) as RemoteDoc.GroupDoc
+        h.remote.serverWrite(
+            doc.copy(group = doc.group.copy(memberUids = listOf("uid-luis"), meta = doc.group.meta.copy(version = 2)))
+        )
+        h.settle()
+        assertTrue(h.engine.isAccessLost(g))
+
+        // Linking Google publishes my "linked" flag: not on a group that no longer lists me.
+        h.env.members.publishMyLinked(true)
+        assertTrue(h.env.outbox().none { it.entity_type == "MEMBER" })
+        // A write that can never be uploaded does not count as pending.
+        h.env.expenses.create(g, dinner(ana))
+        h.settle()
+        assertTrue(h.env.outbox().isNotEmpty())
+        assertEquals(0L, h.engine.pendingCount.first())
+        job.cancel()
+    }
+
+    @Test
     fun `a lost group that lists me again uploads again`() = runTest {
         // Left and joined again (maybe with another account) on this device: not stuck as "lost".
         val h = Harness(this)
