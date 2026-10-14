@@ -20,6 +20,10 @@ import es.sebas1705.owlsplit.di.dataModule
 import es.sebas1705.owlsplit.di.groupsModule
 import es.sebas1705.owlsplit.di.inviteModule
 import es.sebas1705.owlsplit.domain.usecases.account.GoogleCredentials
+import es.sebas1705.owlsplit.domain.usecases.update.NoStoreUpdates
+import es.sebas1705.owlsplit.domain.usecases.update.StoreUpdates
+import es.sebas1705.owlsplit.config.installedFromPlay
+import es.sebas1705.owlsplit.update.PlayStoreUpdates
 import es.sebas1705.owlsplit.share.AndroidQrScanner
 import es.sebas1705.owlsplit.share.AndroidFilePicker
 import es.sebas1705.owlsplit.share.AndroidFileSharer
@@ -59,6 +63,9 @@ class KmpApplication : Application() {
                     single<FileSharer> { AndroidFileSharer(activities) }
                     single<FilePicker> { AndroidFilePicker(activities) }
                     single<QrScanner> { AndroidQrScanner(this@KmpApplication, activities) }
+                    single<StoreUpdates> {
+                        if (installedFromPlay()) PlayStoreUpdates(this@KmpApplication, activities) else NoStoreUpdates
+                    }
                 },
             )
         }.koin

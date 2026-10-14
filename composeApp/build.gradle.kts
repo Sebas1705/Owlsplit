@@ -101,6 +101,7 @@ kotlin {
             implementation(libs.androidx.credentials.play)
             implementation(libs.google.identity.googleid)
             implementation(libs.play.services.code.scanner)
+            implementation(libs.play.app.update.ktx)
         }
     }
 }

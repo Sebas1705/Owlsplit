@@ -37,6 +37,8 @@ data class GroupState(
     /** A recorded payment opened from the list, and whether its deletion is being confirmed. */
     val openTransfer: Transfer? = null,
     val confirmDeleteTransfer: Boolean = false,
+    /** A payment owed to me whose reminder is waiting for the share sheet (the screen sends it once). */
+    val reminder: SuggestedPayment? = null,
     /** The group is no longer here (left, or gone): the screen closes. */
     val closed: Boolean = false,
 ) : MVIBaseState {
@@ -53,6 +55,12 @@ sealed interface GroupIntent : MVIBaseIntent {
     data class AskSettle(val payment: SuggestedPayment) : GroupIntent
     data object ConfirmSettle : GroupIntent
     data object FinalSettle : GroupIntent
+
+    /** Share a friendly reminder with whoever owes me [payment]; ignored when it is not owed to me. */
+    data class Remind(val payment: SuggestedPayment) : GroupIntent
+
+    /** The share sheet opened (or the message was copied): the reminder is done. */
+    data object ReminderSent : GroupIntent
     data class OpenTransfer(val transfer: Transfer) : GroupIntent
     data object AskDeleteTransfer : GroupIntent
     data object ConfirmDeleteTransfer : GroupIntent
@@ -119,6 +127,11 @@ class GroupViewModel(
             is GroupIntent.AskSettle -> updateState { it.copy(confirmSettle = intent.payment) }
             GroupIntent.ConfirmSettle -> updateState { it.copy(finalSettle = it.confirmSettle, confirmSettle = null) }
             GroupIntent.FinalSettle -> settle()
+            is GroupIntent.Remind -> updateState {
+                val owedToMe = it.detail?.myMemberId?.let { me -> me == intent.payment.toMemberId } == true
+                if (owedToMe) it.copy(reminder = intent.payment) else it
+            }
+            GroupIntent.ReminderSent -> updateState { it.copy(reminder = null) }
             is GroupIntent.OpenTransfer -> updateState { it.copy(openTransfer = intent.transfer) }
             GroupIntent.AskDeleteTransfer -> updateState { it.copy(confirmDeleteTransfer = true) }
             GroupIntent.ConfirmDeleteTransfer -> {

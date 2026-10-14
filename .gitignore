@@ -72,3 +72,6 @@ iosApp/iosApp/Info.plist
 
 # APK of the latest release: fetched by deploy-firebase.yml, never committed
 firebase/hosting/download/
+
+# Local Claude Code state (agent worktrees, settings)
+.claude/

@@ -2,7 +2,7 @@
 
 | Module | Contents | Plan that extends it |
 |---|---|---|
-| `composeApp` | Android/iOS entry point (iOS: `iosApp/project.yml` with XcodeGen; sharing, scanner, Google via `GoogleSignInBridge`), root DI, `AppConfig` and `isDebugBuild`, Crashlytics (`CrashReporting`), App Check (`AppCheckSetup` per Android build type, `iOSApp.swift`), app language (`LocalAppLocale`), navigation (onboarding → Home · Activity · Profile tabs), `SyncStarter`, Google with Credential Manager, `TextSharer` (share sheet), `AndroidQrScanner`, App Links (`IncomingInvites`) | P9 |
+| `composeApp` | Android/iOS entry point (iOS: `iosApp/project.yml` with XcodeGen; sharing, scanner, Google via `GoogleSignInBridge`), root DI, `AppConfig` and `isDebugBuild`, Crashlytics (`CrashReporting`), App Check (`AppCheckSetup` per Android build type, `iOSApp.swift`), app language (`LocalAppLocale`), navigation (onboarding → Home · Activity · Profile tabs), `SyncStarter`, Google with Credential Manager, `TextSharer` (share sheet), `AndroidQrScanner`, App Links (`IncomingInvites`), Google Play In-App Updates on Play installs (`PlayStoreUpdates`, flexible flow) | P9 |
 | `core:common` | MVI base (`execute` errors go to `UnexpectedErrors`), `AppResult`, utilities | — |
 | `core:ui` | `OwlsplitTheme` (tokens, Inter, shapes), `MoneyFormat` and `LocalMoneyFormat`, components (including `QrCode` and `SwitchRow`) and `DesignCatalog`; Roborazzi screenshots | P9 |
 | `core:security` | `SecureStorage` | — |

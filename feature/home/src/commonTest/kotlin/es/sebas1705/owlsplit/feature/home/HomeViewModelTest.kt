@@ -5,6 +5,9 @@ import es.sebas1705.owlsplit.core.datastore.UpdateSettings
 import es.sebas1705.owlsplit.data.models.LatestRelease
 import es.sebas1705.owlsplit.data.repository.update.ReleaseFeed
 import es.sebas1705.owlsplit.domain.usecases.update.CheckForUpdate
+import es.sebas1705.owlsplit.domain.usecases.update.NoStoreUpdates
+import es.sebas1705.owlsplit.domain.usecases.update.StoreUpdate
+import es.sebas1705.owlsplit.domain.usecases.update.StoreUpdates
 import es.sebas1705.owlsplit.core.money.FxRate
 import es.sebas1705.owlsplit.core.testing.CoroutineTestRule
 import es.sebas1705.owlsplit.data.repository.fx.FxQuote
@@ -57,7 +60,40 @@ class HomeViewModelTest {
     private val sync = FakeSync()
     private val nudge = Nudge()
 
-    private fun viewModel(checkForUpdate: CheckForUpdate? = null, updates: UpdateSettings? = null) = HomeViewModel(
+    private class Dismissals : UpdateSettings {
+        override val dismissedUpdate = MutableStateFlow<Long?>(null)
+        override suspend fun dismissUpdate(versionCode: Long) {
+            dismissedUpdate.value = versionCode
+        }
+    }
+
+    /** Play as the tests drive it: what it reports, and what Home asked of it. */
+    private class FakeStore : StoreUpdates {
+        override val update = MutableStateFlow<StoreUpdate?>(null)
+        var started = 0
+        var completed = 0
+        override suspend fun start() {
+            started++
+        }
+
+        override suspend fun complete() {
+            completed++
+        }
+    }
+
+    /** Store installs: the download page is never asked (installedCode is null there). */
+    private val noRelease = CheckForUpdate(
+        object : ReleaseFeed {
+            override suspend fun latest() = error("A store install never reads the download page")
+        },
+        installedCode = null,
+    )
+
+    private fun viewModel(
+        checkForUpdate: CheckForUpdate? = null,
+        updates: UpdateSettings? = null,
+        store: StoreUpdates = NoStoreUpdates,
+    ) = HomeViewModel(
         ObserveHome(
             ledger.groups,
             ledger.members,
@@ -75,7 +111,7 @@ class HomeViewModelTest {
             },
         ),
         nudge,
-        updates = if (checkForUpdate != null && updates != null) UpdateOffer(checkForUpdate, updates) else null,
+        updates = if (checkForUpdate != null && updates != null) UpdateOffer(checkForUpdate, updates, store) else null,
     )
 
     @Test
@@ -129,17 +165,59 @@ class HomeViewModelTest {
         val feed = object : ReleaseFeed {
             override suspend fun latest() = beta5
         }
-        val updates = object : UpdateSettings {
-            override val dismissedUpdate = MutableStateFlow<Long?>(null)
-            override suspend fun dismissUpdate(versionCode: Long) {
-                dismissedUpdate.value = versionCode
-            }
-        }
+        val updates = Dismissals()
         val vm = viewModel(CheckForUpdate(feed, installedCode = 180), updates)
         assertEquals(beta5, vm.uiState.value.update)
+        assertNull(vm.uiState.value.storeUpdate)
 
         vm.onEvent(HomeIntent.DismissUpdate)
         assertNull(vm.uiState.value.update)
         assertNull(viewModel(CheckForUpdate(feed, installedCode = 180), updates).uiState.value.update)
+    }
+
+    @Test
+    fun aStoreUpdateDownloadsAndThenRestarts() = runTest {
+        val store = FakeStore()
+        val vm = viewModel(noRelease, Dismissals(), store)
+        assertNull(vm.uiState.value.storeUpdate)
+        assertNull(vm.uiState.value.update)
+
+        store.update.value = StoreUpdate.Available(200)
+        assertEquals(StoreUpdate.Available(200), vm.uiState.value.storeUpdate)
+        vm.onEvent(HomeIntent.StartStoreUpdate)
+        assertEquals(1, store.started)
+
+        // Nothing to do while Play downloads it.
+        store.update.value = StoreUpdate.Downloading(200)
+        assertNull(vm.uiState.value.storeUpdate)
+
+        store.update.value = StoreUpdate.Downloaded(200)
+        assertEquals(StoreUpdate.Downloaded(200), vm.uiState.value.storeUpdate)
+        vm.onEvent(HomeIntent.CompleteStoreUpdate)
+        assertEquals(1, store.completed)
+    }
+
+    @Test
+    fun aPutOffStoreUpdateWaitsForTheNextOne() = runTest {
+        val store = FakeStore().apply { update.value = StoreUpdate.Available(200) }
+        val dismissals = Dismissals()
+        val vm = viewModel(noRelease, dismissals, store)
+
+        vm.onEvent(HomeIntent.DismissUpdate)
+        assertEquals(200L, dismissals.dismissedUpdate.value)
+        assertNull(vm.uiState.value.storeUpdate)
+        assertNull(viewModel(noRelease, dismissals, store).uiState.value.storeUpdate)
+
+        store.update.value = StoreUpdate.Available(210)
+        assertEquals(StoreUpdate.Available(210), vm.uiState.value.storeUpdate)
+    }
+
+    @Test
+    fun aDownloadedStoreUpdateIsShownEvenIfItWasPutOff() {
+        assertEquals(StoreUpdate.Downloaded(200), shownStoreUpdate(StoreUpdate.Downloaded(200), dismissed = 200))
+        assertNull(shownStoreUpdate(StoreUpdate.Available(200), dismissed = 200))
+        assertEquals(StoreUpdate.Available(200), shownStoreUpdate(StoreUpdate.Available(200), dismissed = 190))
+        assertNull(shownStoreUpdate(StoreUpdate.Downloading(200), dismissed = null))
+        assertNull(shownStoreUpdate(null, dismissed = null))
     }
 }

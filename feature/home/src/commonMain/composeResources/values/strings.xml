@@ -35,4 +35,9 @@
     <string name="update_title">New version: %1$s</string>
     <string name="update_body">Download it and open it to install it over this one; your groups stay.</string>
     <string name="update_action">Update</string>
+    <string name="store_update_title">New version available</string>
+    <string name="store_update_body">Google Play downloads it while you keep using the app.</string>
+    <string name="store_update_ready_title">Update downloaded</string>
+    <string name="store_update_ready_body">Restart Owlsplit to install it; your groups stay.</string>
+    <string name="store_update_restart">Restart</string>
 </resources>

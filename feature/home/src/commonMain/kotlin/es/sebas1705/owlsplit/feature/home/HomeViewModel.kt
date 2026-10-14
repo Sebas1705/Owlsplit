@@ -11,6 +11,9 @@ import es.sebas1705.owlsplit.core.datastore.LinkNudgeSettings
 import es.sebas1705.owlsplit.core.datastore.UpdateSettings
 import es.sebas1705.owlsplit.data.models.LatestRelease
 import es.sebas1705.owlsplit.domain.usecases.update.CheckForUpdate
+import es.sebas1705.owlsplit.domain.usecases.update.NoStoreUpdates
+import es.sebas1705.owlsplit.domain.usecases.update.StoreUpdate
+import es.sebas1705.owlsplit.domain.usecases.update.StoreUpdates
 import es.sebas1705.owlsplit.domain.usecases.account.ObserveAccount
 import es.sebas1705.owlsplit.domain.usecases.account.ObservePendingChanges
 import es.sebas1705.owlsplit.domain.usecases.account.ShouldSuggestLinking
@@ -44,6 +47,11 @@ data class HomeState(
     val picking: QuickAction? = null,
     /** A newer release to install, unless the user put it off. */
     val update: LatestRelease? = null,
+    /**
+     * An update from the store (Google Play installs): offered while [StoreUpdate.Available] and not put
+     * off, then [StoreUpdate.Downloaded] until the restart. Hidden while it downloads.
+     */
+    val storeUpdate: StoreUpdate? = null,
 ) : MVIBaseState
 
 sealed interface HomeIntent : MVIBaseIntent {
@@ -51,6 +59,8 @@ sealed interface HomeIntent : MVIBaseIntent {
     data object DismissPicker : HomeIntent
     data object DismissNudge : HomeIntent
     data object DismissUpdate : HomeIntent
+    data object StartStoreUpdate : HomeIntent
+    data object CompleteStoreUpdate : HomeIntent
 }
 
 /**
@@ -59,8 +69,15 @@ sealed interface HomeIntent : MVIBaseIntent {
  */
 class HomeChores(val generateRecurring: GenerateRecurring, val syncMyLinked: SyncMyLinked)
 
-/** Finding a newer release and remembering which one the user put off. */
-class UpdateOffer(val check: CheckForUpdate, val settings: UpdateSettings)
+/**
+ * Finding a newer release and remembering which one the user put off. [check] covers APK installs (the
+ * download page); [store] covers store installs (Google Play) and is [NoStoreUpdates] everywhere else.
+ */
+class UpdateOffer(
+    val check: CheckForUpdate,
+    val settings: UpdateSettings,
+    val store: StoreUpdates = NoStoreUpdates,
+)
 
 @OptIn(ExperimentalCoroutinesApi::class) // mapLatest
 class HomeViewModel(
@@ -89,6 +106,10 @@ class HomeViewModel(
                     updateState { it.copy(update = latest.takeIf { latest.versionCode != dismissed }) }
                 }
             }
+            viewModelScope.launch {
+                combine(offer.store.update, offer.settings.dismissedUpdate, ::shownStoreUpdate)
+                    .collect { shown -> updateState { it.copy(storeUpdate = shown) } }
+            }
         }
         viewModelScope.launch {
             combine(
@@ -115,7 +136,11 @@ class HomeViewModel(
                     otherCurrencies = converted.unconverted,
                     approximate = converted.approximate
                 )
-            }.collect { fresh -> updateState { fresh.copy(picking = it.picking, update = it.update) } }
+            }.collect { fresh ->
+                updateState {
+                    fresh.copy(picking = it.picking, update = it.update, storeUpdate = it.storeUpdate)
+                }
+            }
         }
     }
 
@@ -124,7 +149,19 @@ class HomeViewModel(
             is HomeIntent.Pick -> updateState { it.copy(picking = intent.action) }
             HomeIntent.DismissPicker -> updateState { it.copy(picking = null) }
             HomeIntent.DismissNudge -> nudge.dismissLinkNudge()
-            HomeIntent.DismissUpdate -> currentState.update?.let { updates?.settings?.dismissUpdate(it.versionCode) }
+            HomeIntent.DismissUpdate -> {
+                val code = currentState.update?.versionCode ?: currentState.storeUpdate?.versionCode
+                code?.let { updates?.settings?.dismissUpdate(it) }
+            }
+            HomeIntent.StartStoreUpdate -> updates?.store?.start()
+            HomeIntent.CompleteStoreUpdate -> updates?.store?.complete()
         }
     }
+}
+
+/** The store update Home shows: an available one unless put off, a downloaded one always (it needs a restart). */
+internal fun shownStoreUpdate(update: StoreUpdate?, dismissed: Long?): StoreUpdate? = when (update) {
+    is StoreUpdate.Available -> update.takeIf { it.versionCode != dismissed }
+    is StoreUpdate.Downloaded -> update
+    is StoreUpdate.Downloading, null -> null
 }
