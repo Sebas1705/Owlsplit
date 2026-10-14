@@ -111,6 +111,8 @@ class LinkGoogle(
     val isAvailable: Boolean get() = google.isAvailable
 
     suspend operator fun invoke(): GoogleOutcome {
+        // One Google at a time: an account that already has it is not linked again (unlink first).
+        if (accounts.currentSession()?.providers?.contains(GOOGLE_PROVIDER) == true) return GoogleOutcome.Done()
         val outcome = google.withToken(accounts::linkGoogle)
         if (outcome !is GoogleOutcome.Done) return outcome
         // What the cloud has wins over this phone: it comes down and replaces the local profile (and
@@ -149,3 +151,5 @@ class UnlinkGoogle(
 class ReauthenticateGoogle(private val google: GoogleCredentials, private val accounts: AccountService) {
     suspend operator fun invoke(): GoogleOutcome = google.withToken(accounts::reauthenticateGoogle)
 }
+
+private const val GOOGLE_PROVIDER = "google.com"

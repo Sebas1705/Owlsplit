@@ -7,6 +7,7 @@ import es.sebas1705.owlsplit.core.testing.ledger.InMemoryLedger
 import es.sebas1705.owlsplit.data.models.AccountResult
 import es.sebas1705.owlsplit.data.models.GroupInput
 import es.sebas1705.owlsplit.data.models.PayMethods
+import es.sebas1705.owlsplit.data.models.Session
 import es.sebas1705.owlsplit.data.models.UserProfile
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -38,6 +39,17 @@ class LinkGoogleTest {
         val outcome = LinkGoogle(FakeGoogle(), FakeAccounts(), profiles, ledger.members)()
 
         assertEquals(GoogleOutcome.Done(), outcome)
+        assertEquals(local, profiles.profile.value)
+    }
+
+    @Test
+    fun anAccountThatAlreadyHasGoogleIsNotLinkedAgain() = runTest {
+        val accounts = FakeAccounts(Session("uid-ana", isAnonymous = false, providers = FakeAccounts.GOOGLE))
+        val profiles = FakeProfiles(local, remote = cloud)
+        val outcome = LinkGoogle(FakeGoogle(), accounts, profiles, ledger.members)()
+
+        assertEquals(GoogleOutcome.Done(), outcome)
+        assertTrue(accounts.calls.none { it.startsWith("linkGoogle") })
         assertEquals(local, profiles.profile.value)
     }
 

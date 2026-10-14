@@ -11,12 +11,23 @@ import es.sebas1705.owlsplit.data.models.AccountResult
 import es.sebas1705.owlsplit.data.repository.account.AccountService
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.update
 
 /** [AccountService] on Firebase Auth (docs/FIREBASE.md, "Authentication"). */
 class FirebaseAccountService(private val auth: FirebaseAuth) : AccountService {
 
-    override val session: Flow<Session?> = auth.authStateChanged.map { it?.toSession() }
+    /**
+     * Firebase only reports signing in and out: linking or unlinking a provider changes the same
+     * user, so those bump this to re-read it. Without it the app kept offering "Link" after linking.
+     */
+    private val providersChanged = MutableStateFlow(0)
+
+    override val session: Flow<Session?> = combine(auth.authStateChanged, providersChanged) { user, _ ->
+        user?.toSession()
+    }.distinctUntilChanged()
 
     override fun currentSession(): Session? = auth.currentUser?.toSession()
 
@@ -25,15 +36,15 @@ class FirebaseAccountService(private val auth: FirebaseAuth) : AccountService {
     override suspend fun linkGoogle(idToken: String, accessToken: String?) = call {
         val user = requireNotNull(auth.currentUser) { "No session to link" }
         user.linkWithCredential(GoogleAuthProvider.credential(idToken, accessToken))
-        // The listener only fires on sign-in/out: reload so currentSession() shows the provider.
+        // Reload so the user shows the provider, then tell the session flow.
         user.reload()
-    }
+    }.also { if (it == AccountResult.Done) providersChanged.update { n -> n + 1 } }
 
     override suspend fun unlinkGoogle() = call {
         val user = requireNotNull(auth.currentUser) { "No session to unlink" }
         user.unlink(GOOGLE_PROVIDER)
         user.reload()
-    }
+    }.also { if (it == AccountResult.Done) providersChanged.update { n -> n + 1 } }
 
     override suspend fun signInWithGoogle(idToken: String, accessToken: String?) =
         call { auth.signInWithCredential(GoogleAuthProvider.credential(idToken, accessToken)) }
