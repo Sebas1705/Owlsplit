@@ -116,17 +116,25 @@ class SyncEngine(
         }
     }
 
-    /** One catch-up at a time, at most one per group every [REFRESH_INTERVAL_MILLIS] (a screen reopened). */
+    /**
+     * One catch-up at a time, at most one per group every [REFRESH_INTERVAL_MILLIS] (a screen reopened).
+     * A refresh while the group had a listener only pulled its members, so it does not hold back the
+     * changelog catch-up once I archive it.
+     */
     private suspend fun serveRefreshes(groups: StateFlow<MyGroups?>) {
-        val refreshedAt = HashMap<String, Long>()
+        val refreshed = HashMap<String, Refresh>()
         refreshRequests.collect { groupId ->
             val mine = groups.filterNotNull().first()
-            val last = refreshedAt[groupId]
+            val listened = groupId in mine.listened
+            val last = refreshed[groupId]
             val now = local.now()
-            if (groupId !in mine.all || (last != null && now - last < REFRESH_INTERVAL_MILLIS)) return@collect
-            if (puller.catchUp(groupId, listened = groupId in mine.listened) == PullStep.DONE) refreshedAt[groupId] = now
+            val recent = last != null && last.listened == listened && now - last.at < REFRESH_INTERVAL_MILLIS
+            if (groupId !in mine.all || recent) return@collect
+            if (puller.catchUp(groupId, listened) == PullStep.DONE) refreshed[groupId] = Refresh(now, listened)
         }
     }
+
+    private class Refresh(val at: Long, val listened: Boolean)
 
     /** The groups that list me (not deleted) and, among them, those with a live listener (not archived by me). */
     private class MyGroups(val all: Set<String>, val listened: Set<String>)

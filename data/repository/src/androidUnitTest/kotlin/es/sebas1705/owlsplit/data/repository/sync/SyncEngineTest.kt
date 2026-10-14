@@ -165,6 +165,34 @@ class SyncEngineTest {
     }
 
     @Test
+    fun `a group opened just before archiving it still catches up when reopened`() = runTest {
+        val h = Harness(this)
+        val g = h.env.groups.create(trip, "Ana")
+        val ana = h.env.members.observeMembersOnce(g).single().id
+        val e = h.env.expenses.create(g, dinner(ana))
+        val job = h.engine.start(this, "uid-ana")
+        h.settle()
+        // Opened while listened (members only), then archived from its screen.
+        h.engine.refreshGroup(g)
+        h.settle()
+        h.env.groups.setArchived(g, archived = true)
+        h.settle()
+        h.remote.editByOtherDevice(
+            RemoteDoc.ExpenseDoc(
+                h.expenseOnServer(
+                    e
+                ).let { it.copy(title = "Theirs", meta = it.meta.copy(version = 2, updatedAt = h.serverNow())) }
+            )
+        )
+        h.settle()
+
+        h.engine.refreshGroup(g)
+        h.settle()
+        assertEquals("Theirs", h.env.expenses.get(e)!!.title)
+        job.cancel()
+    }
+
+    @Test
     fun `unarchiving a group listens again from its cursor and gets what changed meanwhile`() = runTest {
         val h = Harness(this)
         val g = h.env.groups.create(trip, "Ana")
