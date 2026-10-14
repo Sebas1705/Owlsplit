@@ -13,7 +13,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-/** [AccountService] on Firebase Auth (docs/FIREBASE.md, "Autenticación"). */
+/** [AccountService] on Firebase Auth (docs/FIREBASE.md, "Authentication"). */
 class FirebaseAccountService(private val auth: FirebaseAuth) : AccountService {
 
     override val session: Flow<Session?> = auth.authStateChanged.map { it?.toSession() }

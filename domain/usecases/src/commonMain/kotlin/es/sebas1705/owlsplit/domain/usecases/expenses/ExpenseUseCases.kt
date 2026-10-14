@@ -64,7 +64,7 @@ data class DraftCheck(
     val canSave: Boolean get() = problem == null
 }
 
-/** Defaults and live validation for the expense editor (docs/DOMAIN.md, "Reparto"). */
+/** Defaults and live validation for the expense editor (docs/DOMAIN.md, "Split"). */
 object ExpenseDrafts {
     const val MAX_TITLE = 80
     const val MAX_NOTE = 500

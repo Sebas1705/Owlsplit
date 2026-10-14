@@ -3,7 +3,7 @@ package es.sebas1705.owlsplit.domain.ledger
 import es.sebas1705.owlsplit.core.money.Allocation
 import es.sebas1705.owlsplit.core.money.Money
 
-/** What each member owes for one expense, in the expense currency. See docs/DOMAIN.md#reparto. */
+/** What each member owes for one expense, in the expense currency. See docs/DOMAIN.md#split. */
 object ShareCalculator {
     const val FULL_PERCENT = 10_000L
 

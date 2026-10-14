@@ -1,12 +1,12 @@
-# Registro de decisiones (ADR)
+# Decision log (ADR)
 
-Cada decisión de arquitectura relevante se documenta con su contexto, la decisión y las alternativas descartadas. Una ADR aceptada no se edita: si cambia, se escribe otra que la sustituye.
+Every relevant architecture decision is documented with its context, the decision and the rejected alternatives. An accepted ADR is not edited: if it changes, a new one is written that supersedes it.
 
-| # | Decisión | Estado |
+| # | Decision | Status |
 |---|---|---|
-| [0001](0001-kotlin-multiplatform.md) | Kotlin Multiplatform + Compose Multiplatform sobre la plantilla Templetry | Aceptada |
-| [0002](0002-firebase-gitlive.md) | Firebase (Auth + Firestore) con el SDK KMP de GitLive | Aceptada |
-| [0003](0003-local-first-sqldelight-sync.md) | SQLDelight como fuente de verdad + sincronización propia | Aceptada |
-| [0004](0004-anonymous-auth-linking.md) | Cuenta anónima vinculable y miembros fantasma | Aceptada |
-| [0005](0005-money-as-minor-units.md) | Dinero en enteros de unidades mínimas | Aceptada |
-| [0006](0006-fintech-visual-direction.md) | Dirección visual fintech limpia | Aceptada |
+| [0001](0001-kotlin-multiplatform.md) | Kotlin Multiplatform + Compose Multiplatform on the Templetry template | Accepted |
+| [0002](0002-firebase-gitlive.md) | Firebase (Auth + Firestore) with the GitLive KMP SDK | Accepted |
+| [0003](0003-local-first-sqldelight-sync.md) | SQLDelight as source of truth + custom sync | Accepted |
+| [0004](0004-anonymous-auth-linking.md) | Linkable anonymous account and ghost members | Accepted |
+| [0005](0005-money-as-minor-units.md) | Money as integer minor units | Accepted |
+| [0006](0006-fintech-visual-direction.md) | Clean fintech visual direction | Accepted |

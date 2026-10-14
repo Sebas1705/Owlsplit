@@ -1,47 +1,47 @@
-# P13b · Gastos recurrentes — Implementation Plan
+# P13b · Recurring expenses — Implementation Plan
 
 > **For agentic workers:** Use `mobiai-mobile-executing-plans-with-subagents` (recommended) or `mobiai-mobile-executing-plans` to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
-**Goal:** Cuarta propuesta del [estudio de mercado](../research/2026-10-09-estudio-de-mercado.md) y punto 3 del [ROADMAP](../ROADMAP.md). Alquiler, suministros o suscripciones se apuntan una vez y se repiten solos cada semana, mes o año, sin servidor y también sin conexión.
+**Goal:** Fourth proposal of the [market study](../research/2026-10-09-market-study.md) and item 3 of the [ROADMAP](../ROADMAP.md). Rent, utilities or subscriptions are entered once and repeat on their own every week, month or year, with no server and also offline.
 
 **Architecture:**
 - `domain`:
-  - `Recurrence` (`RepeatUnit`) se guarda en el campo `recurrenceId`, reservado desde el MVP, con la forma `<serie>|<unidad><cada>` (`…|M1`) o `<serie>|stop`. Todos los gastos de una serie comparten el id de serie. Las fechas se calculan desde el primero (el ancla), así que un día 31 no se va desplazando.
-  - `GenerateRecurring` añade los gastos que tocan hasta hoy:
-    - copia el último gasto, de modo que un alquiler que sube conserva el importe nuevo;
-    - cada gasto generado lleva un id fijo `<serie>_<fecha>`;
-    - como mucho genera 24 por pasada.
+  - `Recurrence` (`RepeatUnit`) is stored in the `recurrenceId` field, reserved since the MVP, in the form `<series>|<unit><every>` (`…|M1`) or `<series>|stop`. All expenses in a series share the series id. Dates are computed from the first one (the anchor), so a 31st doesn't drift.
+  - `GenerateRecurring` adds the expenses due up to today:
+    - it copies the latest expense, so a rent that goes up keeps the new amount;
+    - each generated expense has a fixed id `<series>_<date>`;
+    - it generates at most 24 per pass.
   - `SaveExpense`:
-    - "Nunca" marca el gasto con `stop`, y con eso se para toda la serie;
-    - otro periodo empieza una serie nueva desde ese gasto y para la anterior en su último gasto.
+    - "Nunca" ("Never") marks the expense with `stop`, which stops the whole series;
+    - another period starts a new series from that expense and stops the previous one at its last expense.
 - `data`:
   - `ExpenseInput.recurrenceId`;
-  - `ExpenseRepository.create(…, id)` acepta un id fijo.
-  - No cambian el esquema ni las reglas, porque el campo ya existía (≤ 100 caracteres).
+  - `ExpenseRepository.create(…, id)` accepts a fixed id.
+  - Neither the schema nor the rules change, because the field already existed (≤ 100 characters).
 - `feature`:
-  - fila "Repetir" (Nunca, cada semana, mes o año) en el editor de gastos, con una explicación;
-  - "· se repite" en la lista del grupo;
-  - el grupo y la pantalla de inicio generan lo pendiente al abrirse.
+  - "Repetir" ("Repeat") row (Never, every week, month or year) in the expense editor, with an explanation;
+  - "· se repite" ("· repeats") in the group list;
+  - the group and the home screen generate what is due when opened.
 
-**Platform:** KMP (Android probado en el emulador; iOS compila en CI).
+**Platform:** KMP (Android tested on the emulator; iOS compiles in CI).
 
-**Depende de:** P12.
+**Depends on:** P12.
 
 ---
 
-## Decisiones
+## Decisions
 
-1. **Se genera en el móvil**, no con Cloud Functions, para no necesitar el plan Blaze. Funciona sin conexión y la escritura se sincroniza como cualquier otra.
-2. **Sin duplicados.** Dos medidas:
-   - solo genera quien creó la serie (si se fue, el miembro con el uid más bajo);
-   - los ids son deterministas, así que nada se añade dos veces aunque se ejecute varias veces o en varios móviles de la misma persona.
+1. **Generated on the phone**, not with Cloud Functions, so the Blaze plan isn't needed. It works offline and the write syncs like any other.
+2. **No duplicates.** Two measures:
+   - only the series creator generates (if they left, the member with the lowest uid);
+   - ids are deterministic, so nothing is added twice even if it runs several times or on several phones of the same person.
 
-   Si dos móviles de la misma cuenta generan a la vez sin conexión, la segunda subida cae en el conflicto normal de P6 (mismo contenido) y se resuelve desde el aviso de conflictos.
-3. **Parar está a un toque**, en cualquier gasto de la serie. No hace falta una pantalla aparte de plantillas: la plantilla es el último gasto.
-4. **Si la serie no tiene gastos visibles, no se genera.** Si se borran todos los gastos de una serie, se considera terminada. Si solo se borra uno, el siguiente se sigue generando.
+   If two phones on the same account generate at the same time offline, the second upload falls into the normal P6 conflict (same content) and is resolved from the conflict notice.
+3. **Stopping is one tap away**, on any expense in the series. No separate templates screen is needed: the template is the latest expense.
+4. **If the series has no visible expenses, nothing is generated.** If all of a series' expenses are deleted, it is considered finished. If only one is deleted, the next one keeps being generated.
 
-## Tareas
+## Tasks
 
-- [x] Task 1: `Recurrence`, `GenerateRecurring` y los cambios de `SaveExpense`, con tests (meses de 31 días, una sola vez, parar, cambiar de periodo, solo el creador). Commit.
-- [x] Task 2: `ExpenseInput.recurrenceId` y el id fijo en los repositorios. Commit.
-- [x] Task 3: fila "Repetir", "se repite" en la lista, generación al abrir el grupo y el inicio, y textos en es/en. Prueba en el emulador: un alquiler mensual con fecha de hace dos meses genera septiembre y octubre al volver. Commit.
+- [x] Task 1: `Recurrence`, `GenerateRecurring` and the `SaveExpense` changes, with tests (31-day months, one-off, stop, change of period, creator only). Commit.
+- [x] Task 2: `ExpenseInput.recurrenceId` and the fixed id in the repositories. Commit.
+- [x] Task 3: "Repetir" row, "se repite" in the list, generation when opening the group and home, and es/en strings. Test on the emulator: a monthly rent dated two months ago generates September and October on return. Commit.

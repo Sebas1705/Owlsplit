@@ -1,37 +1,37 @@
-# P12a · Saldar con un toque (Bizum, PayPal, Revolut) — Implementation Plan
+# P12a · One-tap settle up (Bizum, PayPal, Revolut) — Implementation Plan
 
 > **For agentic workers:** Use `mobiai-mobile-executing-plans-with-subagents` (recommended) or `mobiai-mobile-executing-plans` to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
-**Goal:** La primera propuesta del [estudio de mercado](../research/2026-10-09-estudio-de-mercado.md): que pagar lo que debes esté a un toque. Cada persona puede publicar en su perfil cómo quiere cobrar (Bizum, PayPal.me, Revolut). Quien le debe dinero ve esos métodos al saldar. Quien cobra puede enviar un mensaje pidiendo el pago con sus datos.
+**Goal:** The first proposal of the [market study](../research/2026-10-09-market-study.md): paying what you owe should be one tap away. Each person can publish on their profile how they want to get paid (Bizum, PayPal.me, Revolut). Whoever owes them money sees those methods when settling up. Whoever is owed can send a message requesting payment with their details.
 
 **Architecture:**
-- `data:models`: `PayMethods(bizum, paypal, revolut)`. `UserProfile.payMethods`. `Member.payMethods` (nulo si no hay).
-- `data:local`: columna `member_entity.pay_methods` (JSON), con la migración `1.sqm` y la instantánea `2.db`. Nueva consulta `selectByUser`.
-- `data:repository`: `MemberRepository.publishMyPayMethods` copia los métodos a mis miembros de todos los grupos. Se sincroniza, pero **no entra en el historial**: es un dato personal, no un cambio del grupo. Al salir de un grupo, mi miembro fantasma pierde los métodos.
-- `data:remote`: `payMethods` en `MemberDto` (opcional al leer documentos anteriores) y en `users/{uid}`, para restaurarlo en otro móvil.
-- `firebase/firestore.rules`: `payMethods` es un mapa con forma fija (`bizum` ≤ 20, `paypal` y `revolut` ≤ 40). Solo lo publica la persona del miembro (`userUid == uid()`); cualquiera puede borrarlo (al liberar). Tests en `subcollections.test.mjs`.
-- `domain`: `PayLinks` limpia lo que se escribe (`@ana`, `paypal.me/ana` → `ana`; teléfono sin espacios) y construye los enlaces (`https://paypal.me/ana/12.50EUR`, `https://revolut.me/ana`). `SaveProfile`, `GroupActions.create` y `ClaimMember` publican los métodos.
-- `feature:profile`: sección "Cómo te pagan", con validación por campo.
-- `feature:groups`: `SettleDialog` sustituye a la confirmación de saldar:
-  - Si pago yo y el otro tiene métodos: "Pagar con…". PayPal y Revolut abren su enlace. Bizum copia el teléfono, porque no tiene enlace público.
-  - Si cobro yo: "Pedir el pago" comparte un mensaje con mis datos. Si no tengo datos, una pista lleva al perfil.
-  - En todos los casos el pago se registra a mano con "Registrar". La app nunca ve mover el dinero.
+- `data:models`: `PayMethods(bizum, paypal, revolut)`. `UserProfile.payMethods`. `Member.payMethods` (null if none).
+- `data:local`: `member_entity.pay_methods` column (JSON), with the `1.sqm` migration and the `2.db` snapshot. New `selectByUser` query.
+- `data:repository`: `MemberRepository.publishMyPayMethods` copies the methods to my members in every group. It syncs, but **doesn't go into the history**: it is personal data, not a group change. When leaving a group, my ghost member loses the methods.
+- `data:remote`: `payMethods` in `MemberDto` (optional when reading older documents) and in `users/{uid}`, to restore it on another phone.
+- `firebase/firestore.rules`: `payMethods` is a map with a fixed shape (`bizum` ≤ 20, `paypal` and `revolut` ≤ 40). Only the member's own person publishes it (`userUid == uid()`); anyone can delete it (when releasing). Tests in `subcollections.test.mjs`.
+- `domain`: `PayLinks` cleans what is typed (`@ana`, `paypal.me/ana` → `ana`; phone without spaces) and builds the links (`https://paypal.me/ana/12.50EUR`, `https://revolut.me/ana`). `SaveProfile`, `GroupActions.create` and `ClaimMember` publish the methods.
+- `feature:profile`: "Cómo te pagan" ("How you get paid") section, with per-field validation.
+- `feature:groups`: `SettleDialog` replaces the settle-up confirmation:
+  - If I'm paying and the other person has methods: "Pagar con…" ("Pay with…"). PayPal and Revolut open their link. Bizum copies the phone number, because it has no public link.
+  - If I'm being paid: "Pedir el pago" ("Request payment") shares a message with my details. If I have no details, a hint leads to the profile.
+  - In every case the payment is recorded by hand with "Registrar" ("Record"). The app never sees the money move.
 
-**Platform:** KMP (Android probado en emulador; iOS compila en CI). `LocalUriHandler` y `LocalClipboardManager` funcionan en las dos plataformas, y el mensaje usa el `TextSharer` existente.
+**Platform:** KMP (Android tested on emulator; iOS compiles in CI). `LocalUriHandler` and `LocalClipboardManager` work on both platforms, and the message uses the existing `TextSharer`.
 
-**Depende de:** P11.
+**Depends on:** P11.
 
 ---
 
-## Decisiones
+## Decisions
 
-1. **Sin integración de pagos.** Ni Bizum ni los bancos ofrecen una API pública para iniciar un pago desde otra app. Abrir el servicio y registrar después evita licencias de pago (PSD2) y no toca dinero.
-2. **Los datos viven en el miembro**, no en `users/{uid}`, porque las reglas solo dejan leer el perfil a su dueño. Copiarlos a cada grupo los hace visibles justo a quien los necesita.
-3. **Fuera del historial.** Un teléfono no debe quedarse para siempre en el registro de cambios. Además, una edición propia sin diferencias se lee como "salió del grupo" en las entradas antiguas (P9c), así que estas escrituras no generan entrada.
-4. **Compatibilidad:** las reglas aceptan documentos sin `payMethods`, y las escrituras usan `merge = true`, así que una versión anterior no borra los métodos. Las versiones anteriores a esta no leen el campo nuevo, pero solo hay testers con la última build.
+1. **No payment integration.** Neither Bizum nor the banks offer a public API to start a payment from another app. Opening the service and recording afterwards avoids payment licences (PSD2) and never touches money.
+2. **The details live on the member**, not in `users/{uid}`, because the rules only let the owner read the profile. Copying them to each group makes them visible exactly to whoever needs them.
+3. **Outside the history.** A phone number shouldn't stay forever in the change log. Also, an own edit without differences reads as "salió del grupo" ("left the group") in old entries (P9c), so these writes don't create an entry.
+4. **Compatibility:** the rules accept documents without `payMethods`, and writes use `merge = true`, so an older version doesn't erase the methods. Versions before this one don't read the new field, but only testers on the latest build exist.
 
-## Tareas
+## Tasks
 
-- [x] Task 1: modelo, columna y migración, DTO, reglas y sus tests. Commit.
-- [x] Task 2: `publishMyPayMethods`, liberar al salir, `PayLinks` y casos de uso, con tests. Commit.
-- [x] Task 3: perfil ("Cómo te pagan") y `SettleDialog`, con textos en es/en y prueba en el emulador. Commit.
+- [x] Task 1: model, column and migration, DTO, rules and their tests. Commit.
+- [x] Task 2: `publishMyPayMethods`, release on leave, `PayLinks` and use cases, with tests. Commit.
+- [x] Task 3: profile ("Cómo te pagan") and `SettleDialog`, with es/en strings and a test on the emulator. Commit.

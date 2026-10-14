@@ -2,7 +2,7 @@ package es.sebas1705.owlsplit.config
 
 /** Settings of the app. There is one Firebase project (`owlsplit`); debug builds differ only in [isDebugBuild]. */
 object AppConfig {
-    /** Exchange rates of the ECB (docs/DOMAIN.md, "Divisas"). */
+    /** Exchange rates of the ECB (docs/DOMAIN.md, "Currencies"). */
     const val FX_API_BASE_URL: String = "https://api.frankfurter.dev/v1"
 
     /** How long a downloaded rate is reused; the ECB publishes once a day. */

@@ -1,16 +1,16 @@
-# 0006 · Dirección visual fintech limpia
+# 0006 · Clean fintech visual direction
 
-- **Estado:** aceptada · 2026-10-07
+- **Status:** accepted · 2026-10-07
 
-## Contexto
-El motivo de crear Owlsplit es que el diseño de Settle Up da mucho que desear. Se exploraron tres direcciones con mockups:
-1. *Desenfadada con carácter*: colores vivos por grupo y mascota ilustrada. Se descartó por poco seria.
-2. *Sobria con personalidad*: índigo y Manrope. Correcta, pero menos distintiva.
-3. **Fintech limpia** (estilo Revolut/Monzo). **Elegida.**
+## Context
+The reason for creating Owlsplit is that Settle Up's design leaves a lot to be desired. Three directions were explored with mockups:
+1. *Playful with character*: vivid per-group colors and an illustrated mascot. Rejected as not serious enough.
+2. *Sober with personality*: indigo and Manrope. Fine, but less distinctive.
+3. **Clean fintech** (Revolut/Monzo style). **Chosen.**
 
-## Decisión
-Cifras protagonistas, fondo gris claro con contenedores blancos (negro y grafito en oscuro), un único acento azul eléctrico, botones de acción circulares, píldoras, verde solo para saldos a favor y deudas en color neutro. El búho de Owlsplit queda como logotipo geométrico, no como mascota. Tokens y componentes en [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md); mockup en [mockups/owlsplit-fintech-v3.html](../mockups/owlsplit-fintech-v3.html).
+## Decision
+Numbers in the spotlight, light gray background with white containers (black and graphite in dark), a single electric blue accent, circular action buttons, pills, green only for balances in your favor and debts in a neutral color. The Owlsplit owl stays as a geometric logo, not a mascot. Tokens and components in [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md); mockup in [mockups/owlsplit-fintech-v3.html](../mockups/owlsplit-fintech-v3.html).
 
-## Consecuencias
-- Un tema propio (`OwlsplitTheme`) sobre Material 3 y un catálogo de componentes en `core:ui` con capturas en claro y oscuro.
-- La personalidad sale de la tipografía de los importes, del movimiento y de la claridad, no de la decoración.
+## Consequences
+- A custom theme (`OwlsplitTheme`) on top of Material 3 and a component catalog in `core:ui` with light and dark screenshots.
+- Personality comes from the typography of the amounts, from motion and from clarity, not from decoration.

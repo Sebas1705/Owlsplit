@@ -101,7 +101,7 @@ class ImportViewModel(
         updateState { it.copy(busy = false, importedGroupId = result.groupId) }
     }
 
-    /** "viaje-a-ibiza_2026-10-09_export.csv" → "Viaje a ibiza". */
+    /** "trip-to-ibiza_2026-10-09_export.csv" → "Trip to ibiza". */
     private fun groupName(fileName: String): String {
         val base = fileName.substringBeforeLast('.').substringBefore("_").replace('-', ' ').replace('_', ' ').trim()
         return base.replaceFirstChar { it.uppercase() }.take(GroupActions.MAX_NAME)

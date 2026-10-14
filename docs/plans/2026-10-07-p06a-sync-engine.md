@@ -1,43 +1,43 @@
-# P6a · Motor de sincronización — Implementation Plan
+# P6a · Sync engine — Implementation Plan
 
 > **For agentic workers:** Use `mobiai-mobile-executing-plans-with-subagents` (recommended) or `mobiai-mobile-executing-plans` to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
-**Goal:** Implementar el motor de [SYNC.md](../SYNC.md) sobre la base local de P4: subida del outbox con reintentos y backoff, versión encadenada, detección de conflictos (la versión perdedora se guarda), idempotencia tras un acuse perdido, acceso perdido, aplicación de documentos remotos con cursores y escucha de mis grupos. Todo probado contra un Firestore **falso** que imita las reglas de P5.
+**Goal:** Implement the [SYNC.md](../SYNC.md) engine on top of P4's local database: outbox upload with retries and backoff, chained versions, conflict detection (the losing version is kept), idempotency after a lost acknowledgement, access loss, applying remote documents with cursors, and listening to my groups. All tested against a **fake** Firestore that mimics the P5 rules.
 
-**Architecture:** El motor vive en `data:repository` (paquete `sync`), donde ya están las conversiones fila↔modelo. Define el puerto `RemoteStore` (lo que necesita del servidor); P6b lo implementa con GitLive en `data:remote`. Piezas: `SyncLocalStore` (operaciones locales de sincronización, cada una en su transacción), `OutboxProcessor` (una pasada de subida), `SyncEngine` (bucle de subida que reacciona al outbox y escucha remota de grupos y subcolecciones). La versión que se sube siempre es `base_version + 1` (no la del payload), lo que permite que una edición durante la subida simplemente avance la base.
+**Architecture:** The engine lives in `data:repository` (package `sync`), where the row↔model conversions already are. It defines the `RemoteStore` port (what it needs from the server); P6b implements it with GitLive in `data:remote`. Pieces: `SyncLocalStore` (local sync operations, each in its own transaction), `OutboxProcessor` (one upload pass), `SyncEngine` (upload loop that reacts to the outbox, plus remote listening to groups and sub-collections). The uploaded version is always `base_version + 1` (not the payload's), which lets an edit made during the upload simply advance the base.
 
-**Tech Stack:** Kotlin Multiplatform, SQLDelight 2.4.1 (+ coroutines-extensions), kotlinx-coroutines 1.11 (`Mutex`, `collectLatest`), kotlinx-serialization, Turbine/coroutines-test para los tests.
+**Tech Stack:** Kotlin Multiplatform, SQLDelight 2.4.1 (+ coroutines-extensions), kotlinx-coroutines 1.11 (`Mutex`, `collectLatest`), kotlinx-serialization, Turbine/coroutines-test for the tests.
 
-**Platform:** KMP (código común; tests en la JVM de Android)
+**Platform:** KMP (common code; tests on the Android JVM)
 
-**Depende de:** P4 (base local y repositorios), P5 (las reglas que imita el falso).
+**Depends on:** P4 (local database and repositories), P5 (the rules the fake mimics).
 
 ---
 
-## Decisiones
+## Decisions
 
-1. **Versión de subida = `base_version + 1`.** Si el documento se edita mientras se sube, al confirmar la subida la entrada del outbox no se borra: avanza su base a la versión recién escrita y la siguiente subida encadena.
-2. **Rechazo (`PERMISSION_DENIED`) → leer el remoto:** sin acceso → *acceso perdido* (no se reintenta en 1 h); versión remota ≥ la que intentábamos y mismo contenido → era nuestra escritura (acuse perdido) → se da por buena; versión remota ≥ y otro contenido → **conflicto**: gana el servidor, la versión local va a `conflict` y al historial; versión menor → rechazo por validación (bug) → reintento en 1 h con `last_error`.
-3. **Orden FIFO por grupo:** si una entrada de un grupo no se pudo subir, el resto de ese grupo espera a la siguiente pasada (un miembro no puede subir antes que su grupo).
-4. **Aplicar remoto:** versión menor que la conocida → se ignora; igual y sin pendiente local → se refresca (llega `updatedAt` del servidor); igual con pendiente → se ignora (es el eco de nuestra subida); mayor con pendiente → conflicto; mayor sin pendiente → se aplica.
-5. **Acceso perdido por la escucha:** si un grupo ya sincronizado deja de aparecer en "mis grupos", se marca como perdido (clave `accessLost:<id>` en la tabla `meta`; sin migración).
-6. Disparadores de plataforma (WorkManager, primer plano) y adaptador real: P6b.
+1. **Upload version = `base_version + 1`.** If the document is edited while it is being uploaded, the outbox entry is not deleted when the upload is confirmed: its base advances to the version just written and the next upload chains on it.
+2. **Rejection (`PERMISSION_DENIED`) → read the remote:** no access → *access lost* (retried only after 1 h); remote version ≥ the one we tried and same content → it was our write (lost acknowledgement) → accepted; remote version ≥ and different content → **conflict**: the server wins, the local version goes to `conflict` and to the history; lower version → validation rejection (bug) → retry in 1 h with `last_error`.
+3. **FIFO order per group:** if an entry of a group could not be uploaded, the rest of that group waits for the next pass (a member cannot be uploaded before its group).
+4. **Applying remote:** version lower than the known one → ignored; equal and no local pending → refreshed (the server `updatedAt` arrives); equal with pending → ignored (it is the echo of our upload); higher with pending → conflict; higher without pending → applied.
+5. **Access lost via the listener:** if an already-synced group stops appearing in "my groups", it is marked as lost (key `accessLost:<id>` in the `meta` table; no migration).
+6. Platform triggers (WorkManager, foreground) and the real adapter: P6b.
 
-## Mapa de archivos
+## File map
 
-| Acción | Ruta |
+| Action | Path |
 |---|---|
-| Modificar | `data/local/.../db/Outbox.sq`, `GroupEntity.sq`, `MemberEntity.sq`, `ExpenseEntity.sq`, `TransferEntity.sq`, `ChangeLog.sq`, `Conflict.sq` (solo consultas nuevas) |
-| Crear | `data/repository/src/commonMain/kotlin/es/sebas1705/owlsplit/data/repository/sync/`: `RemoteStore.kt`, `Payloads.kt`, `SyncLocalStore.kt`, `OutboxProcessor.kt`, `SyncEngine.kt` |
-| Modificar | `data/repository/src/androidUnitTest/.../TestEnv.kt` (reloj ligado al planificador de test) |
+| Modify | `data/local/.../db/Outbox.sq`, `GroupEntity.sq`, `MemberEntity.sq`, `ExpenseEntity.sq`, `TransferEntity.sq`, `ChangeLog.sq`, `Conflict.sq` (new queries only) |
+| Create | `data/repository/src/commonMain/kotlin/es/sebas1705/owlsplit/data/repository/sync/`: `RemoteStore.kt`, `Payloads.kt`, `SyncLocalStore.kt`, `OutboxProcessor.kt`, `SyncEngine.kt` |
+| Modify | `data/repository/src/androidUnitTest/.../TestEnv.kt` (clock tied to the test scheduler) |
 | Test | `data/repository/src/androidUnitTest/kotlin/es/sebas1705/owlsplit/data/repository/sync/`: `FakeRemoteStore.kt`, `OutboxProcessorTest.kt`, `SyncEngineTest.kt` |
-| Modificar | `docs/SYNC.md`, `MODULE_MAP.md`, `docs/plans/README.md` |
+| Modify | `docs/SYNC.md`, `MODULE_MAP.md`, `docs/plans/README.md` |
 
 ---
 
-### Task 1: Consultas de sincronización
+### Task 1: Sync queries
 
-- [ ] **Step 1:** Añadir al final de cada archivo:
+- [ ] **Step 1:** Append to the end of each file:
 
 `Outbox.sq`:
 ```sql
@@ -59,7 +59,7 @@ UPDATE outbox SET base_version = ? WHERE id = ?;
 nextAttemptAt:
 SELECT coalesce(min(next_attempt_at), -1) FROM outbox;
 ```
-`GroupEntity.sq`, `MemberEntity.sq`, `ExpenseEntity.sq`, `TransferEntity.sq` (cambiando el nombre de la tabla en cada uno):
+`GroupEntity.sq`, `MemberEntity.sq`, `ExpenseEntity.sq`, `TransferEntity.sq` (changing the table name in each one):
 ```sql
 markSynced:
 UPDATE group_entity SET server_version = :version, sync_state = 'SYNCED' WHERE id = :id;
@@ -81,10 +81,10 @@ countAll:
 SELECT count(*) FROM conflict;
 ```
 
-- [ ] **Step 2:** `./gradlew :data:local:assembleDebug verifySqlDelightMigration` → verde (el esquema no cambia, `1.db` sigue válido).
+- [ ] **Step 2:** `./gradlew :data:local:assembleDebug verifySqlDelightMigration` → green (the schema does not change, `1.db` stays valid).
 - [ ] **Step 3:** `git commit -m "feat(local): queries for the sync engine"`.
 
-### Task 2: El puerto remoto y la carga útil
+### Task 2: The remote port and the payload
 
 - [ ] **Step 1: `sync/RemoteStore.kt`**
 
@@ -236,11 +236,11 @@ private fun RemoteDoc.neutral(): Any = when (this) {
     is RemoteDoc.ChangeLogDoc -> entry
 }
 ```
-`json` es `internal` en `Rows.kt`; mismo módulo, así que es accesible.
+`json` is `internal` in `Rows.kt`; same module, so it is accessible.
 
-- [ ] **Step 3:** compilar (`./gradlew :data:repository:assembleDebug`) y `git commit -m "feat(sync): remote store port and payload decoding"`.
+- [ ] **Step 3:** compile (`./gradlew :data:repository:assembleDebug`) and `git commit -m "feat(sync): remote store port and payload decoding"`.
 
-### Task 3: Operaciones locales de sincronización
+### Task 3: Local sync operations
 
 - [ ] **Step 1: `sync/SyncLocalStore.kt`**
 
@@ -309,7 +309,7 @@ internal class SyncLocalStore(private val db: AppDatabase, private val writer: W
         write(remote)
     }
 
-    /** Applies a remote document following docs/SYNC.md ("Bajada"). Returns true if local data changed. */
+    /** Applies a remote document following docs/SYNC.md ("Download"). Returns true if local data changed. */
     fun apply(remote: RemoteDoc): Boolean = db.transactionWithResult {
         if (remote is RemoteDoc.ChangeLogDoc) {
             db.changeLogQueries.insert(remote.entry.toRow(SyncState.SYNCED))
@@ -381,17 +381,17 @@ internal class SyncLocalStore(private val db: AppDatabase, private val writer: W
     private fun accessKey(groupId: String) = "accessLost:$groupId"
 }
 ```
-Para que compile: en `Rows.kt` y `Writer.kt` las funciones/clases ya son `internal` (mismo módulo). Las consultas `markSynced`/`setServerVersion` con parámetros con nombre generan la firma `(version: Long, id: String)`.
+To make it compile: in `Rows.kt` and `Writer.kt` the functions/classes are already `internal` (same module). The `markSynced`/`setServerVersion` queries with named parameters generate the signature `(version: Long, id: String)`.
 
-- [ ] **Step 2:** compilar y `git commit -m "feat(sync): local store for pushes, conflicts, remote apply and cursors"`.
+- [ ] **Step 2:** compile and `git commit -m "feat(sync): local store for pushes, conflicts, remote apply and cursors"`.
 
-### Task 4: Firestore falso y subida
+### Task 4: Fake Firestore and upload
 
-- [ ] **Step 1: Reloj de test ligado al planificador**
+- [ ] **Step 1: Test clock tied to the scheduler**
 
-En `TestEnv.kt`, el reloj pasa a `Instant.fromEpochMilliseconds(nowMillis + scope.testScheduler.currentTime)`, para que `delay` en los tests haga avanzar también la hora del motor (los tests de P4 no usan `delay`, así que no cambian).
+In `TestEnv.kt`, the clock becomes `Instant.fromEpochMilliseconds(nowMillis + scope.testScheduler.currentTime)`, so that `delay` in the tests also advances the engine's time (P4 tests do not use `delay`, so they are unaffected).
 
-- [ ] **Step 2: `sync/FakeRemoteStore.kt`** (en `androidUnitTest`)
+- [ ] **Step 2: `sync/FakeRemoteStore.kt`** (in `androidUnitTest`)
 
 ```kotlin
 package es.sebas1705.owlsplit.data.repository.sync
@@ -452,7 +452,7 @@ class FakeRemoteStore(private val now: () -> Long) : RemoteStore {
 }
 ```
 
-- [ ] **Step 3: Tests de subida** — `sync/OutboxProcessorTest.kt`
+- [ ] **Step 3: Upload tests** — `sync/OutboxProcessorTest.kt`
 
 ```kotlin
 package es.sebas1705.owlsplit.data.repository.sync
@@ -592,7 +592,7 @@ class OutboxProcessorTest {
 }
 ```
 
-- [ ] **Step 4: Ver que falla** (`OutboxProcessor` no existe): `./gradlew :data:repository:testDebugUnitTest --tests "*OutboxProcessorTest"`.
+- [ ] **Step 4: See it fail** (`OutboxProcessor` does not exist): `./gradlew :data:repository:testDebugUnitTest --tests "*OutboxProcessorTest"`.
 
 - [ ] **Step 5: `sync/OutboxProcessor.kt`**
 
@@ -604,7 +604,7 @@ import es.sebas1705.owlsplit.data.models.OutboxType
 import kotlin.math.min
 import kotlin.random.Random
 
-/** One upload pass over the outbox (docs/SYNC.md, "Subida"). */
+/** One upload pass over the outbox (docs/SYNC.md, "Upload"). */
 internal class OutboxProcessor(
     private val local: SyncLocalStore,
     private val remote: RemoteStore,
@@ -685,9 +685,9 @@ internal class OutboxProcessor(
 }
 ```
 
-- [ ] **Step 6:** Ver que pasa (7 tests) y `git commit -m "feat(sync): outbox processor with backoff, conflicts, idempotency and access loss"`.
+- [ ] **Step 6:** See it pass (7 tests) and `git commit -m "feat(sync): outbox processor with backoff, conflicts, idempotency and access loss"`.
 
-### Task 5: Motor con escucha remota
+### Task 5: Engine with remote listening
 
 - [ ] **Step 1: Tests** — `sync/SyncEngineTest.kt`
 
@@ -806,7 +806,7 @@ class SyncEngineTest {
 }
 ```
 
-- [ ] **Step 2: Ver que falla** (`SyncEngine` no existe).
+- [ ] **Step 2: See it fail** (`SyncEngine` does not exist).
 
 - [ ] **Step 3: `sync/SyncEngine.kt`**
 
@@ -904,25 +904,25 @@ class SyncEngine(
 }
 ```
 
-- [ ] **Step 4:** Ver que pasan (4 tests) y commit `feat(sync): sync engine with upload loop and remote listeners`.
+- [ ] **Step 4:** See them pass (4 tests) and commit `feat(sync): sync engine with upload loop and remote listeners`.
 
-### Task 6: Cierre
+### Task 6: Wrap-up
 
-- [ ] Todo verde: `./gradlew detekt testDebugUnitTest verifySqlDelightMigration :composeApp:assembleDebug`.
-- [ ] `docs/SYNC.md`: sección nueva "Implementación (P6a)" con las decisiones 1–5 de este plan; corregir "Subida" (versión = `base_version + 1`, base que avanza si se edita durante la subida, acuse perdido) y "Estado visible" (de momento `pendingCount` e `isAccessLost`).
-- [ ] `MODULE_MAP.md`: `data:repository` añade "motor de sincronización (`sync`): `RemoteStore`, `SyncEngine`".
-- [ ] `docs/plans/README.md`: fila P6 → "P6a hecho (motor); P6b pendiente (Firestore real, integración, disparadores)".
+- [ ] All green: `./gradlew detekt testDebugUnitTest verifySqlDelightMigration :composeApp:assembleDebug`.
+- [ ] `docs/SYNC.md`: new section "Implementation (P6a)" with decisions 1–5 of this plan; fix "Upload" (version = `base_version + 1`, base that advances if edited during the upload, lost acknowledgement) and "Visible state" (for now `pendingCount` and `isAccessLost`).
+- [ ] `MODULE_MAP.md`: `data:repository` adds "sync engine (`sync`): `RemoteStore`, `SyncEngine`".
+- [ ] `docs/plans/README.md`: row P6 → "P6a done (engine); P6b pending (real Firestore, integration, triggers)".
 - [ ] Commit, push, PR `P6a: sync engine`.
 
-## Verificación final de P6a
+## P6a final verification
 
-- 11 tests de sincronización en verde (7 de subida + 4 del motor) y los de P4 siguen en verde con el reloj ligado al planificador.
-- Ninguna ruta de pérdida silenciosa: todo rechazo termina en sincronizado, conflicto guardado, acceso perdido o reintento con `last_error`.
+- 11 sync tests green (7 upload + 4 engine) and the P4 tests stay green with the clock tied to the scheduler.
+- No silent-loss path: every rejection ends as synced, stored conflict, access lost, or retry with `last_error`.
 
-## Desviaciones durante la ejecución (2026-10-07)
+## Deviations during execution (2026-10-07)
 
-- **FIFO por grupo estricto**: el procesador recorre todo el outbox (no solo lo listo); una entrada que espera su reintento retiene a las siguientes de su grupo. Lo destapó el test de reintentos.
-- **Bucle de subida**: despierta en el primer reintento entre las cabezas de grupo (`nextWakeAt`). Despertar en el mínimo global giraba en vacío cuando una entrada lista estaba detrás de una cabeza en espera (el test de conflicto en la bajada se colgaba). Las consultas `selectReady` y `nextAttemptAt` se eliminaron.
-- **Aplicar remoto normaliza** `serverVersion = version` y `SYNCED`, sin fiarse del adaptador.
-- **`RemoteApplier`** separado de `SyncLocalStore` (Detekt `TooManyFunctions`); el procesador usa `when` en lugar de varios `continue`.
-- Incidencia de proceso: un `git add -A` arrastró `node_modules` de P5 (la rama salía de un `main` sin ese `.gitignore`); se corrigió antes de subir nada.
+- **Strict FIFO per group**: the processor walks the whole outbox (not just the ready entries); an entry waiting for its retry holds back the following ones of its group. The retry test uncovered it.
+- **Upload loop**: wakes at the earliest retry among the group heads (`nextWakeAt`). Waking at the global minimum spun idly when a ready entry sat behind a waiting head (the download conflict test hung). The `selectReady` and `nextAttemptAt` queries were removed.
+- **Applying remote normalises** `serverVersion = version` and `SYNCED`, without trusting the adapter.
+- **`RemoteApplier`** split out of `SyncLocalStore` (Detekt `TooManyFunctions`); the processor uses `when` instead of several `continue`s.
+- Process incident: a `git add -A` swept in P5's `node_modules` (the branch came off a `main` without that `.gitignore`); it was fixed before anything was pushed.

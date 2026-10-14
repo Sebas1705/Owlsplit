@@ -5,7 +5,7 @@ import es.sebas1705.owlsplit.data.models.OutboxType
 import kotlin.math.min
 import kotlin.random.Random
 
-/** One upload pass over the outbox (docs/SYNC.md, "Subida"). */
+/** One upload pass over the outbox (docs/SYNC.md, "Upload"). */
 internal class OutboxProcessor(
     private val local: SyncLocalStore,
     private val applier: RemoteApplier,

@@ -1,61 +1,61 @@
-# Marca Owlsplit
+# Owlsplit brand
 
-Todo lo que identifica a Owlsplit sale de un solo sitio: **[`brand/tokens.json`](../brand/tokens.json)**. Con ese archivo se rigen:
+Everything that identifies Owlsplit comes from a single place: **[`brand/tokens.json`](../brand/tokens.json)**. That file drives:
 
-- **La app**: los colores de `core/ui` [`Tokens.kt`](../core/ui/src/commonMain/kotlin/es/sebas1705/owlsplit/core/ui/theme/Tokens.kt) y el logotipo `OwlsplitLogo`. `BrandTokensTest` falla si `Tokens.kt` y `tokens.json` no coinciden.
-- **La web** (owlsplit.web.app): `firebase/hosting/brand.css` y `favicon.svg` se generan a partir de él.
-- **Los iconos de la app**: el icono adaptativo y monocromo de Android, el de Android 7 y el de iOS se generan a partir de él.
+- **The app**: the colors in `core/ui` [`Tokens.kt`](../core/ui/src/commonMain/kotlin/es/sebas1705/owlsplit/core/ui/theme/Tokens.kt) and the `OwlsplitLogo` logo. `BrandTokensTest` fails if `Tokens.kt` and `tokens.json` don't match.
+- **The website** (owlsplit.web.app): `firebase/hosting/brand.css` and `favicon.svg` are generated from it.
+- **The app icons**: the Android adaptive and monochrome icon, the Android 7 icon and the iOS icon are generated from it.
 
-## Logotipo
+## Logo
 
 ![Owlsplit](../brand/logo.svg)
 
-Búho geométrico sobre una retícula de 24 unidades:
+A geometric owl on a 24-unit grid:
 
-- un cuadrado de `accent` con esquinas de 7 unidades;
-- dos anillos blancos por ojos, de radio 3,2 y trazo 1,8, centrados en (8,5, 11) y (15,5, 11);
-- un pico triangular de `brandBeak`, de (10,8, 15,6) a (13,2, 15,6) con la punta en (12, 18).
+- an `accent` square with 7-unit corners;
+- two white rings for eyes, radius 3.2 and stroke 1.8, centered at (8.5, 11) and (15.5, 11);
+- a triangular `brandBeak` beak, from (10.8, 15.6) to (13.2, 15.6) with its tip at (12, 18).
 
-Archivos de referencia:
+Reference files:
 
-| Archivo | Uso |
+| File | Use |
 |---|---|
-| [`brand/logo.svg`](../brand/logo.svg) | El logotipo con sus esquinas: web, documentos y favicon |
-| [`brand/icon.svg`](../brand/icon.svg) | Cuadrado completo, sin esquinas, para las tiendas y para iOS (que redondea solo) |
+| [`brand/logo.svg`](../brand/logo.svg) | The logo with its rounded corners: web, documents and favicon |
+| [`brand/icon.svg`](../brand/icon.svg) | Full square, no corners, for the stores and for iOS (which rounds it itself) |
 
-Iconos de la app:
+App icons:
 
-- **Android 8 y posteriores**: icono adaptativo. El fondo es `accent`, y los ojos y el pico ocupan la zona segura de 66 dp, dibujados a escala 3 en el centro del lienzo de 108 dp. Android 12 lo usa también en la pantalla de arranque.
-- **Android 13 y posteriores**: versión monocroma para los iconos temáticos.
-- **PNG en cada densidad** (`mipmap-mdpi` … `xxxhdpi`): el logotipo redondeado. Lo usa Android 7, que no tiene iconos adaptativos, y Firebase App Distribution (App Tester), que no sabe leer los adaptativos: sin los PNG mostraría un icono genérico.
-- **iOS**: `AppIcon` de 1024 px, opaco.
+- **Android 8 and later**: adaptive icon. The background is `accent`, and the eyes and beak fill the 66 dp safe zone, drawn at 3x scale in the center of the 108 dp canvas. Android 12 also uses it on the splash screen.
+- **Android 13 and later**: monochrome version for themed icons.
+- **PNG at each density** (`mipmap-mdpi` … `xxxhdpi`): the rounded logo. Used by Android 7, which has no adaptive icons, and by Firebase App Distribution (App Tester), which can't read adaptive icons: without the PNGs it would show a generic icon.
+- **iOS**: 1024 px `AppIcon`, opaque.
 
-Reglas de uso:
+Usage rules:
 
-- El logotipo no se usa como mascota ilustrada dentro de las pantallas de trabajo; solo aparece en el icono, el arranque, los estados vacíos y la bienvenida.
-- `brandBeak` se usa exclusivamente para el pico.
-- No se cambian sus proporciones ni su color.
+- The logo is not used as an illustrated mascot inside working screens; it only appears in the icon, the splash screen, empty states and the welcome screen.
+- `brandBeak` is used exclusively for the beak.
+- Its proportions and color are not changed.
 
-## Colores
+## Colors
 
-Los valores están en `tokens.json`, en tema claro y oscuro. Los roles de cada uno se explican en [DESIGN_SYSTEM](DESIGN_SYSTEM.md#color). En resumen:
+The values live in `tokens.json`, in light and dark themes. The role of each one is explained in [DESIGN_SYSTEM](DESIGN_SYSTEM.md#color). In short:
 
-- **Azul Owlsplit** `#3B4BF5` (`accent`): botones, selección y el fondo del logotipo. En texto sobre fondo oscuro se usa `#8C96FF` (`accentText`).
-- **Ámbar del pico** `#E8B04B` (`brandBeak`): solo en el logotipo.
-- **Verde de saldo** `#087A54` (claro) y `#34C38F` (oscuro) (`positive`): lo que te deben.
-- **Neutros**: fondo `#F2F3F7` y `#0B0C10`, superficie `#FFFFFF` y `#16181F`, texto `#0B0C10` y `#F5F6FA`.
+- **Owlsplit blue** `#3B4BF5` (`accent`): buttons, selection and the logo background. For text on a dark background, `#8C96FF` (`accentText`) is used.
+- **Beak amber** `#E8B04B` (`brandBeak`): logo only.
+- **Balance green** `#087A54` (light) and `#34C38F` (dark) (`positive`): what you are owed.
+- **Neutrals**: background `#F2F3F7` and `#0B0C10`, surface `#FFFFFF` and `#16181F`, text `#0B0C10` and `#F5F6FA`.
 
-En la web, `brand.css` define estos colores como variables CSS, por ejemplo `--os-accent` o `--os-text-primary`. Los nombres son los de `tokens.json` en kebab-case, y `style.css` les pone los nombres que usan las páginas.
+On the web, `brand.css` defines these colors as CSS variables, for example `--os-accent` or `--os-text-primary`. The names are the `tokens.json` names in kebab-case, and `style.css` maps them to the names the pages use.
 
-## Tipografía
+## Typography
 
-- **App**: Inter, con cifras tabulares en los importes.
-- **Web**: Inter para el texto, Bricolage Grotesque para los titulares e IBM Plex Mono para datos como el SHA-256.
+- **App**: Inter, with tabular figures for amounts.
+- **Web**: Inter for body text, Bricolage Grotesque for headlines and IBM Plex Mono for data such as the SHA-256.
 
-## Cambiar la marca
+## Changing the brand
 
-1. Edita `brand/tokens.json`.
-2. Ejecuta `node scripts/brand.mjs --png` para regenerar la web, los iconos de Android (vectoriales y PNG) y el de iOS. Para los PNG necesita Edge o Chrome; sin `--png` solo regenera los archivos de texto.
-3. Si cambiaste colores de la app, actualiza `Tokens.kt`; `BrandTokensTest` te dirá cuáles faltan. Si cambiaste la geometría del logotipo, actualiza `OwlsplitLogo`.
+1. Edit `brand/tokens.json`.
+2. Run `node scripts/brand.mjs --png` to regenerate the website, the Android icons (vector and PNG) and the iOS icon. The PNGs require Edge or Chrome; without `--png` it only regenerates the text files.
+3. If you changed app colors, update `Tokens.kt`; `BrandTokensTest` will tell you which ones are missing. If you changed the logo geometry, update `OwlsplitLogo`.
 
-La CI ejecuta `node scripts/brand.mjs --check` y falla si algún archivo generado no está al día.
+CI runs `node scripts/brand.mjs --check` and fails if any generated file is out of date.

@@ -3,7 +3,7 @@ package es.sebas1705.owlsplit.domain.ledger
 /**
  * Greedy settlement (as in Settle Up): the largest debtor pays the largest creditor until
  * everyone is at zero. At most n − 1 payments; ties follow member order.
- * See docs/DOMAIN.md#simplificación-de-deudas.
+ * See docs/DOMAIN.md#debt-simplification.
  */
 object DebtSimplifier {
     fun simplify(balances: Map<String, Long>, members: List<LedgerMember>): List<SuggestedPayment> {

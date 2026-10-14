@@ -1,82 +1,82 @@
-# P2 · Firebase dev + prueba de humo GitLive — Implementation Plan
+# P2 · Firebase dev + GitLive smoke test — Implementation Plan
 
 > **For agentic workers:** Use `mobiai-mobile-executing-plans-with-subagents` (recommended) or `mobiai-mobile-executing-plans` to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
-**Goal:** Crear el proyecto Firebase de desarrollo, guardar su configuración en Doppler y demostrar con un test instrumentado que el SDK KMP de GitLive hace autenticación anónima, escritura y escucha en tiempo real contra Firestore real desde Android, y que compila para iOS.
+**Goal:** Create the development Firebase project, store its configuration in Doppler and prove with an instrumented test that the GitLive KMP SDK performs anonymous authentication, a write and a real-time listener against real Firestore from Android, and that it builds for iOS.
 
-**Architecture:** Nuevo módulo `data:remote`, que en P6 alojará el acceso a Firestore. En P2 solo contiene las dependencias de GitLive y un test instrumentado que inicializa Firebase con opciones pasadas como argumentos de instrumentación (sin `google-services.json` en el módulo). La app aplica el plugin `google-services` solo cuando existe el archivo, para que CI siga compilando sin secretos.
+**Architecture:** New `data:remote` module, which will host Firestore access in P6. In P2 it only contains the GitLive dependencies and an instrumented test that initializes Firebase with options passed as instrumentation arguments (no `google-services.json` in the module). The app applies the `google-services` plugin only when the file exists, so CI keeps building without secrets.
 
 **Tech Stack:** `dev.gitlive:firebase-auth`/`firebase-firestore` 2.7.0, Google Services plugin 4.5.0, AndroidX Test (runner 1.7.0, ext-junit 1.3.0), firebase-tools (`npx`), Doppler CLI.
 
 **Platform:** KMP (Android + iOS)
 
-**Depende de:** P1 terminado.
+**Depends on:** P1 done.
 
 ---
 
-## Contexto para quien ejecuta
+## Context for the executor
 
-- Mismo entorno que P1 (`JAVA_HOME`, `ANDROID_HOME`). Repo en `~/Documents/Repos/Owlsplit`.
-- Las acciones sobre la cuenta de Google/Firebase se hacen con la sesión del usuario en `npx firebase-tools`. **Pasos marcados 👤 los hace el usuario** (inicio de sesión interactivo y activar proveedores en la consola); el agente le pide que los haga y espera confirmación.
-- Si el id `owlsplit-dev` está cogido, usar `owlsplit-dev-<4 letras>` y sustituirlo en **todos** los comandos y en `docs/FIREBASE.md`.
-- Identificadores por entorno (se fijan aquí y los usan P5–P11):
+- Same environment as P1 (`JAVA_HOME`, `ANDROID_HOME`). Repo at `~/Documents/Repos/Owlsplit`.
+- Actions on the Google/Firebase account are done with the user's session in `npx firebase-tools`. **Steps marked 👤 are done by the user** (interactive sign-in and enabling providers in the console); the agent asks the user to do them and waits for confirmation.
+- If the id `owlsplit-dev` is taken, use `owlsplit-dev-<4 letters>` and substitute it in **every** command and in `docs/FIREBASE.md`.
+- Per-environment identifiers (fixed here and used by P5–P11):
 
-| Entorno | Sufijo | Android applicationId / iOS bundle id |
+| Environment | Suffix | Android applicationId / iOS bundle id |
 |---|---|---|
 | development | `.dev` | `es.sebas1705.owlsplit.dev` |
 | staging | `.stg` | `es.sebas1705.owlsplit.stg` |
 | production | — | `es.sebas1705.owlsplit` |
 
-## Mapa de archivos
+## File map
 
-| Acción | Ruta |
+| Action | Path |
 |---|---|
-| Modificar | `gradle/libs.versions.toml`, `settings.gradle.kts`, `build.gradle.kts`, `composeApp/build.gradle.kts`, `.gitignore`, `docs/FIREBASE.md`, `MODULE_MAP.md`, `docs/plans/README.md` |
-| Crear | `data/remote/build.gradle.kts` |
-| Crear | `data/remote/src/androidInstrumentedTest/kotlin/es/sebas1705/owlsplit/data/remote/FirebaseSmokeTest.kt` |
-| Crear | `firebase/firebase.json`, `firebase/.firebaserc`, `firebase/firestore.rules`, `firebase/firestore.indexes.json` |
-| Crear | `scripts/doppler-sync-local.sh`, `scripts/run-firebase-smoke.sh` |
+| Modify | `gradle/libs.versions.toml`, `settings.gradle.kts`, `build.gradle.kts`, `composeApp/build.gradle.kts`, `.gitignore`, `docs/FIREBASE.md`, `MODULE_MAP.md`, `docs/plans/README.md` |
+| Create | `data/remote/build.gradle.kts` |
+| Create | `data/remote/src/androidInstrumentedTest/kotlin/es/sebas1705/owlsplit/data/remote/FirebaseSmokeTest.kt` |
+| Create | `firebase/firebase.json`, `firebase/.firebaserc`, `firebase/firestore.rules`, `firebase/firestore.indexes.json` |
+| Create | `scripts/doppler-sync-local.sh`, `scripts/run-firebase-smoke.sh` |
 
 ---
 
-### Task 1: Proyecto Firebase `owlsplit-dev`
+### Task 1: Firebase project `owlsplit-dev`
 
-- [ ] **Step 1: 👤 Iniciar sesión en firebase-tools**
+- [ ] **Step 1: 👤 Sign in to firebase-tools**
 
-Pedir al usuario que ejecute en su terminal y confirme:
+Ask the user to run this in their terminal and confirm:
 ```bash
 npx firebase-tools login
 ```
-Comprobar: `npx firebase-tools login:list` muestra su cuenta.
+Check: `npx firebase-tools login:list` shows their account.
 
-- [ ] **Step 2: Crear el proyecto**
+- [ ] **Step 2: Create the project**
 
 ```bash
 npx firebase-tools projects:create owlsplit-dev --display-name "Owlsplit Dev"
 ```
-Expected: `Your Firebase project is ready!`. Plan Spark (sin facturación).
+Expected: `Your Firebase project is ready!`. Spark plan (no billing).
 
-- [ ] **Step 3: Crear la base de datos Firestore en Europa**
+- [ ] **Step 3: Create the Firestore database in Europe**
 
 ```bash
 npx firebase-tools firestore:databases:create "(default)" --location eur3 --project owlsplit-dev
 ```
 Expected: `Successfully created projects/owlsplit-dev/databases/(default)`.
 
-- [ ] **Step 4: 👤 Activar autenticación anónima**
+- [ ] **Step 4: 👤 Enable anonymous authentication**
 
-Pedir al usuario: consola de Firebase → proyecto *Owlsplit Dev* → Authentication → *Comenzar* → *Sign-in method* → **Anónimo** → Habilitar → Guardar. (Google y Apple se activan en P8.)
+Ask the user: Firebase console → project *Owlsplit Dev* → Authentication → *Comenzar* (Get started) → *Sign-in method* → **Anónimo** (Anonymous) → Habilitar (Enable) → Guardar (Save). (Google and Apple are enabled in P8.)
 
-- [ ] **Step 5: Registrar las apps Android e iOS de desarrollo**
+- [ ] **Step 5: Register the development Android and iOS apps**
 
 ```bash
 npx firebase-tools apps:create ANDROID "Owlsplit Dev" --package-name es.sebas1705.owlsplit.dev --project owlsplit-dev
 npx firebase-tools apps:create IOS "Owlsplit Dev" --bundle-id es.sebas1705.owlsplit.dev --project owlsplit-dev
 npx firebase-tools apps:list --project owlsplit-dev
 ```
-Expected: dos apps listadas; anotar sus **App ID** (`1:…:android:…` y `1:…:ios:…`).
+Expected: two apps listed; note their **App IDs** (`1:…:android:…` and `1:…:ios:…`).
 
-- [ ] **Step 6: Descargar las configuraciones a un directorio temporal** (nunca al repo)
+- [ ] **Step 6: Download the configurations to a temporary directory** (never into the repo)
 
 ```bash
 T="$(mktemp -d)"
@@ -84,11 +84,11 @@ npx firebase-tools apps:sdkconfig ANDROID <ANDROID_APP_ID> --project owlsplit-de
 npx firebase-tools apps:sdkconfig IOS <IOS_APP_ID> --project owlsplit-dev > "$T/GoogleService-Info.plist"
 grep -o '"current_key": "[^"]*"' "$T/google-services.json" | head -1
 ```
-Expected: se ve una `current_key` (API key). Si el primer renglón del archivo es un mensaje de la CLI en lugar de JSON, borrarlo.
+Expected: a `current_key` (API key) is shown. If the first line of the file is a CLI message instead of JSON, delete it.
 
 ### Task 2: Doppler
 
-- [ ] **Step 1: Crear el proyecto Doppler y cargar secretos de `dev`**
+- [ ] **Step 1: Create the Doppler project and load the `dev` secrets**
 
 ```bash
 doppler projects create owlsplit --description "Owlsplit app config"
@@ -102,11 +102,11 @@ doppler secrets set --project owlsplit --config dev \
 doppler secrets --project owlsplit --config dev --only-names
 rm -rf "$T"
 ```
-Expected: los seis nombres listados. Los configs `stg` y `prd` existen vacíos (se rellenan en P11).
+Expected: the six names listed. The `stg` and `prd` configs exist and are empty (filled in P11).
 
-- [ ] **Step 2: Script de sincronización local**
+- [ ] **Step 2: Local sync script**
 
-Crear `scripts/doppler-sync-local.sh`:
+Create `scripts/doppler-sync-local.sh`:
 ```bash
 #!/usr/bin/env bash
 # Writes the Firebase config files of one Doppler config (dev by default) to the
@@ -128,7 +128,7 @@ chmod +x scripts/doppler-sync-local.sh
 ls iosApp/iosApp/ >/dev/null && ./scripts/doppler-sync-local.sh dev
 git status --short
 ```
-Expected: el script escribe ambos archivos y `git status` **no** los muestra (ya están en `.gitignore` desde P1). Si `iosApp/iosApp` no existe, ver la carpeta real con `ls iosApp` y corregir la ruta en el script.
+Expected: the script writes both files and `git status` does **not** show them (they are already in `.gitignore` since P1). If `iosApp/iosApp` does not exist, find the real folder with `ls iosApp` and fix the path in the script.
 
 - [ ] **Step 3: Commit**
 
@@ -137,14 +137,14 @@ git add scripts/doppler-sync-local.sh
 git commit -m "chore: add Doppler sync script for Firebase config"
 ```
 
-### Task 3: Id de aplicación por entorno y plugin google-services
+### Task 3: Per-environment application id and google-services plugin
 
 **Files:**
 - Modify: `gradle/libs.versions.toml`, `build.gradle.kts`, `composeApp/build.gradle.kts`
 
-- [ ] **Step 1: Catálogo**
+- [ ] **Step 1: Catalog**
 
-En `gradle/libs.versions.toml`, añadir en `[versions]`:
+In `gradle/libs.versions.toml`, add to `[versions]`:
 ```toml
 gitlive-firebase        = "2.7.0"
 google-services         = "4.5.0"
@@ -152,7 +152,7 @@ androidx-test-runner    = "1.7.0"
 androidx-test-core      = "1.7.0"
 androidx-test-ext-junit = "1.3.0"
 ```
-en `[libraries]`:
+to `[libraries]`:
 ```toml
 gitlive-firebase-auth      = { module = "dev.gitlive:firebase-auth",      version.ref = "gitlive-firebase" }
 gitlive-firebase-firestore = { module = "dev.gitlive:firebase-firestore", version.ref = "gitlive-firebase" }
@@ -160,21 +160,21 @@ androidx-test-runner       = { module = "androidx.test:runner",           versio
 androidx-test-core         = { module = "androidx.test:core",             version.ref = "androidx-test-core" }
 androidx-test-ext-junit    = { module = "androidx.test.ext:junit",        version.ref = "androidx-test-ext-junit" }
 ```
-y en `[plugins]`:
+and to `[plugins]`:
 ```toml
 google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
 ```
 
-- [ ] **Step 2: Declarar el plugin en la raíz**
+- [ ] **Step 2: Declare the plugin in the root project**
 
-En `build.gradle.kts`, dentro de `plugins { }`, añadir:
+In `build.gradle.kts`, inside `plugins { }`, add:
 ```kotlin
     alias(libs.plugins.google.services)       apply false
 ```
 
-- [ ] **Step 3: Sufijo de id y google-services condicional en `composeApp/build.gradle.kts`**
+- [ ] **Step 3: Id suffix and conditional google-services in `composeApp/build.gradle.kts`**
 
-Justo después del bloque `require(appEnvironment in templetryProfiles) { … }`, añadir:
+Right after the `require(appEnvironment in templetryProfiles) { … }` block, add:
 ```kotlin
 // One Firebase app per environment: development and staging install side by side
 // with production thanks to the applicationId suffix.
@@ -195,7 +195,7 @@ if (file("google-services.json").exists()) {
 }
 ```
 
-- [ ] **Step 4: Compilar con y sin configuración**
+- [ ] **Step 4: Build with and without the configuration**
 
 ```bash
 ./gradlew :composeApp:assembleDebug 2>&1 | grep -E "BUILD|google-services"
@@ -203,7 +203,7 @@ mv composeApp/google-services.json /tmp/gs.json
 ./gradlew :composeApp:assembleDebug 2>&1 | grep -E "BUILD|google-services"
 mv /tmp/gs.json composeApp/google-services.json
 ```
-Expected: ambas `BUILD SUCCESSFUL`; la segunda muestra el aviso `google-services.json missing`. Si la primera falla con `No matching client found for package name 'es.sebas1705.owlsplit.dev'`, la app Android de la Tarea 1 se registró con otro paquete: corregirla.
+Expected: both `BUILD SUCCESSFUL`; the second shows the `google-services.json missing` warning. If the first fails with `No matching client found for package name 'es.sebas1705.owlsplit.dev'`, the Android app from Task 1 was registered with another package: fix it.
 
 - [ ] **Step 5: Commit**
 
@@ -212,15 +212,15 @@ git add gradle/libs.versions.toml build.gradle.kts composeApp/build.gradle.kts
 git commit -m "build: per-environment application id and optional google-services"
 ```
 
-### Task 4: Módulo `data:remote` con GitLive
+### Task 4: `data:remote` module with GitLive
 
 **Files:**
 - Create: `data/remote/build.gradle.kts`
 - Modify: `settings.gradle.kts`
 
-- [ ] **Step 1: Registrar el módulo**
+- [ ] **Step 1: Register the module**
 
-En `settings.gradle.kts`, sustituir `include(":data:local")` por:
+In `settings.gradle.kts`, replace `include(":data:local")` with:
 ```kotlin
 include(":data:local", ":data:remote")
 ```
@@ -264,12 +264,12 @@ android {
 }
 ```
 
-- [ ] **Step 3: Compilar Android**
+- [ ] **Step 3: Build Android**
 
 ```bash
 ./gradlew :data:remote:assembleDebug 2>&1 | tail -5
 ```
-Expected: `BUILD SUCCESSFUL`. Si falla por incompatibilidad de metadatos de Kotlin o de AGP con GitLive 2.7.0, **parar y avisar**: es justo el riesgo que mide este plan (ver Tarea 8).
+Expected: `BUILD SUCCESSFUL`. If it fails because of a Kotlin metadata or AGP incompatibility with GitLive 2.7.0, **stop and report**: that is exactly the risk this plan measures (see Task 8).
 
 - [ ] **Step 4: Commit**
 
@@ -278,12 +278,12 @@ git add settings.gradle.kts data/remote/build.gradle.kts
 git commit -m "build: add data:remote module with GitLive Firebase"
 ```
 
-### Task 5: Reglas temporales de Firestore para la prueba
+### Task 5: Temporary Firestore rules for the test
 
 **Files:**
 - Create: `firebase/firebase.json`, `firebase/.firebaserc`, `firebase/firestore.rules`, `firebase/firestore.indexes.json`
 
-- [ ] **Step 1: Configuración de firebase-tools**
+- [ ] **Step 1: firebase-tools configuration**
 
 `firebase/firebase.json`:
 ```json
@@ -312,7 +312,7 @@ git commit -m "build: add data:remote module with GitLive Firebase"
 { "indexes": [], "fieldOverrides": [] }
 ```
 
-- [ ] **Step 2: Reglas mínimas** (P5 las sustituye por las reales)
+- [ ] **Step 2: Minimal rules** (P5 replaces them with the real ones)
 
 `firebase/firestore.rules`:
 ```
@@ -330,7 +330,7 @@ service cloud.firestore {
 }
 ```
 
-- [ ] **Step 3: Desplegar a dev**
+- [ ] **Step 3: Deploy to dev**
 
 ```bash
 cd firebase && npx firebase-tools deploy --only firestore --project dev && cd ..
@@ -344,13 +344,13 @@ git add firebase
 git commit -m "chore: firebase config and temporary smoke-test rules"
 ```
 
-### Task 6: Test instrumentado de humo
+### Task 6: Instrumented smoke test
 
 **Files:**
 - Create: `data/remote/src/androidInstrumentedTest/kotlin/es/sebas1705/owlsplit/data/remote/FirebaseSmokeTest.kt`
 - Create: `scripts/run-firebase-smoke.sh`
 
-- [ ] **Step 1: Escribir el test**
+- [ ] **Step 1: Write the test**
 
 ```kotlin
 package es.sebas1705.owlsplit.data.remote
@@ -425,7 +425,7 @@ class FirebaseSmokeTest {
 }
 ```
 
-- [ ] **Step 2: Script para lanzarlo con los valores de Doppler**
+- [ ] **Step 2: Script to run it with the Doppler values**
 
 `scripts/run-firebase-smoke.sh`:
 ```bash
@@ -444,29 +444,29 @@ doppler run --project owlsplit --config dev -- bash -c '
 chmod +x scripts/run-firebase-smoke.sh
 ```
 
-- [ ] **Step 3: Ejecutar con el emulador arrancado** (el de P1, `owlsplit_api36`)
+- [ ] **Step 3: Run it with the emulator started** (the one from P1, `owlsplit_api36`)
 
 ```bash
 "$ANDROID_HOME/platform-tools/adb" devices
 ./scripts/run-firebase-smoke.sh 2>&1 | tail -15
 ```
-Expected: `BUILD SUCCESSFUL` y `Finished 1 tests`. El informe está en `data/remote/build/reports/androidTests/connected/debug/index.html`.
+Expected: `BUILD SUCCESSFUL` and `Finished 1 tests`. The report is at `data/remote/build/reports/androidTests/connected/debug/index.html`.
 
-Fallos posibles:
+Possible failures:
 
-| Síntoma | Causa y acción |
+| Symptom | Cause and action |
 |---|---|
-| `PERMISSION_DENIED` en `set` | Reglas no desplegadas o `projectId` erróneo: repetir Tarea 5 y revisar `FIREBASE_PROJECT_ID` |
-| `ADMIN_ONLY_OPERATION` / `OPERATION_NOT_ALLOWED` en `signInAnonymously` | Proveedor anónimo sin activar: repetir Tarea 1, Step 4 |
-| `TimeoutCancellationException` | El listener no recibe: es un fallo del SDK → Tarea 8 |
-| `NoSuchMethodError` / `ClassNotFoundException` de `com.google.firebase` | Incompatibilidad GitLive ↔ BoM de Firebase → Tarea 8 |
+| `PERMISSION_DENIED` on `set` | Rules not deployed or wrong `projectId`: repeat Task 5 and check `FIREBASE_PROJECT_ID` |
+| `ADMIN_ONLY_OPERATION` / `OPERATION_NOT_ALLOWED` on `signInAnonymously` | Anonymous provider not enabled: repeat Task 1, Step 4 |
+| `TimeoutCancellationException` | The listener receives nothing: SDK bug → Task 8 |
+| `NoSuchMethodError` / `ClassNotFoundException` from `com.google.firebase` | GitLive ↔ Firebase BoM incompatibility → Task 8 |
 
-- [ ] **Step 4: Comprobar que no quedan restos en Firestore**
+- [ ] **Step 4: Check that nothing is left in Firestore**
 
 ```bash
 npx firebase-tools firestore:delete smoke --recursive --project owlsplit-dev --force 2>&1 | tail -1
 ```
-Expected: no había documentos (el test borra el suyo) o los borra.
+Expected: there were no documents (the test deletes its own) or it deletes them.
 
 - [ ] **Step 5: Commit**
 
@@ -475,16 +475,16 @@ git add data/remote/src scripts/run-firebase-smoke.sh
 git commit -m "test: GitLive smoke test against the dev Firebase project"
 ```
 
-### Task 7: Compilación iOS con GitLive en CI
+### Task 7: iOS build with GitLive in CI
 
-- [ ] **Step 1: Hacer que `composeApp` dependa de `data:remote`** (para que el framework de iOS enlace GitLive)
+- [ ] **Step 1: Make `composeApp` depend on `data:remote`** (so the iOS framework links GitLive)
 
-En `composeApp/build.gradle.kts`, dentro de `commonMain.dependencies`, después de `implementation(project(":data:local"))`, añadir:
+In `composeApp/build.gradle.kts`, inside `commonMain.dependencies`, after `implementation(project(":data:local"))`, add:
 ```kotlin
             implementation(project(":data:remote"))
 ```
 
-- [ ] **Step 2: Compilar Android y abrir PR para que corra el job de iOS**
+- [ ] **Step 2: Build Android and open a PR so the iOS job runs**
 
 ```bash
 ./gradlew :composeApp:assembleDebug | tail -1
@@ -495,32 +495,32 @@ git push -u origin p2/firebase-smoke
 gh pr create --title "P2: Firebase dev + GitLive smoke test" --body "Implements docs/plans/2026-10-07-p02-firebase-smoke.md"
 gh pr checks --watch
 ```
-Expected: `Android` e `iOS framework` en verde. Los frameworks son **estáticos** (`isStatic = true`), así que los símbolos del SDK de Firebase iOS no se resuelven aquí sino al enlazar la app en Xcode; el job solo comprueba que el código Kotlin de GitLive compila para iOS. Si aun así falla (por ejemplo `Undefined symbols … FIR…` o un error de cinterop de GitLive), **parar y avisar** con el log: entra en la decisión de la Tarea 8. Añadir el SDK de Firebase iOS al proyecto `iosApp` (Swift Package Manager) necesita Xcode y forma parte del checklist de P11.
+Expected: `Android` and `iOS framework` green. The frameworks are **static** (`isStatic = true`), so the Firebase iOS SDK symbols are not resolved here but when the app is linked in Xcode; the job only checks that the GitLive Kotlin code compiles for iOS. If it still fails (for example `Undefined symbols … FIR…` or a GitLive cinterop error), **stop and report** with the log: it feeds the Task 8 decision. Adding the Firebase iOS SDK to the `iosApp` project (Swift Package Manager) needs Xcode and is part of the P11 checklist.
 
-- [ ] **Step 3: Fusionar**
+- [ ] **Step 3: Merge**
 
-Con los checks en verde:
+With the checks green:
 ```bash
 gh pr merge --merge --delete-branch
 git switch main && git pull
 ```
 
-### Task 8: Decisión sobre GitLive
+### Task 8: GitLive decision
 
-- [ ] **Step 1: Registrar el resultado**
+- [ ] **Step 1: Record the result**
 
-Si las Tareas 4, 6 y 7 pasaron: añadir al final de `docs/adr/0002-firebase-gitlive.md`:
+If Tasks 4, 6 and 7 passed: append to `docs/adr/0002-firebase-gitlive.md`:
 ```markdown
-## Validación (P2, <fecha>)
-Prueba de humo superada con GitLive 2.7.0: auth anónima, escritura y listener en Android contra `owlsplit-dev`; framework iOS compilado en CI. La ejecución en un dispositivo iOS queda pendiente de un Mac (checklist de P11).
+## Validation (P2, <date>)
+Smoke test passed with GitLive 2.7.0: anonymous auth, write and listener on Android against `owlsplit-dev`; iOS framework built in CI. Running on an iOS device is pending a Mac (P11 checklist).
 ```
-Si alguna falló de forma no resoluble: **no seguir con P6**. Escribir el error exacto en `docs/adr/0002-firebase-gitlive.md` bajo `## Validación` y avisar al usuario con las dos salidas del ADR: (a) probar `3.0.0-alpha02` de GitLive; (b) implementar `data:remote` sobre la API REST de Firestore con Ktor. La elección es del usuario.
+If any of them failed in a way that cannot be fixed: **do not continue with P6**. Write the exact error in `docs/adr/0002-firebase-gitlive.md` under `## Validation` and tell the user the two ways out given in the ADR: (a) try GitLive `3.0.0-alpha02`; (b) implement `data:remote` on top of the Firestore REST API with Ktor. The choice is the user's.
 
-- [ ] **Step 2: Actualizar documentación**
+- [ ] **Step 2: Update the documentation**
 
-- `docs/FIREBASE.md`, tabla de proyectos: fila `development` con el id real y los App ID de Android e iOS.
-- `MODULE_MAP.md`: añadir `| data:remote | Firebase (GitLive): auth y Firestore | P6, P8 |`.
-- `docs/plans/README.md`: estado de P2 → `Hecho`.
+- `docs/FIREBASE.md`, projects table: `development` row with the real id and the Android and iOS App IDs.
+- `MODULE_MAP.md`: add `| data:remote | Firebase (GitLive): auth and Firestore | P6, P8 |`.
+- `docs/plans/README.md`: status of P2 → `Done`.
 
 ```bash
 git add docs MODULE_MAP.md
@@ -528,9 +528,9 @@ git commit -m "docs: record P2 smoke test result"
 git push
 ```
 
-## Verificación final de P2
+## Final verification of P2
 
-- `./scripts/run-firebase-smoke.sh` → 1 test pasado contra `owlsplit-dev`.
-- La app compila con y sin `google-services.json`; con él se instala como `es.sebas1705.owlsplit.dev`.
-- CI verde en el PR, incluido el job de iOS.
-- Ningún secreto en git: `git log -p | grep -c "current_key"` → `0`.
+- `./scripts/run-firebase-smoke.sh` → 1 test passed against `owlsplit-dev`.
+- The app builds with and without `google-services.json`; with it, it installs as `es.sebas1705.owlsplit.dev`.
+- Green CI on the PR, including the iOS job.
+- No secrets in git: `git log -p | grep -c "current_key"` → `0`.

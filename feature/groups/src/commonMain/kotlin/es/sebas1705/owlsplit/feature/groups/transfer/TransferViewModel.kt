@@ -39,7 +39,7 @@ sealed interface TransferIntent : MVIBaseIntent {
     data object DismissConfirm : TransferIntent
 }
 
-/** "Ana pagó 23,50 € a Luis": a payment typed by hand, in the group currency. */
+/** "Ana paid Luis €23.50": a payment typed by hand, in the group currency. */
 class TransferViewModel(
     private val groupId: String,
     private val observeDetail: ObserveGroupDetail,

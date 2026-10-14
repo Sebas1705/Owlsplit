@@ -109,7 +109,7 @@ fun CurrencyPicker(
 }
 
 /**
- * A date row ("Fecha · 12 jul") that opens the Material date picker. [text] is the date as shown;
+ * A date row ("Date · Jul 12") that opens the Material date picker. [text] is the date as shown;
  * the picker works in UTC midnights, converted here so the chosen day never shifts.
  */
 @OptIn(ExperimentalMaterial3Api::class)

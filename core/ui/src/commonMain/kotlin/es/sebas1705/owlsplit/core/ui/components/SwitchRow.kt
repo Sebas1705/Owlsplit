@@ -22,7 +22,7 @@ import es.sebas1705.owlsplit.core.ui.theme.Sizes
 
 /**
  * A labelled switch: the whole row toggles, so the label is the switch's name for screen
- * readers ("Varios pagadores, interruptor, desactivado") and the target is the full row.
+ * readers ("Several payers, switch, off") and the target is the full row.
  */
 @Composable
 fun SwitchRow(

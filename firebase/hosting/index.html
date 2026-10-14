@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Owlsplit · Gastos compartidos, cuentas claras</title>
-  <meta name="description" content="Apunta quién pagó qué y Owlsplit te dice quién debe a quién. Gratis, sin registro y sin conexión. Descarga la app para Android.">
+  <title data-en="Owlsplit · Shared expenses, no loose ends">Owlsplit · Gastos compartidos, cuentas claras</title>
+  <meta name="description" content="Apunta quién pagó qué y Owlsplit te dice quién debe a quién. Gratis, sin registro y sin conexión. Descarga la app para Android." data-en-content="Log who paid what and Owlsplit tells you who owes whom. Free, no sign-up and works offline. Download the app for Android.">
   <meta name="theme-color" content="#F2F3F7" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0B0C10" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -21,6 +21,9 @@
     .wordmark svg { width: 34px; height: 34px; }
     .top a.quiet { font-weight: 600; font-size: 15px; color: var(--muted); text-decoration: none; }
     .top a.quiet:hover { color: var(--ink); }
+    .top-end { display: flex; align-items: center; gap: 14px; }
+    /* Narrow phones: the language toggle needs the room; the GitHub link is also in the footer. */
+    @media (max-width: 400px) { .top a.quiet { display: none; } }
 
     .hero { display: grid; gap: 48px; align-items: center; padding: 40px 0 72px; }
     @media (min-width: 880px) { .hero { grid-template-columns: 1.05fr 0.95fr; padding: 64px 0 96px; } }
@@ -59,7 +62,7 @@
     .share b { font-variant-numeric: tabular-nums; font-size: 15px; color: var(--ink); }
     .owe { margin-top: 22px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--positive-soft); border-radius: 18px; padding: 14px 16px; }
     .owe p { margin: 0; font-weight: 600; color: var(--ink); }
-    .owe p span { color: var(--positive); }
+    .owe p .amount { color: var(--positive); }
     .chip { font-size: 13px; font-weight: 700; color: var(--accent-text); background: var(--surface); border-radius: 999px; padding: 8px 12px; white-space: nowrap; }
     @media (prefers-reduced-motion: no-preference) {
       .bar i { animation: fill .9s cubic-bezier(.2, .8, .2, 1) both; }
@@ -89,88 +92,159 @@
 <body>
 <div class="page">
   <header class="top">
-    <a class="wordmark" href="/" aria-label="Owlsplit, inicio">
+    <a class="wordmark" href="/" aria-label="Owlsplit, inicio" data-en-aria-label="Owlsplit, home">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="var(--accent)"/><circle cx="8.5" cy="11" r="3.2" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="15.5" cy="11" r="3.2" fill="none" stroke="#fff" stroke-width="1.8"/><path d="M10.8 15.6H13.2L12 18Z" fill="var(--beak)"/></svg>
       owlsplit
     </a>
-    <a class="quiet" href="https://github.com/Sebas1705/Owlsplit">Código en GitHub</a>
+    <div class="top-end">
+      <a class="quiet" href="https://github.com/Sebas1705/Owlsplit" data-en="Code on GitHub">Código en GitHub</a>
+      <!-- Shown by the script below; without JS the page stays in Spanish. -->
+      <div class="lang-toggle" id="lang" role="group" aria-label="Idioma / Language" hidden>
+        <button type="button" data-lang="es" lang="es" aria-label="Español" aria-pressed="true">ES</button>
+        <button type="button" data-lang="en" lang="en" aria-label="English" aria-pressed="false">EN</button>
+      </div>
+    </div>
   </header>
 
   <main>
     <section class="hero">
       <div>
-        <h1>Gastos compartidos, <em>cuentas claras.</em></h1>
-        <p class="lede">Apunta quién pagó qué y Owlsplit te dice quién debe a quién. Sin registro, sin anuncios y también sin conexión.</p>
+        <h1><span data-en="Shared expenses, ">Gastos compartidos, </span><em data-en="no loose ends.">cuentas claras.</em></h1>
+        <p class="lede" data-en="Log who paid what and Owlsplit tells you who owes whom. No sign-up, no ads, and it works offline too.">Apunta quién pagó qué y Owlsplit te dice quién debe a quién. Sin registro, sin anuncios y también sin conexión.</p>
         <div class="get">
           <!-- /apk redirects to the APK of the latest release: the button works even without the script. -->
           <a class="download" id="apk" href="/apk">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
-            <span>Descargar para Android<small id="apk-meta">Archivo APK</small></span>
+            <span><span data-en="Download for Android">Descargar para Android</span><small id="apk-meta" data-en="APK file">Archivo APK</small></span>
           </a>
-          <p class="meta">¿Primera vez instalando un APK? <a href="#instalar">Así se hace</a> · iPhone: próximamente</p>
+          <p class="meta"><span data-en="First time installing an APK?">¿Primera vez instalando un APK?</span> <a href="#instalar" data-en="Here's how">Así se hace</a> · <span data-en="iPhone: coming soon">iPhone: próximamente</span></p>
         </div>
       </div>
 
-      <figure class="split" aria-label="Ejemplo: una cena de 90 euros pagada por Ana y dividida entre tres; Luis le debe 30 euros.">
+      <figure class="split" aria-label="Ejemplo: una cena de 90 euros pagada por Ana y dividida entre tres; Luis le debe 30 euros." data-en-aria-label="Example: a 90 euro dinner paid by Ana and split three ways; Luis owes her 30 euros.">
         <div class="head">
           <span class="cat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v8a2 2 0 0 0 2 2v8"/><path d="M5 3v5"/><path d="M9 3v5"/><path d="M17 21V3c-2 1.5-3 4-3 7s1 4 3 4"/></svg></span>
-          <div><div class="title">Cena en el puerto</div><div class="sub">Pagó Ana · entre 3</div></div>
-          <div class="total">90 €</div>
+          <div><div class="title" data-en="Dinner at the harbour">Cena en el puerto</div><div class="sub" data-en="Ana paid · split 3 ways">Pagó Ana · entre 3</div></div>
+          <div class="total" data-en="€90">90 €</div>
         </div>
         <ul class="shares" aria-hidden="true">
-          <li class="share"><span class="avatar" style="background:#E8EBFF;color:#3B4BF5">A</span><span class="bar"><i style="background:#3B4BF5"></i></span><b>30,00 €</b></li>
-          <li class="share"><span class="avatar" style="background:#FDE8F0;color:#C2306A">L</span><span class="bar"><i style="background:#C2306A"></i></span><b>30,00 €</b></li>
-          <li class="share"><span class="avatar" style="background:#E3F5EE;color:#087A54">M</span><span class="bar"><i style="background:#0E9F6E"></i></span><b>30,00 €</b></li>
+          <li class="share"><span class="avatar" style="background:#E8EBFF;color:#3B4BF5">A</span><span class="bar"><i style="background:#3B4BF5"></i></span><b data-en="€30.00">30,00 €</b></li>
+          <li class="share"><span class="avatar" style="background:#FDE8F0;color:#C2306A">L</span><span class="bar"><i style="background:#C2306A"></i></span><b data-en="€30.00">30,00 €</b></li>
+          <li class="share"><span class="avatar" style="background:#E3F5EE;color:#087A54">M</span><span class="bar"><i style="background:#0E9F6E"></i></span><b data-en="€30.00">30,00 €</b></li>
         </ul>
         <div class="owe" aria-hidden="true">
-          <p>Luis te debe <span>30,00 €</span></p>
-          <span class="chip">Saldar con Bizum</span>
+          <p><span data-en="Luis owes you">Luis te debe</span> <span class="amount" data-en="€30.00">30,00 €</span></p>
+          <span class="chip" data-en="Settle with Bizum">Saldar con Bizum</span>
         </div>
       </figure>
     </section>
 
     <section class="section">
-      <h2>Lo que hace por ti</h2>
+      <h2 data-en="What it does for you">Lo que hace por ti</h2>
       <dl class="facts">
-        <div><dt>Gratis de verdad</dt><dd>Sin límite de gastos, sin anuncios y sin una versión Pro que esconda lo útil.</dd></div>
-        <div><dt>Sin registro</dt><dd>Abres la app, creas un grupo y compartes un enlace o un QR. Nadie necesita cuenta.</dd></div>
-        <div><dt>Sin conexión</dt><dd>Apunta en el avión o en la montaña: todo se sincroniza al volver la cobertura.</dd></div>
-        <div><dt>Saldar con un toque</dt><dd>Bizum, PayPal o Revolut desde el saldo, y el mensaje para pedir lo que te deben.</dd></div>
-        <div><dt>Varias monedas</dt><dd>Cada gasto en su moneda, con el tipo de cambio del día guardado.</dd></div>
-        <div><dt>Vienes de Splitwise</dt><dd>Importa tu grupo con sus gastos y los mismos saldos. También repite el alquiler cada mes y exporta a PDF o CSV.</dd></div>
+        <div><dt data-en="Truly free">Gratis de verdad</dt><dd data-en="No expense limits, no ads and no Pro version hiding the useful parts.">Sin límite de gastos, sin anuncios y sin una versión Pro que esconda lo útil.</dd></div>
+        <div><dt data-en="No sign-up">Sin registro</dt><dd data-en="Open the app, create a group and share a link or a QR code. Nobody needs an account.">Abres la app, creas un grupo y compartes un enlace o un QR. Nadie necesita cuenta.</dd></div>
+        <div><dt data-en="Works offline">Sin conexión</dt><dd data-en="Log expenses on a plane or up a mountain: everything syncs once you're back in coverage.">Apunta en el avión o en la montaña: todo se sincroniza al volver la cobertura.</dd></div>
+        <div><dt data-en="Settle up in one tap">Saldar con un toque</dt><dd data-en="Bizum, PayPal or Revolut straight from the balance, plus the message to ask for what you're owed.">Bizum, PayPal o Revolut desde el saldo, y el mensaje para pedir lo que te deben.</dd></div>
+        <div><dt data-en="Multiple currencies">Varias monedas</dt><dd data-en="Each expense in its own currency, with that day's exchange rate saved.">Cada gasto en su moneda, con el tipo de cambio del día guardado.</dd></div>
+        <div><dt data-en="Coming from Splitwise">Vienes de Splitwise</dt><dd data-en="Import your group with its expenses and the same balances. It also repeats the rent every month and exports to PDF or CSV.">Importa tu grupo con sus gastos y los mismos saldos. También repite el alquiler cada mes y exporta a PDF o CSV.</dd></div>
       </dl>
     </section>
 
     <section class="section" id="instalar">
-      <h2>Cómo instalarla</h2>
+      <h2 data-en="How to install it">Cómo instalarla</h2>
       <ol class="steps">
-        <li><strong>Descarga el APK</strong> desde el móvil con el botón de arriba.</li>
-        <li><strong>Ábrelo</strong>. Si Android lo pide, permite instalar apps desde tu navegador: solo hace falta la primera vez.</li>
-        <li><strong>Para actualizar</strong>, vuelve aquí y descarga la nueva versión. Se instala encima y conserva tus grupos.</li>
+        <li><strong data-en="Download the APK">Descarga el APK</strong> <span data-en="on your phone with the button above.">desde el móvil con el botón de arriba.</span></li>
+        <li><strong data-en="Open it">Ábrelo</strong><span data-en=". If Android asks, allow installing apps from your browser: you only need to do this the first time.">. Si Android lo pide, permite instalar apps desde tu navegador: solo hace falta la primera vez.</span></li>
+        <li><strong data-en="To update">Para actualizar</strong><span data-en=", come back here and download the new version. It installs over the old one and keeps your groups.">, vuelve aquí y descarga la nueva versión. Se instala encima y conserva tus grupos.</span></li>
       </ol>
     </section>
   </main>
 
   <footer class="foot">
-    <span id="version">Owlsplit para Android</span>
+    <span id="version" data-en="Owlsplit for Android">Owlsplit para Android</span>
     <span class="hash" id="sha"></span>
-    <a href="https://github.com/Sebas1705/Owlsplit">Código abierto (MIT)</a>
-    <a href="/privacidad">Privacidad</a>
-    <a href="/borrar-cuenta">Borrar tu cuenta</a>
+    <a href="https://github.com/Sebas1705/Owlsplit" data-en="Open source (MIT)">Código abierto (MIT)</a>
+    <a href="/privacidad" data-en="Privacy" data-en-href="/privacy">Privacidad</a>
+    <a href="/borrar-cuenta" data-en="Delete your account" data-en-href="/delete-account">Borrar tu cuenta</a>
   </footer>
 </div>
 <script>
-  // Adds the version, size and checksum of the latest release; the button works without it.
+  // Spanish is the markup's default (and what shows without JS). English is used when the browser
+  // is not in Spanish, or when the visitor picks it in the toggle (remembered in localStorage).
+  // Elements carry their English text in data-en and English attributes in data-en-<attr>;
+  // the Spanish originals are kept in data-es / data-es-<attr> the first time they are swapped.
   (function () {
+    var KEY = 'owlsplit.lang';
+    var ATTRS = ['aria-label', 'href', 'content'];
+    var lang = 'es';
+    var info = null;
+
+    try {
+      var saved = localStorage.getItem(KEY);
+      if (saved === 'es' || saved === 'en') lang = saved;
+      else lang = /^es/i.test(navigator.language || 'es') ? 'es' : 'en';
+    } catch (e) {
+      lang = /^es/i.test(navigator.language || 'es') ? 'es' : 'en';
+    }
+
+    function applyLang() {
+      var en = lang === 'en';
+      document.documentElement.lang = lang;
+      var nodes = document.querySelectorAll('[data-en]');
+      for (var i = 0; i < nodes.length; i++) {
+        var el = nodes[i];
+        if (!el.hasAttribute('data-es')) el.setAttribute('data-es', el.textContent);
+        el.textContent = el.getAttribute(en ? 'data-en' : 'data-es');
+      }
+      ATTRS.forEach(function (attr) {
+        var list = document.querySelectorAll('[data-en-' + attr + ']');
+        for (var j = 0; j < list.length; j++) {
+          var node = list[j];
+          if (!node.hasAttribute('data-es-' + attr)) node.setAttribute('data-es-' + attr, node.getAttribute(attr) || '');
+          node.setAttribute(attr, node.getAttribute((en ? 'data-en-' : 'data-es-') + attr));
+        }
+      });
+      var buttons = document.querySelectorAll('#lang button');
+      for (var k = 0; k < buttons.length; k++) {
+        buttons[k].setAttribute('aria-pressed', String(buttons[k].getAttribute('data-lang') === lang));
+      }
+      render();
+    }
+
+    // Version, size and date of the latest release (null until latest.json arrives).
+    function render() {
+      if (!info) return;
+      var en = lang === 'en';
+      var mb = (info.size / 1048576).toFixed(1);
+      if (!en) mb = mb.replace('.', ',');
+      var day = new Date(info.date).toLocaleDateString(en ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+      document.getElementById('apk-meta').textContent = (en ? 'Version ' : 'Versión ') + info.version + ' · ' + mb + ' MB';
+      document.getElementById('version').textContent = en
+        ? 'Version ' + info.version + ', released ' + day
+        : 'Versión ' + info.version + ', publicada el ' + day;
+    }
+
+    var toggle = document.getElementById('lang');
+    var choices = toggle.querySelectorAll('button');
+    for (var b = 0; b < choices.length; b++) {
+      choices[b].addEventListener('click', function () {
+        lang = this.getAttribute('data-lang');
+        try { localStorage.setItem(KEY, lang); } catch (e) { /* Not remembered; still switches. */ }
+        applyLang();
+      });
+    }
+    toggle.hidden = false;
+    applyLang();
+
+    // Adds the version, size and checksum of the latest release; the button works without it.
     fetch('/download/latest.json', { cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then(function (info) {
-        var mb = (info.size / 1048576).toFixed(1).replace('.', ',');
-        var day = new Date(info.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+      .then(function (latest) {
+        info = latest;
         document.getElementById('apk').href = info.url;
-        document.getElementById('apk-meta').textContent = 'Versión ' + info.version + ' · ' + mb + ' MB';
-        document.getElementById('version').textContent = 'Versión ' + info.version + ', publicada el ' + day;
         document.getElementById('sha').textContent = 'SHA-256 ' + info.sha256;
+        render();
       })
       .catch(function () { /* Keep the plain /apk link. */ });
   })();

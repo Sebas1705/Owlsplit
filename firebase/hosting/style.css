@@ -40,3 +40,14 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--accent-text); o
 .doc ul { margin: 0; padding-left: 20px; color: var(--muted); }
 .doc li + li { margin-top: 6px; }
 .doc .updated { font-size: 14px; }
+
+/* Language: the ES/EN toggle on index/join (shown by their script) and the link on the legal pages. */
+.page-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.lang-toggle { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--surface); flex: none; }
+.lang-toggle[hidden] { display: none; }
+.lang-toggle button {
+  border: 0; background: none; cursor: pointer; border-radius: 999px; padding: 6px 10px;
+  font: 700 13px/1 var(--body); letter-spacing: 0.02em; color: var(--muted);
+}
+.lang-toggle button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-text); }
+.lang-link { font-size: 14px; }

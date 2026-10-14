@@ -12,7 +12,7 @@ import es.sebas1705.owlsplit.data.models.SyncState
 import es.sebas1705.owlsplit.data.repository.Writer
 import es.sebas1705.owlsplit.data.repository.toRow
 
-/** Writes server documents into the local database and resolves conflicts (docs/SYNC.md, "Bajada"). */
+/** Writes server documents into the local database and resolves conflicts (docs/SYNC.md, "Download"). */
 internal class RemoteApplier(private val db: AppDatabase, private val writer: Writer) {
 
     /** Applies a remote document. Returns true if local data changed. */

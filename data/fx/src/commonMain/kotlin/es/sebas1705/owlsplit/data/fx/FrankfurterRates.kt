@@ -18,7 +18,7 @@ import kotlin.time.Clock
 /**
  * ECB rates from Frankfurter (no key). Rates are read as text and parsed into fixed point: never
  * through a Double. Each pair is cached for [maxAgeSeconds]; an expired entry is still returned,
- * marked stale, when the network fails (docs/DOMAIN.md, "Divisas").
+ * marked stale, when the network fails (docs/DOMAIN.md, "Currencies").
  */
 class FrankfurterRates(
     private val client: HttpClient,

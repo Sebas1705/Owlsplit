@@ -1,46 +1,46 @@
-# P13a · Importar un grupo de Splitwise — Implementation Plan
+# P13a · Import a Splitwise group — Implementation Plan
 
 > **For agentic workers:** Use `mobiai-mobile-executing-plans-with-subagents` (recommended) or `mobiai-mobile-executing-plans` to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
-**Goal:** Tercera propuesta del [estudio de mercado](../research/2026-10-09-estudio-de-mercado.md). Quitar el coste de cambiarse: un grupo de Splitwise entra en Owlsplit con sus personas, gastos y pagos, y **con los mismos saldos**.
+**Goal:** Third proposal of the [market study](../research/2026-10-09-market-study.md). Remove the cost of switching: a Splitwise group comes into Owlsplit with its people, expenses and payments, and **with the same balances**.
 
 **Architecture:**
 - `domain`:
-  - `SplitwiseCsv.parse` lee la hoja que exporta Splitwise ("Export as spreadsheet").
-    - Formato: cinco columnas fijas (fecha, concepto, categoría, coste y moneda, con títulos en cualquier idioma), luego una columna por persona con *pagado − su parte*, y al final una fila de totales sin coste.
-    - Las filas de categoría *Payment* con un solo receptor se convierten en pagos.
-    - Cada gasto se convierte en un reparto exacto que da los mismos netos:
-      - pagan quienes tienen saldo positivo;
-      - quienes deben tienen como parte lo que deben;
-      - el resto del coste es la parte de quien más pagó.
-    - Las categorías se traducen por palabras clave en inglés y español.
-    - Se aceptan números con punto o coma decimal.
-  - `ImportGroup` crea el grupo en la moneda más usada.
-    - Yo entro como la persona que elija o con mi nombre de perfil.
-    - El resto entran como miembros sin cuenta.
-    - Los gastos y pagos se apuntan en orden de fecha.
-    - Las otras monedas usan el tipo de hoy (Frankfurter). Si no hay conexión, esas filas se quedan fuera y se avisa.
+  - `SplitwiseCsv.parse` reads the spreadsheet Splitwise exports ("Export as spreadsheet").
+    - Format: five fixed columns (date, description, category, cost and currency, with headers in any language), then one column per person with *paid − their share*, and at the end a totals row without cost.
+    - Rows in the *Payment* category with a single recipient become payments.
+    - Each expense becomes an exact split that yields the same net amounts:
+      - those with a positive balance pay;
+      - those who owe get what they owe as their share;
+      - the rest of the cost is the share of whoever paid the most.
+    - Categories are mapped by English and Spanish keywords.
+    - Numbers with a decimal point or comma are accepted.
+  - `ImportGroup` creates the group in the most used currency.
+    - I join as the person I choose or with my profile name.
+    - Everyone else joins as members without an account.
+    - Expenses and payments are recorded in date order.
+    - Other currencies use today's rate (Frankfurter). If there is no connection, those rows are left out with a warning.
 - `core:ui`: `FilePicker`/`PickedFile`.
 - `composeApp`:
-  - `AndroidFilePicker` usa el selector del sistema (SAF), registrado en el `ActivityResultRegistry` para cada elección.
-  - `IosFilePicker` usa `UIDocumentPickerViewController` (CSV o texto), con una copia del archivo.
-- `feature:groups`: `ImportScreen`/`ImportViewModel`. Explica cómo exportar, deja elegir el archivo y muestra una vista previa con el nombre del grupo, los recuentos, avisos y "¿Quién eres tú?". Después de importar, abre el grupo.
-  - Se entra desde "¿Vienes de Splitwise? Importa un grupo" en la pantalla de grupo nuevo.
+  - `AndroidFilePicker` uses the system picker (SAF), registered in the `ActivityResultRegistry` for each pick.
+  - `IosFilePicker` uses `UIDocumentPickerViewController` (CSV or text), with a copy of the file.
+- `feature:groups`: `ImportScreen`/`ImportViewModel`. It explains how to export, lets you pick the file and shows a preview with the group name, counts, warnings and "¿Quién eres tú?" ("Who are you?"). After importing, it opens the group.
+  - Opened from "¿Vienes de Splitwise? Importa un grupo" ("Coming from Splitwise? Import a group") on the new group screen.
 
-**Platform:** KMP (Android probado en el emulador; iOS compila en CI).
+**Platform:** KMP (Android tested on the emulator; iOS compiles in CI).
 
-**Depende de:** P12.
+**Depends on:** P12.
 
 ---
 
-## Decisiones
+## Decisions
 
-1. **Saldos exactos antes que el reparto original.** El CSV solo da netos por persona. El reparto que se reconstruye puede no coincidir con el que se apuntó en Splitwise (quién pagó qué parte), pero los saldos siempre cuadran, y eso es lo que importa al cambiar de app.
-2. **Tipo de cambio de hoy** para las filas en otra moneda, porque Splitwise no exporta el tipo que usó. Se dice en la pantalla cuando no hay conexión.
-3. **Sin formato de Tricount por ahora.** Tricount no ofrece una exportación estable y documentada. Si aparece, se añade otro lector junto a `SplitwiseCsv`.
+1. **Exact balances over the original split.** The CSV only gives net amounts per person. The rebuilt split may not match the one recorded in Splitwise (who paid which share), but the balances always add up, and that is what matters when switching apps.
+2. **Today's exchange rate** for rows in another currency, because Splitwise doesn't export the rate it used. The screen says so when there is no connection.
+3. **No Tricount format for now.** Tricount doesn't offer a stable, documented export. If one appears, another reader is added next to `SplitwiseCsv`.
 
-## Tareas
+## Tasks
 
-- [x] Task 1: `SplitwiseCsv` (CSV RFC 4180, números, categorías, pagos) con tests. Commit.
-- [x] Task 2: `ImportGroup` con tests (saldos iguales a los de Splitwise, monedas, yo). Commit.
-- [x] Task 3: `FilePicker` en Android e iOS, pantalla, navegación y textos en es/en. Prueba en el emulador con un CSV: vista previa, importación y saldos. Commit.
+- [x] Task 1: `SplitwiseCsv` (RFC 4180 CSV, numbers, categories, payments) with tests. Commit.
+- [x] Task 2: `ImportGroup` with tests (balances equal to Splitwise's, currencies, me). Commit.
+- [x] Task 3: `FilePicker` on Android and iOS, screen, navigation and es/en strings. Test on the emulator with a CSV: preview, import and balances. Commit.

@@ -84,7 +84,7 @@ object GroupIcons {
         "heart" to Res.string.group_icon_heart,
     )
 
-    /** What a screen reader says for the icon [key] ("Viaje", "Casa"…). */
+    /** What a screen reader says for the icon [key] ("Trip", "Home"…). */
     @Composable
     fun name(key: String): String = stringResource(names[key] ?: Res.string.group_icon_plane)
 }

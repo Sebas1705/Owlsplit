@@ -1,10 +1,10 @@
-# P1 · Base del proyecto — Implementation Plan
+# P1 · Project foundation — Implementation Plan
 
 > **For agentic workers:** Use `mobiai-mobile-executing-plans-with-subagents` (recommended) or `mobiai-mobile-executing-plans` to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
-**Goal:** Generar el proyecto Owlsplit desde la plantilla Templetry `kmp/modular-features`, actualizarlo a las versiones estables actuales, quitar el código de ejemplo y dejar una app que arranca en Android con CI verde.
+**Goal:** Generate the Owlsplit project from the Templetry `kmp/modular-features` template, update it to the current stable versions, remove the sample code and end up with an app that starts on Android with green CI.
 
-**Architecture:** Se conserva la estructura de la plantilla (convenciones en `build-logic`, capas `core`/`data`/`domain`/`feature`, Koin, SQLDelight). Se elimina el ejemplo de usuario/login y todos los módulos `feature:*`; los módulos de datos y features reales llegan en P4–P10. Sin target de escritorio.
+**Architecture:** The template structure is kept (conventions in `build-logic`, `core`/`data`/`domain`/`feature` layers, Koin, SQLDelight). The user/login sample and every `feature:*` module are removed; the real data and feature modules arrive in P4–P10. No desktop target.
 
 **Tech Stack:** Gradle 9.1.0, Kotlin 2.4.20, Compose Multiplatform 1.12.1, AGP 8.13.2, Koin 4.2.2, SQLDelight 2.4.1, Ktor 3.6.0, Detekt 1.23.8.
 
@@ -12,44 +12,44 @@
 
 ---
 
-## Contexto para quien ejecuta
+## Context for the executor
 
-- Repo: `C:\Users\sebss\Documents\Repos\Owlsplit` (Git Bash: `~/Documents/Repos/Owlsplit`). Ya contiene `README.md`, `.gitignore` y `docs/`. **No sobrescribir** esos archivos con los de la plantilla.
-- Entorno obligatorio en cada terminal:
+- Repo: `C:\Users\sebss\Documents\Repos\Owlsplit` (Git Bash: `~/Documents/Repos/Owlsplit`). It already contains `README.md`, `.gitignore` and `docs/`. **Do not overwrite** those files with the template's.
+- Required environment in every terminal:
   ```bash
   export JAVA_HOME="/c/Users/sebss/.jdks/jdk-21.0.12.1+1"
   export ANDROID_HOME="/c/Users/sebss/Android/sdk"
   ```
-- CLI de plantillas: `templetry` (ya instalado en `~/go/bin`).
-- Commits con la identidad configurada del usuario, **sin** líneas `Co-Authored-By` ni pies "Generated with".
-- Paquete raíz tras el renombrado: `es.sebas1705.owlsplit` (ruta `es/sebas1705/owlsplit`). Los plugins de convención pasan a llamarse `owlsplit.kmp.*`.
+- Template CLI: `templetry` (already installed in `~/go/bin`).
+- Commits use the user's configured identity, **without** `Co-Authored-By` lines or "Generated with" footers.
+- Root package after the rename: `es.sebas1705.owlsplit` (path `es/sebas1705/owlsplit`). The convention plugins are renamed to `owlsplit.kmp.*`.
 
-## Mapa de archivos
+## File map
 
-| Acción | Ruta |
+| Action | Path |
 |---|---|
-| Crear (render) | todo lo de la plantilla salvo `README.md` y `.gitignore` |
-| Crear | `gradlew`, `gradlew.bat`, `gradle/wrapper/gradle-wrapper.jar`, `gradle/wrapper/gradle-wrapper.properties` |
-| Reescribir | `gradle/libs.versions.toml` |
-| Reescribir | `build.gradle.kts` |
-| Reescribir | `settings.gradle.kts` |
-| Reescribir | `build-logic/convention/src/main/kotlin/ext/KotlinMultiplatformExtensions.kt` |
-| Modificar | `build-logic/convention/build.gradle.kts`, `build-logic/convention/src/main/kotlin/KmpAppConventionPlugin.kt`, `build-logic/convention/src/main/kotlin/KmpDataConventionPlugin.kt` |
-| Reescribir | `core/ui/build.gradle.kts`, `composeApp/build.gradle.kts`, `domain/usecases/build.gradle.kts`, `data/local/build.gradle.kts` |
-| Reescribir | `composeApp/src/commonMain/kotlin/es/sebas1705/owlsplit/App.kt`, `.../di/AppModule.kt` |
-| Crear | `data/local/src/commonMain/sqldelight/es/sebas1705/owlsplit/data/local/db/Meta.sq`, `data/local/src/androidUnitTest/kotlin/es/sebas1705/owlsplit/data/local/MetaQueriesTest.kt` |
-| Borrar | `feature/` entero, `data/network/`, `data/models/`, `data/repository/`, `domain/usecases/.../user/`, `data/local/.../dao/UserLocalDao.kt`, `data/local/.../db/UserEntity.sq`, `AI_INDEX.md`, `CHANGELOG.md`, `docs/ai/`, `.github/workflows/{release,security,changelog-label-gate}.yml` |
-| Reescribir | `.github/workflows/validate.yml` → `.github/workflows/ci.yml`, `MODULE_MAP.md` |
-| Modificar | `README.md` (sección Desarrollo), `.gitignore` |
+| Create (render) | everything in the template except `README.md` and `.gitignore` |
+| Create | `gradlew`, `gradlew.bat`, `gradle/wrapper/gradle-wrapper.jar`, `gradle/wrapper/gradle-wrapper.properties` |
+| Rewrite | `gradle/libs.versions.toml` |
+| Rewrite | `build.gradle.kts` |
+| Rewrite | `settings.gradle.kts` |
+| Rewrite | `build-logic/convention/src/main/kotlin/ext/KotlinMultiplatformExtensions.kt` |
+| Modify | `build-logic/convention/build.gradle.kts`, `build-logic/convention/src/main/kotlin/KmpAppConventionPlugin.kt`, `build-logic/convention/src/main/kotlin/KmpDataConventionPlugin.kt` |
+| Rewrite | `core/ui/build.gradle.kts`, `composeApp/build.gradle.kts`, `domain/usecases/build.gradle.kts`, `data/local/build.gradle.kts` |
+| Rewrite | `composeApp/src/commonMain/kotlin/es/sebas1705/owlsplit/App.kt`, `.../di/AppModule.kt` |
+| Create | `data/local/src/commonMain/sqldelight/es/sebas1705/owlsplit/data/local/db/Meta.sq`, `data/local/src/androidUnitTest/kotlin/es/sebas1705/owlsplit/data/local/MetaQueriesTest.kt` |
+| Delete | the whole `feature/`, `data/network/`, `data/models/`, `data/repository/`, `domain/usecases/.../user/`, `data/local/.../dao/UserLocalDao.kt`, `data/local/.../db/UserEntity.sq`, `AI_INDEX.md`, `CHANGELOG.md`, `docs/ai/`, `.github/workflows/{release,security,changelog-label-gate}.yml` |
+| Rewrite | `.github/workflows/validate.yml` → `.github/workflows/ci.yml`, `MODULE_MAP.md` |
+| Modify | `README.md` (Development section), `.gitignore` |
 
 ---
 
-### Task 1: Generar el proyecto desde la plantilla
+### Task 1: Generate the project from the template
 
 **Files:**
-- Create: todo el árbol de la plantilla dentro del repo (salvo `README.md`, `.gitignore`)
+- Create: the whole template tree inside the repo (except `README.md`, `.gitignore`)
 
-- [ ] **Step 1: Renderizar en el scratchpad**
+- [ ] **Step 1: Render into the scratchpad**
 
 ```bash
 SCR="$(mktemp -d)"
@@ -59,17 +59,17 @@ templetry init kmp/modular-features --out "$SCR/owlsplit" \
   --feature desktop=false
 ls "$SCR/owlsplit"
 ```
-Expected: lista con `build-logic composeApp config core data domain feature gradle iosApp settings.gradle.kts ...` y un `.templetry-answers.yml`. Si `init` no escribe `.templetry-answers.yml`, anotarlo en el commit (lo necesita `templetry update`).
+Expected: a listing with `build-logic composeApp config core data domain feature gradle iosApp settings.gradle.kts ...` and a `.templetry-answers.yml`. If `init` does not write `.templetry-answers.yml`, note it in the commit (`templetry update` needs it).
 
-- [ ] **Step 2: Comprobar el renombrado de identidad**
+- [ ] **Step 2: Check the identity rename**
 
 ```bash
 grep -rIl "dev.template.kmpbase\|kmpbase\|KMPNativeBase" "$SCR/owlsplit" | grep -v "/.git/" | head
 ls "$SCR/owlsplit/composeApp/src/commonMain/kotlin/es/sebas1705/owlsplit"
 ```
-Expected: el `grep` no devuelve nada; el `ls` muestra `App.kt config di`.
+Expected: the `grep` returns nothing; the `ls` shows `App.kt config di`.
 
-- [ ] **Step 3: Copiar al repo sin pisar lo existente**
+- [ ] **Step 3: Copy into the repo without overwriting existing files**
 
 ```bash
 cd ~/Documents/Repos/Owlsplit
@@ -77,32 +77,32 @@ cp -rn "$SCR/owlsplit/." .
 cat "$SCR/owlsplit/.gitignore" >> .gitignore
 git status --short | head -40
 ```
-Expected: `.gitignore` aparece como modificado (`M`), `README.md` no aparece y el resto de archivos salen como nuevos (`??`).
+Expected: `.gitignore` shows as modified (`M`), `README.md` does not appear and the remaining files show as new (`??`).
 
-- [ ] **Step 4: Quitar duplicados del `.gitignore` y la regla que ignora la config de Detekt**
+- [ ] **Step 4: Remove duplicates from `.gitignore` and the rule that ignores the Detekt config**
 
-La plantilla ignora `detekt.yml`, pero `config/detekt/detekt.yml` es configuración del repo. Ejecutar:
+The template ignores `detekt.yml`, but `config/detekt/detekt.yml` is repo configuration. Run:
 ```bash
 awk '!seen[$0]++ || /^$/' .gitignore > .gitignore.tmp && mv .gitignore.tmp .gitignore
 sed -i '/^detekt.yml$/d' .gitignore
 git check-ignore config/detekt/detekt.yml; echo "exit=$?"
 ```
-Expected: `exit=1` (el archivo ya no se ignora).
+Expected: `exit=1` (the file is no longer ignored).
 
-- [ ] **Step 5: Commit del render tal cual (línea base)**
+- [ ] **Step 5: Commit the render as is (baseline)**
 
 ```bash
 git add -A
 git commit -m "chore: scaffold from Templetry kmp/modular-features"
 ```
 
-### Task 2: Wrapper de Gradle 9.1.0
+### Task 2: Gradle 9.1.0 wrapper
 
 **Files:**
 - Create: `gradlew`, `gradlew.bat`, `gradle/wrapper/gradle-wrapper.jar`
 - Modify: `gradle/wrapper/gradle-wrapper.properties`
 
-- [ ] **Step 1: Generar el wrapper en un directorio vacío** (en el repo fallaría al evaluar `build-logic` con versiones antiguas)
+- [ ] **Step 1: Generate the wrapper in an empty directory** (inside the repo it would fail while evaluating `build-logic` with the old versions)
 
 ```bash
 W="$(mktemp -d)"; cd "$W"
@@ -121,15 +121,15 @@ git add gradlew gradlew.bat gradle/wrapper
 git commit -m "build: add Gradle 9.1.0 wrapper"
 ```
 
-### Task 3: Actualizar versiones y convenciones de build
+### Task 3: Update versions and build conventions
 
 **Files:**
 - Rewrite: `gradle/libs.versions.toml`, `build.gradle.kts`, `build-logic/convention/src/main/kotlin/ext/KotlinMultiplatformExtensions.kt`
 - Modify: `build-logic/convention/build.gradle.kts`, `KmpAppConventionPlugin.kt`, `KmpDataConventionPlugin.kt`
 
-- [ ] **Step 1: Reescribir `gradle/libs.versions.toml`**
+- [ ] **Step 1: Rewrite `gradle/libs.versions.toml`**
 
-Se quitan KSP y BuildKonfig (no se usan) y los accesores `compose.*` se sustituyen por coordenadas explícitas (deprecados en CMP ≥ 1.10).
+KSP and BuildKonfig are removed (unused), and the `compose.*` accessors (deprecated in CMP ≥ 1.10) are replaced with explicit coordinates.
 
 ```toml
 [versions]
@@ -243,7 +243,7 @@ kmp-app         = { id = "owlsplit.kmp.app" }
 owlsplit-detekt = { id = "owlsplit.detekt" }
 ```
 
-- [ ] **Step 2: Reescribir `build.gradle.kts` (raíz)**
+- [ ] **Step 2: Rewrite `build.gradle.kts` (root)**
 
 ```kotlin
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
@@ -281,16 +281,16 @@ allprojects {
 }
 ```
 
-- [ ] **Step 3: Comprobar que `build-logic` no usa KSP ni BuildKonfig**
+- [ ] **Step 3: Check that `build-logic` uses neither KSP nor BuildKonfig**
 
 ```bash
 grep -rn "ksp\|buildkonfig" build-logic
 ```
-Expected: solo la línea `apply(plugin = "com.google.devtools.ksp")` de `KmpDataConventionPlugin.kt`, que se elimina en el paso siguiente.
+Expected: only the `apply(plugin = "com.google.devtools.ksp")` line in `KmpDataConventionPlugin.kt`, which is removed in the next step.
 
-- [ ] **Step 4: Reescribir `KmpDataConventionPlugin.kt` sin KSP**
+- [ ] **Step 4: Rewrite `KmpDataConventionPlugin.kt` without KSP**
 
-Ruta: `build-logic/convention/src/main/kotlin/KmpDataConventionPlugin.kt`
+Path: `build-logic/convention/src/main/kotlin/KmpDataConventionPlugin.kt`
 ```kotlin
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -307,9 +307,9 @@ class KmpDataConventionPlugin : Plugin<Project> {
 }
 ```
 
-- [ ] **Step 5: Reescribir `ext/KotlinMultiplatformExtensions.kt`**
+- [ ] **Step 5: Rewrite `ext/KotlinMultiplatformExtensions.kt`**
 
-`kotlinOptions` es un error desde Kotlin 2.2; se usa `compilerOptions`. Se elimina `iosX64` (simuladores Intel, sin soporte en Kotlin 2.4 como tier principal).
+`kotlinOptions` is an error since Kotlin 2.2; `compilerOptions` is used instead. `iosX64` is removed (Intel simulators, not supported as a main tier in Kotlin 2.4).
 
 ```kotlin
 package ext
@@ -358,22 +358,22 @@ internal fun Project.configureAndroidLibrary(namespace: String) {
 }
 ```
 
-- [ ] **Step 6: SDK 36 en `KmpAppConventionPlugin.kt`**
+- [ ] **Step 6: SDK 36 in `KmpAppConventionPlugin.kt`**
 
 ```bash
 F=build-logic/convention/src/main/kotlin/KmpAppConventionPlugin.kt
 sed -i 's/compileSdk = 35/compileSdk = ext.COMPILE_SDK/; s/minSdk *= 24/minSdk        = ext.MIN_SDK/; s/targetSdk *= 35/targetSdk     = ext.TARGET_SDK/' "$F"
 grep -n "Sdk" "$F"
 ```
-Expected: tres líneas con `ext.COMPILE_SDK`, `ext.MIN_SDK`, `ext.TARGET_SDK`.
+Expected: three lines with `ext.COMPILE_SDK`, `ext.MIN_SDK`, `ext.TARGET_SDK`.
 
-- [ ] **Step 7: Instalar la plataforma Android 36**
+- [ ] **Step 7: Install the Android 36 platform**
 
 ```bash
 "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager.bat" "platforms;android-36" "build-tools;36.0.0"
 ls "$ANDROID_HOME/platforms"
 ```
-Expected: aparece `android-36`.
+Expected: `android-36` is listed.
 
 - [ ] **Step 8: Commit**
 
@@ -382,14 +382,14 @@ git add gradle/libs.versions.toml build.gradle.kts build-logic
 git commit -m "build: update to Kotlin 2.4.20, CMP 1.12.1, AGP 8.13.2 and SDK 36"
 ```
 
-### Task 4: Quitar el código de ejemplo de la plantilla
+### Task 4: Remove the template sample code
 
 **Files:**
 - Delete: `feature/`, `data/network/`, `data/models/`, `data/repository/`, `domain/usecases/src/commonMain/kotlin/es/sebas1705/owlsplit/domain/usecases/user/`, `data/local/src/commonMain/kotlin/es/sebas1705/owlsplit/data/local/dao/`, `data/local/src/commonMain/sqldelight/es/sebas1705/owlsplit/data/local/db/UserEntity.sq`
 - Rewrite: `settings.gradle.kts`, `domain/usecases/build.gradle.kts`, `data/local/build.gradle.kts`, `core/ui/build.gradle.kts`, `composeApp/build.gradle.kts`, `App.kt`, `AppModule.kt`
 - Create: `data/local/src/commonMain/sqldelight/es/sebas1705/owlsplit/data/local/db/Meta.sq`
 
-- [ ] **Step 1: Borrar el ejemplo**
+- [ ] **Step 1: Delete the sample**
 
 ```bash
 git rm -r -q feature data/network data/models data/repository \
@@ -398,7 +398,7 @@ git rm -r -q feature data/network data/models data/repository \
   data/local/src/commonMain/sqldelight/es/sebas1705/owlsplit/data/local/db/UserEntity.sq
 ```
 
-- [ ] **Step 2: Reescribir `settings.gradle.kts`**
+- [ ] **Step 2: Rewrite `settings.gradle.kts`**
 
 ```kotlin
 rootProject.name = "Owlsplit"
@@ -438,7 +438,7 @@ include(":data:local")
 include(":domain:usecases")
 ```
 
-- [ ] **Step 3: `domain/usecases/build.gradle.kts` sin dependencias de datos**
+- [ ] **Step 3: `domain/usecases/build.gradle.kts` without data dependencies**
 
 ```kotlin
 plugins { alias(libs.plugins.kmp.domain) }
@@ -454,7 +454,7 @@ kotlin {
 }
 ```
 
-- [ ] **Step 4: `data/local/build.gradle.kts` sin `data:models`**
+- [ ] **Step 4: `data/local/build.gradle.kts` without `data:models`**
 
 ```kotlin
 plugins {
@@ -487,9 +487,9 @@ sqldelight {
 }
 ```
 
-- [ ] **Step 5: Esquema mínimo `Meta.sq`** (tabla clave-valor que P4 usará para marcas internas, p. ej. la versión del esquema de sincronización)
+- [ ] **Step 5: Minimal `Meta.sq` schema** (key-value table that P4 will use for internal markers, e.g. the sync schema version)
 
-Ruta: `data/local/src/commonMain/sqldelight/es/sebas1705/owlsplit/data/local/db/Meta.sq`
+Path: `data/local/src/commonMain/sqldelight/es/sebas1705/owlsplit/data/local/db/Meta.sq`
 ```sql
 CREATE TABLE meta (
     key TEXT NOT NULL PRIMARY KEY,
@@ -503,7 +503,7 @@ put:
 INSERT OR REPLACE INTO meta(key, value) VALUES (?, ?);
 ```
 
-- [ ] **Step 6: `core/ui/build.gradle.kts` con coordenadas explícitas**
+- [ ] **Step 6: `core/ui/build.gradle.kts` with explicit coordinates**
 
 ```kotlin
 plugins {
@@ -523,9 +523,9 @@ kotlin {
 }
 ```
 
-- [ ] **Step 7: Reescribir `composeApp/build.gradle.kts`**
+- [ ] **Step 7: Rewrite `composeApp/build.gradle.kts`**
 
-Se conserva el generador de `AppConfig` de la plantilla (perfiles, ADR-0018 de Templetry); `apiBaseUrl` pasa a ser la API de tipos de cambio, que es la única API HTTP del MVP.
+The template's `AppConfig` generator is kept (profiles, Templetry ADR-0018); `apiBaseUrl` becomes the exchange-rate API, the only HTTP API in the MVP.
 
 ```kotlin
 plugins {
@@ -616,9 +616,9 @@ dependencies {
 }
 ```
 
-- [ ] **Step 8: Reescribir `App.kt`**
+- [ ] **Step 8: Rewrite `App.kt`**
 
-Ruta: `composeApp/src/commonMain/kotlin/es/sebas1705/owlsplit/App.kt`
+Path: `composeApp/src/commonMain/kotlin/es/sebas1705/owlsplit/App.kt`
 ```kotlin
 package es.sebas1705.owlsplit
 
@@ -648,9 +648,9 @@ fun App(modifier: Modifier = Modifier) {
 }
 ```
 
-- [ ] **Step 9: Reescribir `AppModule.kt`**
+- [ ] **Step 9: Rewrite `AppModule.kt`**
 
-Ruta: `composeApp/src/commonMain/kotlin/es/sebas1705/owlsplit/di/AppModule.kt`
+Path: `composeApp/src/commonMain/kotlin/es/sebas1705/owlsplit/di/AppModule.kt`
 ```kotlin
 package es.sebas1705.owlsplit.di
 
@@ -668,13 +668,13 @@ val appModule = module {
 }
 ```
 
-- [ ] **Step 10: Comprobar que no quedan referencias al ejemplo**
+- [ ] **Step 10: Check that no references to the sample remain**
 
 ```bash
 grep -rIn "feature\.\|UserApi\|UserRepository\|GetMeUseCase\|UserLocalDao\|data:models\|data:network\|data:repository" \
   --include=*.kt --include=*.kts . | grep -v "/build/"
 ```
-Expected: sin resultados.
+Expected: no results.
 
 - [ ] **Step 11: Commit**
 
@@ -683,49 +683,49 @@ git add -A
 git commit -m "refactor: remove template sample features and user example"
 ```
 
-### Task 5: Compilar, arrancar en Android y corregir
+### Task 5: Build, run on Android and fix
 
-**Files:** los que señale el compilador (ver tabla de fallos conocidos)
+**Files:** whatever the compiler points at (see the table of known failures)
 
-- [ ] **Step 1: Compilar**
+- [ ] **Step 1: Build**
 
 ```bash
 ./gradlew :composeApp:assembleDebug --stacktrace 2>&1 | tail -40
 ```
 Expected: `BUILD SUCCESSFUL`.
 
-Fallos conocidos y su corrección:
+Known failures and how to fix them:
 
-| Error | Corrección |
+| Error | Fix |
 |---|---|
-| `Unresolved reference 'kotlinOptions'` en algún `build.gradle.kts` de módulo | Sustituir el bloque por `compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) }` |
-| `Unresolved reference: compose` (accesores `compose.runtime`, etc.) en un módulo | Sustituir el bloque de dependencias Compose por `implementation(libs.bundles.compose.core)` |
-| `Unresolved reference 'Icons'` en `core:ui` (`ErrorScreen.kt`) | Añadir `org.jetbrains.compose.material:material-icons-core:1.7.3` al catálogo como `compose-material-icons-core` y a `core/ui` |
-| `desktopMain` o `jvm("desktop")` en algún archivo | Borrar esas líneas (el render con `desktop=false` debería haberlas quitado; si no, es un fallo de la plantilla que se anota para Templetry) |
-| `Plugin [id: 'owlsplit.kmp.…'] was not found` | Revisar que `build-logic/convention/build.gradle.kts` registra los ids `owlsplit.*` (renombrado de identidad) |
+| `Unresolved reference 'kotlinOptions'` in some module's `build.gradle.kts` | Replace the block with `compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) }` |
+| `Unresolved reference: compose` (`compose.runtime` accessors, etc.) in a module | Replace the Compose dependency block with `implementation(libs.bundles.compose.core)` |
+| `Unresolved reference 'Icons'` in `core:ui` (`ErrorScreen.kt`) | Add `org.jetbrains.compose.material:material-icons-core:1.7.3` to the catalog as `compose-material-icons-core` and to `core/ui` |
+| `desktopMain` or `jvm("desktop")` in some file | Delete those lines (rendering with `desktop=false` should have removed them; if not, it is a template bug to report to Templetry) |
+| `Plugin [id: 'owlsplit.kmp.…'] was not found` | Check that `build-logic/convention/build.gradle.kts` registers the `owlsplit.*` ids (identity rename) |
 
-Repetir el Step 1 hasta `BUILD SUCCESSFUL`. Cada corrección no prevista se anota en el mensaje del commit.
+Repeat Step 1 until `BUILD SUCCESSFUL`. Every unplanned fix is noted in the commit message.
 
-- [ ] **Step 2: Tests y Detekt**
+- [ ] **Step 2: Tests and Detekt**
 
 ```bash
 ./gradlew testDebugUnitTest detekt 2>&1 | tail -20
 ```
-Expected: `BUILD SUCCESSFUL`. Si Detekt marca código de la plantilla, corregirlo (no desactivar reglas) salvo que la regla choque con Compose (`FunctionNaming` en `@Composable`): en ese caso añadir `ignoreAnnotated: ['Composable']` en `config/detekt/detekt.yml` bajo `naming > FunctionNaming`.
+Expected: `BUILD SUCCESSFUL`. If Detekt flags template code, fix it (do not disable rules) unless the rule clashes with Compose (`FunctionNaming` on `@Composable`): in that case add `ignoreAnnotated: ['Composable']` in `config/detekt/detekt.yml` under `naming > FunctionNaming`.
 
-- [ ] **Step 3: Arrancar en el emulador**
+- [ ] **Step 3: Start it on the emulator**
 
 ```bash
 "$ANDROID_HOME/emulator/emulator" -list-avds
 ```
-Si no hay ninguno, crear uno: `"$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager.bat" create avd -n owlsplit_api36 -k "system-images;android-36;google_apis;x86_64"` (instalando antes la imagen con `sdkmanager "system-images;android-36;google_apis;x86_64"`). Arrancarlo en segundo plano y luego:
+If there is none, create one: `"$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager.bat" create avd -n owlsplit_api36 -k "system-images;android-36;google_apis;x86_64"` (installing the image first with `sdkmanager "system-images;android-36;google_apis;x86_64"`). Start it in the background and then:
 ```bash
 "$ANDROID_HOME/platform-tools/adb" wait-for-device
 ./gradlew :composeApp:installDebug
 "$ANDROID_HOME/platform-tools/adb" shell am start -n es.sebas1705.owlsplit/.MainActivity
 "$ANDROID_HOME/platform-tools/adb" exec-out screencap -p > /tmp/owlsplit-p1.png
 ```
-Expected: la captura muestra "Owlsplit" centrado y la insignia de entorno `development`.
+Expected: the screenshot shows "Owlsplit" centered and the `development` environment badge.
 
 - [ ] **Step 4: Commit**
 
@@ -734,12 +734,12 @@ git add -A
 git commit -m "build: make the scaffold compile and run on Android"
 ```
 
-### Task 6: Test del esquema local
+### Task 6: Local schema test
 
 **Files:**
 - Test: `data/local/src/androidUnitTest/kotlin/es/sebas1705/owlsplit/data/local/MetaQueriesTest.kt`
 
-- [ ] **Step 1: Escribir el test**
+- [ ] **Step 1: Write the test**
 
 ```kotlin
 package es.sebas1705.owlsplit.data.local
@@ -772,12 +772,12 @@ class MetaQueriesTest {
 }
 ```
 
-- [ ] **Step 2: Ejecutar**
+- [ ] **Step 2: Run**
 
 ```bash
 ./gradlew :data:local:testDebugUnitTest
 ```
-Expected: `BUILD SUCCESSFUL`, 2 tests pasados (`data/local/build/reports/tests/testDebugUnitTest/index.html`).
+Expected: `BUILD SUCCESSFUL`, 2 tests passed (`data/local/build/reports/tests/testDebugUnitTest/index.html`).
 
 - [ ] **Step 3: Commit**
 
@@ -786,22 +786,22 @@ git add data/local/src/androidUnitTest
 git commit -m "test: cover the meta key-value table"
 ```
 
-### Task 7: CI de GitHub Actions
+### Task 7: GitHub Actions CI
 
 **Files:**
 - Delete: `.github/workflows/release.yml`, `.github/workflows/security.yml`, `.github/workflows/changelog-label-gate.yml`, `.github/workflows/validate.yml`
 - Create: `.github/workflows/ci.yml`
 
-El repo es privado: los minutos de macOS cuentan ×10 sobre los 2000 gratuitos al mes. Por eso el job de iOS solo corre en PRs hacia `main` y a mano. CodeQL no está disponible en repos privados sin GitHub Advanced Security, y el release de escritorio no aplica. El pipeline de release llega en P11.
+The repo is private: macOS minutes count ×10 against the 2,000 free minutes per month. That is why the iOS job only runs on PRs to `main` and when triggered manually. CodeQL is not available on private repos without GitHub Advanced Security, and the desktop release does not apply. The release pipeline arrives in P11.
 
-- [ ] **Step 1: Sustituir los workflows**
+- [ ] **Step 1: Replace the workflows**
 
 ```bash
 git rm -q .github/workflows/release.yml .github/workflows/security.yml \
   .github/workflows/changelog-label-gate.yml .github/workflows/validate.yml
 ```
 
-Crear `.github/workflows/ci.yml`:
+Create `.github/workflows/ci.yml`:
 ```yaml
 name: CI
 
@@ -846,7 +846,7 @@ jobs:
       - run: ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64
 ```
 
-- [ ] **Step 2: Commit y push**
+- [ ] **Step 2: Commit and push**
 
 ```bash
 git add .github
@@ -855,77 +855,77 @@ git push
 gh run list --limit 1
 ```
 
-- [ ] **Step 3: Comprobar el job de Android y lanzar el de iOS una vez**
+- [ ] **Step 3: Check the Android job and trigger the iOS one once**
 
 ```bash
 gh run watch "$(gh run list --limit 1 --json databaseId -q '.[0].databaseId')" --exit-status
 gh workflow run CI --ref main
 ```
-Expected: el primer run termina en `success`. Seguir el segundo (`workflow_dispatch`, incluye iOS) con `gh run watch`; si el job de iOS falla, el error se corrige en esta tarea porque es la única verificación de iOS hasta que haya un Mac.
+Expected: the first run ends in `success`. Follow the second one (`workflow_dispatch`, includes iOS) with `gh run watch`; if the iOS job fails, the error is fixed in this task, because it is the only iOS verification until a Mac is available.
 
-### Task 8: Documentación del repo
+### Task 8: Repo documentation
 
 **Files:**
 - Delete: `AI_INDEX.md`, `CHANGELOG.md`, `docs/ai/`
 - Rewrite: `MODULE_MAP.md`
 - Modify: `README.md`, `ARCHITECTURE.md`, `AGENTS.md`
 
-- [ ] **Step 1: Borrar documentos de la plantilla que describen el ejemplo**
+- [ ] **Step 1: Delete the template documents that describe the sample**
 
 ```bash
 git rm -r -q AI_INDEX.md CHANGELOG.md docs/ai
 ```
 
-- [ ] **Step 2: Reescribir `MODULE_MAP.md`**
+- [ ] **Step 2: Rewrite `MODULE_MAP.md`**
 
 ```markdown
-# Mapa de módulos
+# Module map
 
-| Módulo | Contenido | Plan que lo amplía |
+| Module | Contents | Plan that extends it |
 |---|---|---|
-| `composeApp` | Entrada Android/iOS, DI raíz, `AppConfig` por entorno | P8–P9 |
-| `core:common` | MVI base, `AppResult`, utilidades | — |
-| `core:ui` | Tema y componentes compartidos | P7 |
+| `composeApp` | Android/iOS entry point, root DI, per-environment `AppConfig` | P8–P9 |
+| `core:common` | Base MVI, `AppResult`, utilities | — |
+| `core:ui` | Theme and shared components | P7 |
 | `core:security` | `SecureStorage` | — |
-| `core:network` | Cliente Ktor por plataforma | P9 (tipos de cambio) |
-| `core:datastore` | Preferencias (`AppPreferences`) | P8 |
+| `core:network` | Per-platform Ktor client | P9 (exchange rates) |
+| `core:datastore` | Preferences (`AppPreferences`) | P8 |
 | `core:logging` | Kermit | — |
-| `core:testing` | Utilidades de test | — |
-| `core:money` (se crea en P3) | Dinero, divisas, reparto de restos, tipos de cambio | P3 |
+| `core:testing` | Test utilities | — |
+| `core:money` (created in P3) | Money, currencies, remainder allocation, exchange rates | P3 |
 | `data:local` | SQLDelight (`AppDatabase`) | P4 |
-| `domain:usecases` | Casos de uso; `ledger` (saldos y deudas) | P3 |
+| `domain:usecases` | Use cases; `ledger` (balances and debts) | P3 |
 
-Módulos previstos: `data:models`, `data:repository` (P4), `data:remote`, `data:sync` (P2, P6), `feature:*` (P8–P10).
+Planned modules: `data:models`, `data:repository` (P4), `data:remote`, `data:sync` (P2, P6), `feature:*` (P8–P10).
 ```
 
-- [ ] **Step 3: Sección de desarrollo en `README.md`**
+- [ ] **Step 3: Development section in `README.md`**
 
-Añadir antes de `## Licencia`:
+Add before `## License`:
 ```markdown
-## Desarrollo
+## Development
 
-Requisitos: JDK 21 y Android SDK (platform 36). iOS solo compila en macOS.
+Requirements: JDK 21 and Android SDK (platform 36). iOS only builds on macOS.
 
 ```bash
 export JAVA_HOME="/c/Users/sebss/.jdks/jdk-21.0.12.1+1"
 export ANDROID_HOME="/c/Users/sebss/Android/sdk"
-./gradlew :composeApp:assembleDebug          # APK de desarrollo
-./gradlew testDebugUnitTest detekt           # tests y análisis estático
-./gradlew :composeApp:assembleDebug -PappEnv=staging   # otro entorno
+./gradlew :composeApp:assembleDebug          # development APK
+./gradlew testDebugUnitTest detekt           # tests and static analysis
+./gradlew :composeApp:assembleDebug -PappEnv=staging   # another environment
 ```
 
-Estructura de módulos en [MODULE_MAP.md](MODULE_MAP.md); planes de implementación en [docs/plans](docs/plans/README.md).
+Module structure in [MODULE_MAP.md](MODULE_MAP.md); implementation plans in [docs/plans](docs/plans/README.md).
 ```
-y cambiar la línea de estado por: `> **Estado:** en construcción (P1 completado). Ver [planes](docs/plans/README.md).`
+and change the status line to: `> **Status:** under construction (P1 done). See [plans](docs/plans/README.md).`
 
-- [ ] **Step 4: Quitar del resto de documentos las referencias al ejemplo**
+- [ ] **Step 4: Remove references to the sample from the other documents**
 
 ```bash
 grep -n "feature:auth\|feature:home\|feature:profile\|feature:settings\|data:network\|UserApi\|desktop\|Desktop" ARCHITECTURE.md AGENTS.md CONTRIBUTING.md
 ```
-Para cada línea encontrada: si es una fila de tabla o un elemento de lista sobre un módulo borrado o el escritorio, borrar la línea; si es el diagrama de capas de `ARCHITECTURE.md`, sustituir `feature:auth │ feature:home │ feature:…` por `feature:… (P8–P10)` y quitar "Desktop (JVM)" de la descripción. Repetir el `grep` hasta que no devuelva nada.
+For each line found: if it is a table row or list item about a deleted module or the desktop target, delete the line; if it is the layer diagram in `ARCHITECTURE.md`, replace `feature:auth │ feature:home │ feature:…` with `feature:… (P8–P10)` and remove "Desktop (JVM)" from the description. Repeat the `grep` until it returns nothing.
 
-- [ ] **Step 5: Commit y push**
+- [ ] **Step 5: Commit and push**
 
 ```bash
 git add -A
@@ -933,9 +933,9 @@ git commit -m "docs: adapt template docs to Owlsplit"
 git push
 ```
 
-### Task 9: Marcar P1 como hecho
+### Task 9: Mark P1 as done
 
-- [ ] **Step 1:** En `docs/plans/README.md`, cambiar el estado de P1 a `Hecho`.
+- [ ] **Step 1:** In `docs/plans/README.md`, change the status of P1 to `Done`.
 - [ ] **Step 2: Commit**
 
 ```bash
@@ -944,9 +944,9 @@ git commit -m "docs: mark P1 as done"
 git push
 ```
 
-## Verificación final de P1
+## Final verification of P1
 
 - `./gradlew detekt testDebugUnitTest :composeApp:assembleDebug` → `BUILD SUCCESSFUL`.
-- La app arranca en el emulador y muestra "Owlsplit".
-- El último run de CI está en verde, incluido el job de iOS lanzado a mano.
-- `git status` limpio; `grep -rI "kmpbase\|KMPNativeBase" --include=*.kt --include=*.kts .` vacío.
+- The app starts on the emulator and shows "Owlsplit".
+- The latest CI run is green, including the manually triggered iOS job.
+- `git status` clean; `grep -rI "kmpbase\|KMPNativeBase" --include=*.kt --include=*.kts .` empty.

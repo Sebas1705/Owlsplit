@@ -1,45 +1,47 @@
 # Owlsplit
 
-App para Android e iOS que lleva los gastos compartidos de grupos (viajes, pisos, cenas, regalos): quién ha pagado qué, cuánto debe cada uno y cómo quedar en paz con el menor número de pagos. Funciona sin conexión y se sincroniza entre todos los miembros.
+Android and iOS app for tracking shared group expenses (trips, flats, dinners, gifts): who paid what, how much each person owes, and how to settle up with the fewest payments. It works offline and syncs across all members.
 
-Inspirada en Settle Up, con un diseño cuidado (estilo fintech limpio) y más funciones por delante: liquidar con un toque, gastos recurrentes, presupuestos y estadísticas, y escaneo de tickets.
+Inspired by Settle Up, with a polished design (clean fintech style) and more features ahead: one-tap settle-up, recurring expenses, budgets and statistics, and receipt scanning.
 
-> **Estado:** en construcción (P1 completado). Ver [planes](docs/plans/README.md).
+> **Status:** public beta (P1–P15 done). Android APK at [owlsplit.web.app](https://owlsplit.web.app); Google Play closed testing. See the [plans](docs/plans/README.md).
 
-## Documentación
+Code and docs are in English; the app UI is in Spanish and English.
 
-| Documento | Contenido |
+## Documentation
+
+| Document | Contents |
 |---|---|
-| [Diseño del núcleo (MVP)](docs/designs/2026-10-07-owlsplit-core-design.md) | Spec completo: alcance, arquitectura, UX, errores, pruebas, CI y criterios de aceptación |
-| [Roadmap](docs/ROADMAP.md) | Los cinco subproyectos y su orden |
-| [Dominio](docs/DOMAIN.md) | Entidades, reglas de dinero, reparto, divisas, saldos y simplificación de deudas |
-| [Sincronización](docs/SYNC.md) | Motor local-first: outbox, listeners, conflictos y borrados |
-| [Firebase](docs/FIREBASE.md) | Proyectos, colecciones, reglas, autenticación y borrado de cuenta |
-| [Sistema de diseño](docs/DESIGN_SYSTEM.md) | Tokens, tipografía, componentes, movimiento y tono |
-| [Marca](docs/BRAND.md) | Logotipo, colores e iconos desde `brand/tokens.json` (app, web e iconos) |
-| [Decisiones (ADR)](docs/adr/README.md) | Por qué se eligió cada pieza y qué se descartó |
-| [Mockup aprobado](docs/mockups/owlsplit-fintech-v3.html) | Inicio, grupo y editor de gasto |
+| [Core design (MVP)](docs/designs/2026-10-07-owlsplit-core-design.md) | Full spec: scope, architecture, UX, errors, testing, CI and acceptance criteria |
+| [Roadmap](docs/ROADMAP.md) | The five subprojects and their order |
+| [Domain](docs/DOMAIN.md) | Entities, money rules, splitting, currencies, balances and debt simplification |
+| [Sync](docs/SYNC.md) | Local-first engine: outbox, listeners, conflicts and deletions |
+| [Firebase](docs/FIREBASE.md) | Projects, collections, rules, authentication and account deletion |
+| [Design system](docs/DESIGN_SYSTEM.md) | Tokens, typography, components, motion and tone |
+| [Brand](docs/BRAND.md) | Logo, colors and icons from `brand/tokens.json` (app, web and icons) |
+| [Decisions (ADR)](docs/adr/README.md) | Why each piece was chosen and what was ruled out |
+| [Approved mockup](docs/mockups/owlsplit-fintech-v3.html) | Home, group and expense editor |
 
-## Stack previsto
+## Planned stack
 
-Kotlin Multiplatform · Compose Multiplatform · SQLDelight · Koin · Ktor · Firebase (Auth, Firestore) vía GitLive, sobre la plantilla Templetry `kmp/modular-features`.
+Kotlin Multiplatform · Compose Multiplatform · SQLDelight · Koin · Ktor · Firebase (Auth, Firestore) via GitLive, on top of the Templetry `kmp/modular-features` template.
 
-## Desarrollo
+## Development
 
-Requisitos: JDK 21 y Android SDK (platform 36). iOS solo compila en macOS.
+Requirements: JDK 21 and Android SDK (platform 36). iOS only builds on macOS.
 
 ```bash
 export JAVA_HOME="/c/Users/sebss/.jdks/jdk-21.0.12.1+1"
 export ANDROID_HOME="/c/Users/sebss/Android/sdk"
-scripts/doppler-sync-local.sh                   # configuración de Firebase (Doppler)
-./gradlew :composeApp:installDebug         # app de depuración (es.sebas1705.owlsplit.debug)
-./gradlew build                            # tests, detekt, lint y builds
+scripts/doppler-sync-local.sh                   # Firebase configuration (Doppler)
+./gradlew :composeApp:installDebug         # debug app (es.sebas1705.owlsplit.debug)
+./gradlew build                            # tests, detekt, lint and builds
 ```
 
-Estructura de módulos en [MODULE_MAP.md](MODULE_MAP.md); planes de implementación en [docs/plans](docs/plans/README.md); Firebase en [docs/FIREBASE.md](docs/FIREBASE.md); distribución a testers (Firebase App Distribution) y versiones en [docs/RELEASE.md](docs/RELEASE.md); criterios de aceptación del MVP en [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md).
+Module structure in [MODULE_MAP.md](MODULE_MAP.md); implementation plans in [docs/plans](docs/plans/README.md); Firebase in [docs/FIREBASE.md](docs/FIREBASE.md); tester distribution (Firebase App Distribution) and versioning in [docs/RELEASE.md](docs/RELEASE.md); MVP acceptance criteria in [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md).
 
-iOS: el proyecto de Xcode se genera con XcodeGen (`cd iosApp && xcodegen generate`, en un Mac); CI compila la app para el simulador en cada PR.
+iOS: the Xcode project is generated with XcodeGen (`cd iosApp && xcodegen generate`, on a Mac); CI builds the app for the simulator on every PR.
 
-## Licencia
+## License
 
-[MIT](LICENSE). La licencia cubre el código; el nombre y el logo de Owlsplit no están incluidos, así que una copia o derivado debe usar otro nombre.
+[MIT](LICENSE). The license covers the code; the Owlsplit name and logo are not included, so a copy or derivative must use a different name.

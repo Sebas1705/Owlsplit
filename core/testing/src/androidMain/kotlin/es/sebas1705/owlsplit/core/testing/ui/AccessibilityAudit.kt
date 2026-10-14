@@ -9,7 +9,7 @@ import kotlin.test.fail
 
 /**
  * Smallest visible size of a control. Compose widens the touch area of every clickable to
- * 48 dp (`ViewConfiguration.minimumTouchTargetSize`), which meets the spec's "áreas táctiles
+ * 48 dp (`ViewConfiguration.minimumTouchTargetSize`), which meets the spec's "Touch targets
  * ≥ 48 dp"; below 40 dp (Material's icon buttons and chips) the control is too small to see.
  */
 private const val MIN_VISIBLE_DP = 40f

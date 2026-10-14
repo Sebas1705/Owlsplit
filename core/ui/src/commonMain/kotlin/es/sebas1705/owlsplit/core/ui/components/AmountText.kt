@@ -29,7 +29,7 @@ private const val ROLL_MILLIS = 300
 /**
  * An amount where the integer part leads and the fraction shrinks to 60 %. When [animate] is
  * true a change rolls from the previous value; the final frame is always the exact amount.
- * [spokenDescription] replaces the digits for screen readers ("Te deben veintitrés euros con cincuenta").
+ * [spokenDescription] replaces the digits for screen readers ("You are owed twenty-three euros fifty").
  */
 @Composable
 fun AmountText(

@@ -21,7 +21,7 @@ data class CarriedGroup(val groupId: String, val code: String, val memberId: Str
 /**
  * Takes this device's groups from one account to another with what already exists: leave (my
  * member stays, abandoned, with its expenses), then join with the code and claim that same member
- * (docs/designs/2026-10-12-identidad-miembros.md, option A).
+ * (docs/designs/2026-10-12-member-identity.md, option A).
  */
 class CarryGroups(
     private val groups: GroupRepository,

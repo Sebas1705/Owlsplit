@@ -15,7 +15,7 @@ fun interface DeviceReset {
 }
 
 /**
- * Deletes the account (docs/FIREBASE.md, "Borrado de cuenta"): my members become ghosts and I leave
+ * Deletes the account (docs/FIREBASE.md, "Account deletion"): my members become ghosts and I leave
  * every group, then the profile and the user go, then this device is reset. Every step can be
  * repeated, so after [AccountResult.Offline] or [AccountResult.RecentLoginRequired] (sign in with
  * Google again, then retry) it continues where it stopped.
@@ -68,7 +68,7 @@ object ShouldSuggestLinking {
         session != null && session.isAnonymous && !dismissed && groupCount >= 1
 }
 
-/** Writes still waiting to reach the server (the sync chip: "Sincronizado" or "N cambios pendientes"). */
+/** Writes still waiting to reach the server (the sync chip: "Synced" or "N pending changes"). */
 class ObservePendingChanges(private val sync: SyncControl) {
     operator fun invoke(): Flow<Long> = sync.pendingCount
 }

@@ -1,18 +1,18 @@
-# 0005 · Dinero en enteros de unidades mínimas
+# 0005 · Money as integer minor units
 
-- **Estado:** aceptada · 2026-10-07
+- **Status:** accepted · 2026-10-07
 
-## Contexto
-Varios dispositivos calculan los saldos por separado, sin servidor que arbitre. Cualquier diferencia de redondeo produce saldos distintos según quién mire, y además la suma del grupo dejaría de ser cero.
+## Context
+Several devices compute balances separately, with no server to arbitrate. Any rounding difference produces different balances depending on who looks, and the group sum would also stop being zero.
 
-## Decisión
-- Importes como `Long` en **unidades mínimas** según los decimales ISO 4217 de cada divisa.
-- Repartos con **restos mayores** y desempate determinista (`sortKey`, `id`).
-- Tipos de cambio como `Long` con escala 10⁹, **congelados** en cada gasto; conversión del neto por miembro con corrección determinista del descuadre.
-- Invariante: la suma de saldos del grupo es exactamente 0, verificada con tests de propiedades.
+## Decision
+- Amounts as `Long` in **minor units** according to each currency's ISO 4217 decimals.
+- Splits with **largest remainders** and deterministic tie-break (`sortKey`, `id`).
+- Exchange rates as `Long` with scale 10⁹, **frozen** on each expense; conversion of the net per member with deterministic correction of the imbalance.
+- Invariant: the sum of the group's balances is exactly 0, verified with property tests.
 
-Reglas exactas en [DOMAIN.md](../DOMAIN.md).
+Exact rules in [DOMAIN.md](../DOMAIN.md).
 
-## Alternativas descartadas
-- **`Double`**: errores de representación y resultados distintos según el orden de las operaciones.
-- **BigDecimal multiplataforma** (p. ej. ionspin bignum): correcto, pero más pesado e innecesario con valores acotados en `Long`.
+## Rejected alternatives
+- **`Double`**: representation errors and different results depending on the order of operations.
+- **Multiplatform BigDecimal** (e.g. ionspin bignum): correct, but heavier and unnecessary with values bounded in `Long`.

@@ -1,30 +1,30 @@
-# Mapa de módulos
+# Module map
 
-| Módulo | Contenido | Plan que lo amplía |
+| Module | Contents | Plan that extends it |
 |---|---|---|
-| `composeApp` | Entrada Android/iOS (iOS: `iosApp/project.yml` con XcodeGen; compartir, escáner, Google por `GoogleSignInBridge`), DI raíz, `AppConfig` e `isDebugBuild`, Crashlytics (`CrashReporting`), idioma de la app (`LocalAppLocale`), navegación (onboarding → pestañas Inicio · Actividad · Perfil), `SyncStarter`, Google con Credential Manager, `TextSharer` (hoja de compartir), `AndroidQrScanner`, App Links (`IncomingInvites`) | P9 |
-| `core:common` | MVI base (los errores de `execute` van a `UnexpectedErrors`), `AppResult`, utilidades | — |
-| `core:ui` | `OwlsplitTheme` (tokens, Inter, formas), `MoneyFormat` y `LocalMoneyFormat`, componentes (incluidos `QrCode` y `SwitchRow`) y `DesignCatalog`; capturas Roborazzi | P9 |
+| `composeApp` | Android/iOS entry point (iOS: `iosApp/project.yml` with XcodeGen; sharing, scanner, Google via `GoogleSignInBridge`), root DI, `AppConfig` and `isDebugBuild`, Crashlytics (`CrashReporting`), app language (`LocalAppLocale`), navigation (onboarding → Home · Activity · Profile tabs), `SyncStarter`, Google with Credential Manager, `TextSharer` (share sheet), `AndroidQrScanner`, App Links (`IncomingInvites`) | P9 |
+| `core:common` | MVI base (`execute` errors go to `UnexpectedErrors`), `AppResult`, utilities | — |
+| `core:ui` | `OwlsplitTheme` (tokens, Inter, shapes), `MoneyFormat` and `LocalMoneyFormat`, components (including `QrCode` and `SwitchRow`) and `DesignCatalog`; Roborazzi screenshots | P9 |
 | `core:security` | `SecureStorage` | — |
-| `core:network` | Cliente Ktor por plataforma | P9 (tipos de cambio) |
-| `core:datastore` | Preferencias (`AppPreferences`: tema, idioma, perfil local, aviso para vincular; `DisplaySettings`) | — |
+| `core:network` | Per-platform Ktor client | P9 (exchange rates) |
+| `core:datastore` | Preferences (`AppPreferences`: theme, language, local profile, link reminder; `DisplaySettings`) | — |
 | `core:logging` | Kermit | — |
-| `core:testing` | `CoroutineTestRule`, falsos de cuenta/sincronización, `InMemoryLedger` (los cuatro repositorios en memoria) , `FakeInvites` para tests de dominio y ViewModels, y `assertAccessible()` (androidMain) para las capturas | — |
-| `core:money` | Dinero, divisas, multiplicación-división exacta, reparto por restos mayores, tipos de cambio | — |
-| `data:models` | Documentos (`Group`, `Member`, `Expense`, `Transfer`, `ChangeLogEntry`) con `SyncMeta`, serializables | P6 |
-| `data:local` | Esquema SQLDelight completo v1 (`AppDatabase`), snapshot `databases/1.db` y `verifyMigrations` | P6, P9 |
-| `data:repository` | Repositorios con Flows (cada escritura guarda la entidad, compacta el outbox y registra el historial en una transacción) y motor de sincronización `sync` (`RemoteStore`, `SyncEngine`) | P8, P9 |
-| `data:fx` | `FrankfurterRates` (Ktor): tipos del BCE en punto fijo, caché por par en DataStore | — |
-| `data:remote` | Firebase (GitLive): `FirestoreRemoteStore` (adaptador del motor), `FirebaseAccountService`, `FirestoreProfileRemote` (`users/{uid}`), `FirestoreInviteService` (`invites/{code}` y unirse); test de humo y test de sincronización con emuladores | P10 |
-| `domain:usecases` | `ledger` (partes, netos, saldos, pagos sugeridos), `ObserveGroupBalances` y `account` (onboarding, Google, perfil, cerrar sesión, borrar cuenta, aviso para vincular), `groups` (Inicio, detalle, acciones, saldar), `expenses` (borradores con validación en vivo) e `invite` (compartir, regenerar, previsualizar, unirse, reclamar miembro) | P9b |
-| `feature:onboarding` | Bienvenida → nombre y avatar → primer grupo; "Ya tengo cuenta" con Google | P9, P10 |
-| `feature:profile` | Pestaña Perfil: perfil, vincular Google, divisa preferida, tema, cerrar sesión, borrar cuenta | P11 |
-| `feature:home` | Inicio: balance total, estado de sincronización, acciones rápidas, grupos, aviso para vincular | P9b (balance convertido) |
-| `feature:groups` | Pantalla de grupo (Gastos · Saldos · Saldar), editor de grupo y miembros | P9b, P10 |
-| `feature:history` | Historial de un grupo y pestaña Actividad: cambios legibles, restaurar borrados, reaplicar o descartar conflictos | P11 |
-| `feature:expense` | Editor de gasto: teclado propio, categoría, pagador y los cuatro tipos de reparto con validación en vivo | P9b (divisas, varios pagadores, fecha) |
-| `feature:invite` | Invitar (QR, código, enlace, compartir, regenerar) y Unirse (escanear, código o enlace → vista previa → unirse → reclamar miembro o añadirme) | — |
+| `core:testing` | `CoroutineTestRule`, account/sync fakes, `InMemoryLedger` (the four repositories in memory), `FakeInvites` for domain and ViewModel tests, and `assertAccessible()` (androidMain) for screenshots | — |
+| `core:money` | Money, currencies, exact multiply-divide, largest-remainder splitting, exchange rates | — |
+| `data:models` | Documents (`Group`, `Member`, `Expense`, `Transfer`, `ChangeLogEntry`) with `SyncMeta`, serializable | P6 |
+| `data:local` | Full SQLDelight v1 schema (`AppDatabase`), `databases/1.db` snapshot and `verifyMigrations` | P6, P9 |
+| `data:repository` | Repositories with Flows (each write saves the entity, compacts the outbox and records history in one transaction) and the `sync` engine (`RemoteStore`, `SyncEngine`) | P8, P9 |
+| `data:fx` | `FrankfurterRates` (Ktor): ECB rates in fixed point, per-pair cache in DataStore | — |
+| `data:remote` | Firebase (GitLive): `FirestoreRemoteStore` (engine adapter), `FirebaseAccountService`, `FirestoreProfileRemote` (`users/{uid}`), `FirestoreInviteService` (`invites/{code}` and join); smoke test and sync test against emulators | P10 |
+| `domain:usecases` | `ledger` (shares, nets, balances, suggested payments), `ObserveGroupBalances` and `account` (onboarding, Google, profile, sign out, delete account, link reminder), `groups` (Home, detail, actions, settle up), `expenses` (drafts with live validation) and `invite` (share, regenerate, preview, join, claim member) | P9b |
+| `feature:onboarding` | Welcome → name and avatar → first group; "Ya tengo cuenta" (I already have an account) with Google | P9, P10 |
+| `feature:profile` | Profile tab: profile, link Google, preferred currency, theme, sign out, delete account | P11 |
+| `feature:home` | Home: total balance, sync status, quick actions, groups, link reminder | P9b (converted balance) |
+| `feature:groups` | Group screen (Expenses · Balances · Settle up), group and member editor | P9b, P10 |
+| `feature:history` | Group history and Activity tab: readable changes, restore deletions, reapply or discard conflicts | P11 |
+| `feature:expense` | Expense editor: custom keypad, category, payer and the four split types with live validation | P9b (currencies, multiple payers, date) |
+| `feature:invite` | Invite (QR, code, link, share, regenerate) and Join (scan, code or link → preview → join → claim member or add me) | — |
 
-Nombres: (`feature:groups`, no `feature:group`: Gradle reserva `group` en los accesores tipados). Las features solo ven `domain`, `data:models` y `core` (ARCHITECTURE.md). El motor de sincronización vive en `data:repository` (paquete `sync`), no en un módulo `data:sync`.
+Naming: `feature:groups`, not `feature:group` (Gradle reserves `group` in type-safe accessors). Features only see `domain`, `data:models` and `core` (ARCHITECTURE.md). The sync engine lives in `data:repository` (`sync` package), not in a `data:sync` module.
 
-Textos y accesibilidad (P11a): cada módulo con recursos tiene `composeResources/values/strings.xml` en inglés (idioma por defecto) y `values-es/strings.xml` en español, con las mismas claves; en inglés el apóstrofo es `’` (Compose no interpreta `\'`). Las pruebas de captura de cada pantalla llaman a `assertAccessible()` antes de capturar.
+Strings and accessibility (P11a): every module with resources has `composeResources/values/strings.xml` in English (default language) and `values-es/strings.xml` in Spanish, with the same keys; in English the apostrophe is `’` (Compose does not interpret `\'`). Each screen's screenshot tests call `assertAccessible()` before capturing.

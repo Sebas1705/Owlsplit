@@ -3,7 +3,7 @@ name: Play listing
 # The Google Play store listing lives in fastlane/metadata/android (texts per language, icon,
 # feature graphic and screenshots; graphics from scripts/brand.mjs --png). Changing it on main
 # publishes it. It does nothing until Google Play is set up and the first AAB is in the PLAY_TRACK
-# track (docs/play/GUIA-PLAY-CONSOLE.md).
+# track (docs/play/PLAY-CONSOLE-GUIDE.md).
 on:
   push:
     branches: [main]
