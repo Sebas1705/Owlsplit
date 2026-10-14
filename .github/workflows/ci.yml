@@ -39,7 +39,8 @@ jobs:
 
   ios:
     name: iOS app (simulator)
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    # Paused for now: only a manual run (Actions, CI, Run workflow) builds the iOS app.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
