@@ -91,12 +91,24 @@ jobs:
           # shellcheck disable=SC2086
           gh release create "$TAG" "$APK" "$AAB" "$SHA" --title "$TAG" --generate-notes $PRERELEASE $REF_FLAG
 
+      # What testers and stores read: the user-facing PR titles of the notes GitHub just generated
+      # (scripts/release-notes.mjs), in en-US and es-ES.
+      - name: Release notes
+        id: notes
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          gh release view "$TAG" --json body -q .body > "$RUNNER_TEMP/release-body.md"
+          node scripts/release-notes.mjs "$VERSION" "$RUNNER_TEMP/release-body.md" "$RUNNER_TEMP/notes"
+          echo "dir=$RUNNER_TEMP/notes" >> "$GITHUB_OUTPUT"
+
       - name: Upload to Firebase App Distribution
         env:
           TESTER_GROUP: ${{ vars.FIREBASE_TESTER_GROUP || 'testers' }}
-          TAG: ${{ steps.ver.outputs.tag }}
+          NOTES_DIR: ${{ steps.notes.outputs.dir }}
         run: |
-          export NOTES="$TAG: $(git log -1 --pretty='%s (%h)')"
+          export NOTES="$(cat "$NOTES_DIR/en-US.txt")"
           doppler run -- bash -c '
             umask 077
             printf "%s" "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-sa.json"
@@ -106,19 +118,18 @@ jobs:
               --groups "$TESTER_GROUP" \
               --release-notes "$NOTES"'
 
-      # Release notes per language: the version and a link to the GitHub notes (Play allows 500
-      # characters). Nothing happens until PLAY_TRACK is set and the key is in Doppler.
+      # The same notes per language for Google Play (500 characters each, keyed by versionCode).
+      # Nothing happens until PLAY_TRACK is set and the key is in Doppler.
       - name: Play release notes
         if: vars.PLAY_TRACK != ''
         env:
-          VERSION: ${{ steps.ver.outputs.version }}
-          TAG: ${{ steps.ver.outputs.tag }}
+          NOTES_DIR: ${{ steps.notes.outputs.dir }}
         run: |
           CODE=$(git rev-list --count HEAD)
-          NOTES="https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
-          for LOCALE in es-ES en-US; do mkdir -p "fastlane/metadata/android/$LOCALE/changelogs"; done
-          printf "Owlsplit %s: mejoras y correcciones.\nNovedades: %s" "$VERSION" "$NOTES" > "fastlane/metadata/android/es-ES/changelogs/$CODE.txt"
-          printf "Owlsplit %s: improvements and fixes.\nWhat's new: %s" "$VERSION" "$NOTES" > "fastlane/metadata/android/en-US/changelogs/$CODE.txt"
+          for LOCALE in es-ES en-US; do
+            mkdir -p "fastlane/metadata/android/$LOCALE/changelogs"
+            cp "$NOTES_DIR/$LOCALE.txt" "fastlane/metadata/android/$LOCALE/changelogs/$CODE.txt"
+          done
 
       - name: Upload to Google Play
         if: vars.PLAY_TRACK != ''
