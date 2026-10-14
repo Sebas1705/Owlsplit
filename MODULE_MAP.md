@@ -2,7 +2,7 @@
 
 | Module | Contents | Plan that extends it |
 |---|---|---|
-| `composeApp` | Android/iOS entry point (iOS: `iosApp/project.yml` with XcodeGen; sharing, scanner, Google via `GoogleSignInBridge`), root DI, `AppConfig` and `isDebugBuild`, Crashlytics (`CrashReporting`), app language (`LocalAppLocale`), navigation (onboarding → Home · Activity · Profile tabs), `SyncStarter`, Google with Credential Manager, `TextSharer` (share sheet), `AndroidQrScanner`, App Links (`IncomingInvites`), Google Play In-App Updates on Play installs (`PlayStoreUpdates`, flexible flow) | P9 |
+| `composeApp` | Android/iOS entry point (iOS: `iosApp/project.yml` with XcodeGen; sharing, scanner, Google via `GoogleSignInBridge`), root DI, `AppConfig` and `isDebugBuild`, Crashlytics (`CrashReporting`), App Check (`AppCheckSetup` per Android build type, `iOSApp.swift`), app language (`LocalAppLocale`), navigation (onboarding → Home · Activity · Profile tabs), `SyncStarter`, Google with Credential Manager, `TextSharer` (share sheet), `AndroidQrScanner`, App Links (`IncomingInvites`), Google Play In-App Updates on Play installs (`PlayStoreUpdates`, flexible flow) | P9 |
 | `core:common` | MVI base (`execute` errors go to `UnexpectedErrors`), `AppResult`, utilities | — |
 | `core:ui` | `OwlsplitTheme` (tokens, Inter, shapes), `MoneyFormat` and `LocalMoneyFormat`, components (including `QrCode` and `SwitchRow`) and `DesignCatalog`; Roborazzi screenshots | P9 |
 | `core:security` | `SecureStorage` | — |
@@ -13,7 +13,7 @@
 | `core:money` | Money, currencies, exact multiply-divide, largest-remainder splitting, exchange rates | — |
 | `data:models` | Documents (`Group`, `Member`, `Expense`, `Transfer`, `ChangeLogEntry`) with `SyncMeta`, serializable | P6 |
 | `data:local` | Full SQLDelight v1 schema (`AppDatabase`), `databases/1.db` snapshot and `verifyMigrations` | P6, P9 |
-| `data:repository` | Repositories with Flows (each write saves the entity, compacts the outbox and records history in one transaction) and the `sync` engine (`RemoteStore`, `SyncEngine`) | P8, P9 |
+| `data:repository` | Repositories with Flows (each write saves the entity, compacts the outbox and records history in one transaction) and the `sync` engine (`RemoteStore`, `SyncEngine`, `GroupPuller`: changelog-driven download, docs/SYNC.md) | P8, P9 |
 | `data:fx` | `FrankfurterRates` (Ktor): ECB rates in fixed point, per-pair cache in DataStore | — |
 | `data:remote` | Firebase (GitLive): `FirestoreRemoteStore` (engine adapter), `FirebaseAccountService`, `FirestoreProfileRemote` (`users/{uid}`), `FirestoreInviteService` (`invites/{code}` and join); smoke test and sync test against emulators | P10 |
 | `domain:usecases` | `ledger` (shares, nets, balances, suggested payments), `ObserveGroupBalances` and `account` (onboarding, Google, profile, sign out, delete account, link reminder), `groups` (Home, detail, actions, settle up), `expenses` (drafts with live validation) and `invite` (share, regenerate, preview, join, claim member) | P9b |

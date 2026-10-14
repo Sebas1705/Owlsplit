@@ -6,6 +6,7 @@ import dev.gitlive.firebase.firestore.DocumentSnapshot
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import dev.gitlive.firebase.firestore.FirebaseFirestoreException
 import dev.gitlive.firebase.firestore.FirestoreExceptionCode
+import dev.gitlive.firebase.firestore.Query
 import dev.gitlive.firebase.firestore.QuerySnapshot
 import dev.gitlive.firebase.firestore.Source
 import dev.gitlive.firebase.firestore.Timestamp
@@ -13,13 +14,16 @@ import dev.gitlive.firebase.firestore.code
 import dev.gitlive.firebase.firestore.fromMilliseconds
 import es.sebas1705.owlsplit.data.models.OutboxType
 import es.sebas1705.owlsplit.data.repository.sync.FetchResult
+import es.sebas1705.owlsplit.data.repository.sync.PullResult
 import es.sebas1705.owlsplit.data.repository.sync.PushResult
 import es.sebas1705.owlsplit.data.repository.sync.RemoteCollection
 import es.sebas1705.owlsplit.data.repository.sync.RemoteDoc
 import es.sebas1705.owlsplit.data.repository.sync.RemoteStore
 import es.sebas1705.owlsplit.data.repository.sync.decodeRemoteDoc
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.map
@@ -27,6 +31,7 @@ import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.min
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -37,6 +42,7 @@ class FirestoreRemoteStore(
     private val firestore: FirebaseFirestore,
     private val auth: FirebaseAuth,
     private val timeout: Duration = 20.seconds,
+    private val pullTimeout: Duration = 2.minutes,
 ) : RemoteStore {
 
     override suspend fun push(
@@ -69,8 +75,15 @@ class FirestoreRemoteStore(
             val snapshot = ref(type, groupId, entityId).get(Source.SERVER)
             when {
                 !snapshot.exists -> FetchResult.Missing
-                else -> snapshot.toRemote(type, groupId)?.let { FetchResult.Found(it) } ?: FetchResult.Transient
+                else -> snapshot.toRemote(type, groupId)?.let { FetchResult.Found(it) } ?: FetchResult.Unreadable
             }
+        }
+
+    override suspend fun pull(groupId: String, collection: RemoteCollection, sinceMillis: Long): PullResult =
+        // A first pull of a large group can take a while; offline, a server read fails at once.
+        firestoreCall(onDenied = PullResult.NoAccess, onError = PullResult.Transient, timeout = pullTimeout) {
+            val snapshot = query(groupId, collection, sinceMillis).get(Source.SERVER)
+            PullResult.Docs(snapshot.documents.mapNotNull { it.toRemote(collection.type, groupId) })
         }
 
     override fun observeMyGroups(uid: String): Flow<List<RemoteDoc.GroupDoc>> =
@@ -85,11 +98,17 @@ class FirestoreRemoteStore(
             .resilient()
 
     override fun observe(groupId: String, collection: RemoteCollection, sinceMillis: Long): Flow<List<RemoteDoc>> =
-        firestore.collection("$GROUPS/$groupId/${collection.path}")
-            .where { "updatedAt" greaterThanOrEqualTo Timestamp.fromMilliseconds(sinceMillis.toDouble()) }
+        query(groupId, collection, sinceMillis)
             .snapshots
+            // Each snapshot carries only its changes, and the engine may be fetching while new ones
+            // arrive: the SDK callback must never drop one (its default buffer drops past 64).
+            .buffer(Channel.UNLIMITED)
             .map { snapshot -> snapshot.confirmedChanges().mapNotNull { it.toRemote(collection.type, groupId) } }
             .resilient()
+
+    private fun query(groupId: String, collection: RemoteCollection, sinceMillis: Long): Query =
+        firestore.collection("$GROUPS/$groupId/${collection.path}")
+            .where { "updatedAt" greaterThanOrEqualTo Timestamp.fromMilliseconds(sinceMillis.toDouble()) }
 
     private fun ref(type: OutboxType, groupId: String, entityId: String): DocumentReference {
         val group = firestore.collection(GROUPS).document(groupId)
@@ -100,7 +119,12 @@ class FirestoreRemoteStore(
     }
 
     /** Runs a Firestore call: PERMISSION_DENIED gives [onDenied]; any other failure or a timeout, [onError]. */
-    private suspend fun <T> firestoreCall(onDenied: T, onError: T, block: suspend () -> T): T =
+    private suspend fun <T> firestoreCall(
+        onDenied: T,
+        onError: T,
+        timeout: Duration = this.timeout,
+        block: suspend () -> T,
+    ): T =
         try {
             // Offline, a write never completes (the SDK queues it): give up and let the outbox retry.
             withTimeoutOrNull(timeout) { block() } ?: onError

@@ -47,7 +47,7 @@ import org.koin.dsl.module
 val groupsModule = module {
     factory { ObserveGroupBalances(get(), get(), get(), get()) }
     factory { ObserveHome(get(), get(), get(), get(), get(), get(), get()) }
-    factory { ObserveGroupDetail(get(), get(), get(), get(), get(), get()) }
+    factory { ObserveGroupDetail(get(), get(), get(), get(), get(), get(), get()) }
     factory { ObservePendingChanges(get()) }
     factory { GroupActions(get(), get(), get()) }
     factory { ImportGroup(get(), get(), get(), get(), get()) }

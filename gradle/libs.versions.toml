@@ -44,6 +44,9 @@ credentials             = "1.6.0"
 googleid                = "1.2.1"
 qrose                   = "1.1.2"
 code-scanner            = "16.1.0"
+# Native Android App Check (GitLive has no App Check module): the version in firebase-bom 34.18.0,
+# the BOM GitLive 2.7.0 is built against.
+firebase-appcheck       = "19.4.1"
 play-app-update         = "2.1.0"
 
 [libraries]
@@ -125,6 +128,8 @@ google-identity-googleid   = { module = "com.google.android.libraries.identity.g
 # qrose 1.2+ needs Compose 1.12 and compileSdk 37 (see the pins above).
 qrose                      = { module = "io.github.alexzhirkevich:qrose",                       version.ref = "qrose" }
 play-services-code-scanner = { module = "com.google.android.gms:play-services-code-scanner",    version.ref = "code-scanner" }
+firebase-appcheck-playintegrity = { module = "com.google.firebase:firebase-appcheck-playintegrity", version.ref = "firebase-appcheck" }
+firebase-appcheck-debug         = { module = "com.google.firebase:firebase-appcheck-debug",         version.ref = "firebase-appcheck" }
 play-app-update-ktx        = { module = "com.google.android.play:app-update-ktx",               version.ref = "play-app-update" }
 androidx-test-core         = { module = "androidx.test:core",             version.ref = "androidx-test-core" }
 androidx-test-ext-junit    = { module = "androidx.test.ext:junit",        version.ref = "androidx-test-ext-junit" }

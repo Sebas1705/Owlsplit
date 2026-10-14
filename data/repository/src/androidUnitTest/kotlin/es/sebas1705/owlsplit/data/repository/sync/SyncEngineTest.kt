@@ -39,6 +39,10 @@ class SyncEngineTest {
             scope.advanceTimeBy(5_000)
             scope.runCurrent()
         }
+
+        fun serverNow() = env.ctx.clock.now().toEpochMilliseconds()
+
+        fun expenseOnServer(id: String) = (remote.doc(OutboxType.EXPENSE, id) as RemoteDoc.ExpenseDoc).expense
     }
 
     @Test
@@ -56,7 +60,192 @@ class SyncEngineTest {
     }
 
     @Test
-    fun `remote changes are pulled and older versions ignored`() = runTest {
+    fun `remote changes are fetched by the id in their history entry and older versions ignored`() = runTest {
+        val h = Harness(this)
+        val g = h.env.groups.create(trip, "Ana")
+        val ana = h.env.members.observeMembersOnce(g).single().id
+        val e = h.env.expenses.create(g, dinner(ana))
+        val job = h.engine.start(this, "uid-ana")
+        h.settle()
+        h.remote.fetches.clear()
+        h.remote.pulls.clear()
+
+        val newer = h.expenseOnServer(e).let {
+            it.copy(title = "Cena con postre", meta = it.meta.copy(version = 3, updatedAt = h.serverNow() + 10_000))
+        }
+        h.remote.editByOtherDevice(RemoteDoc.ExpenseDoc(newer))
+        h.settle()
+        assertEquals("Cena con postre", h.env.expenses.get(e)!!.title)
+        // One get of that document: no query over the expenses.
+        assertEquals(listOf(OutboxType.EXPENSE to e), h.remote.fetches)
+        assertTrue(h.remote.pulls.isEmpty())
+
+        h.remote.editByOtherDevice(
+            RemoteDoc.ExpenseDoc(
+                newer.copy(title = "Old", meta = newer.meta.copy(version = 2, updatedAt = h.serverNow() + 20_000))
+            )
+        )
+        h.settle()
+        assertEquals("Cena con postre", h.env.expenses.get(e)!!.title)
+        assertEquals(SyncState.SYNCED, h.env.expenses.get(e)!!.meta.syncState)
+        job.cancel()
+    }
+
+    @Test
+    fun `my own history entries coming back fetch nothing`() = runTest {
+        val h = Harness(this)
+        val g = h.env.groups.create(trip, "Ana")
+        val ana = h.env.members.observeMembersOnce(g).single().id
+        val job = h.engine.start(this, "uid-ana")
+        h.settle()
+        h.env.expenses.create(g, dinner(ana))
+        h.settle()
+        assertEquals(1, h.remote.pushLog.count { it.first == OutboxType.EXPENSE })
+        assertTrue(h.remote.fetches.isEmpty())
+        job.cancel()
+    }
+
+    @Test
+    fun `an idle restart opens one changelog listener per group not archived and reads nothing else`() = runTest {
+        val h = Harness(this)
+        val groups = listOf("A", "B", "C").map { h.env.groups.create(trip.copy(name = it), "Ana") }
+        var job = h.engine.start(this, "uid-ana")
+        h.settle()
+        h.env.groups.setArchived(groups[2], archived = true)
+        h.settle()
+        job.cancel()
+        runCurrent()
+        assertTrue(h.remote.listening.values.all { it == 0 })
+
+        h.remote.reads = 0
+        h.remote.pulls.clear()
+        job = h.engine.start(this, "uid-ana")
+        h.settle()
+
+        val open = h.remote.listening.filterValues { it > 0 }.keys
+        assertEquals(setOf(groups[0] to RemoteCollection.CHANGELOG, groups[1] to RemoteCollection.CHANGELOG), open)
+        assertTrue(h.remote.pulls.isEmpty())
+        assertTrue(h.remote.fetches.isEmpty())
+        // My groups (3 documents) + 2 changelog listeners re-reading the margin before their cursor:
+        // the 2 entries of each creation. One listener per collection used to cost 3 + 3 × (1 + 1 + 1 + 2).
+        assertEquals(3L + 2 + 2, h.remote.reads)
+        job.cancel()
+    }
+
+    @Test
+    fun `an archived group is not listened to and catches up when opened`() = runTest {
+        val h = Harness(this)
+        val g = h.env.groups.create(trip, "Ana")
+        val ana = h.env.members.observeMembersOnce(g).single().id
+        val e = h.env.expenses.create(g, dinner(ana))
+        val job = h.engine.start(this, "uid-ana")
+        h.settle()
+        h.env.groups.setArchived(g, archived = true)
+        h.settle()
+        assertEquals(0, h.remote.listening[g to RemoteCollection.CHANGELOG])
+
+        val theirs = h.expenseOnServer(
+            e
+        ).let { it.copy(title = "Theirs", meta = it.meta.copy(version = 2, updatedAt = h.serverNow())) }
+        h.remote.editByOtherDevice(RemoteDoc.ExpenseDoc(theirs))
+        h.settle()
+        assertEquals("Cena", h.env.expenses.get(e)!!.title)
+
+        h.engine.refreshGroup(g)
+        h.settle()
+        assertEquals("Theirs", h.env.expenses.get(e)!!.title)
+        assertEquals(0, h.remote.listening[g to RemoteCollection.CHANGELOG])
+
+        // Reopened right away: throttled.
+        val pulls = h.remote.pulls.size
+        h.engine.refreshGroup(g)
+        h.settle()
+        assertEquals(pulls, h.remote.pulls.size)
+        job.cancel()
+    }
+
+    @Test
+    fun `a group opened just before archiving it still catches up when reopened`() = runTest {
+        val h = Harness(this)
+        val g = h.env.groups.create(trip, "Ana")
+        val ana = h.env.members.observeMembersOnce(g).single().id
+        val e = h.env.expenses.create(g, dinner(ana))
+        val job = h.engine.start(this, "uid-ana")
+        h.settle()
+        // Opened while listened (members only), then archived from its screen.
+        h.engine.refreshGroup(g)
+        h.settle()
+        h.env.groups.setArchived(g, archived = true)
+        h.settle()
+        h.remote.editByOtherDevice(
+            RemoteDoc.ExpenseDoc(
+                h.expenseOnServer(
+                    e
+                ).let { it.copy(title = "Theirs", meta = it.meta.copy(version = 2, updatedAt = h.serverNow())) }
+            )
+        )
+        h.settle()
+
+        h.engine.refreshGroup(g)
+        h.settle()
+        assertEquals("Theirs", h.env.expenses.get(e)!!.title)
+        job.cancel()
+    }
+
+    @Test
+    fun `unarchiving a group listens again from its cursor and gets what changed meanwhile`() = runTest {
+        val h = Harness(this)
+        val g = h.env.groups.create(trip, "Ana")
+        val ana = h.env.members.observeMembersOnce(g).single().id
+        val e = h.env.expenses.create(g, dinner(ana))
+        val job = h.engine.start(this, "uid-ana")
+        h.settle()
+        h.env.groups.setArchived(g, archived = true)
+        h.settle()
+        h.remote.editByOtherDevice(
+            RemoteDoc.ExpenseDoc(
+                h.expenseOnServer(
+                    e
+                ).let { it.copy(title = "Theirs", meta = it.meta.copy(version = 2, updatedAt = h.serverNow())) }
+            )
+        )
+        h.settle()
+
+        h.env.groups.setArchived(g, archived = false)
+        h.settle()
+        assertEquals("Theirs", h.env.expenses.get(e)!!.title)
+        assertEquals(1, h.remote.listening[g to RemoteCollection.CHANGELOG])
+        job.cancel()
+    }
+
+    @Test
+    fun `personal member fields, which have no history entry, arrive when the group is opened`() = runTest {
+        val h = Harness(this)
+        val g = h.env.groups.create(trip, "Ana")
+        val job = h.engine.start(this, "uid-ana")
+        h.settle()
+        val member = (
+            h.env.members.observeMembersOnce(
+                g
+            ).single().id
+            ).let { h.remote.doc(OutboxType.MEMBER, it) as RemoteDoc.MemberDoc }
+        // Like publishMyLinked from Ana's other phone: synced but out of the history.
+        val linked = member.member.copy(
+            linked = true,
+            meta = member.member.meta.copy(version = 2, updatedAt = h.serverNow())
+        )
+        h.remote.editByOtherDevice(RemoteDoc.MemberDoc(linked), logged = false)
+        h.settle()
+        assertFalse(h.env.members.observeMembersOnce(g).single().linked)
+
+        h.engine.refreshGroup(g)
+        h.settle()
+        assertTrue(h.env.members.observeMembersOnce(g).single().linked)
+        job.cancel()
+    }
+
+    @Test
+    fun `a fetch that fails offline is retried and the change is not lost`() = runTest {
         val h = Harness(this)
         val g = h.env.groups.create(trip, "Ana")
         val ana = h.env.members.observeMembersOnce(g).single().id
@@ -64,20 +253,87 @@ class SyncEngineTest {
         val job = h.engine.start(this, "uid-ana")
         h.settle()
 
-        val synced = h.remote.doc(OutboxType.EXPENSE, e) as RemoteDoc.ExpenseDoc
-        val newer = synced.expense.copy(
-            title = "Cena con postre",
-            meta = synced.expense.meta.copy(version = 3, updatedAt = h.env.nowMillis + 10_000),
+        h.remote.failingReads = 2
+        h.remote.editByOtherDevice(
+            RemoteDoc.ExpenseDoc(
+                h.expenseOnServer(
+                    e
+                ).let { it.copy(title = "Theirs", meta = it.meta.copy(version = 2, updatedAt = h.serverNow())) }
+            )
         )
-        h.remote.serverWrite(RemoteDoc.ExpenseDoc(newer))
         h.settle()
-        assertEquals("Cena con postre", h.env.expenses.get(e)!!.title)
-
-        h.remote.serverWrite(RemoteDoc.ExpenseDoc(newer.copy(title = "Old", meta = newer.meta.copy(version = 2))))
         h.settle()
-        assertEquals("Cena con postre", h.env.expenses.get(e)!!.title)
-        assertEquals(SyncState.SYNCED, h.env.expenses.get(e)!!.meta.syncState)
+        assertEquals(0, h.remote.failingReads)
+        assertEquals("Theirs", h.env.expenses.get(e)!!.title)
+        assertEquals(
+            1,
+            h.env.db.changeLogQueries.selectByGroup(g).executeAsList().count { it.id.startsWith("remote-log") }
+        )
         job.cancel()
+    }
+
+    @Test
+    fun `a fetched change over a pending local edit becomes a conflict`() = runTest {
+        val h = Harness(this)
+        val g = h.env.groups.create(trip, "Ana")
+        val ana = h.env.members.observeMembersOnce(g).single().id
+        val e = h.env.expenses.create(g, dinner(ana))
+        val job = h.engine.start(this, "uid-ana")
+        h.settle()
+
+        repeat(10) { h.remote.scripted += PushResult.Transient } // our edit stays pending
+        h.env.expenses.update(e, dinner(ana).copy(title = "Mine"))
+        h.remote.editByOtherDevice(
+            RemoteDoc.ExpenseDoc(
+                h.expenseOnServer(
+                    e
+                ).let { it.copy(title = "Theirs", meta = it.meta.copy(version = 2, updatedAt = h.serverNow())) }
+            )
+        )
+        h.settle()
+        assertEquals("Theirs", h.env.expenses.get(e)!!.title)
+        assertEquals(1L, h.env.db.conflictQueries.countAll().executeAsOne())
+        assertTrue(h.env.outbox().none { it.entity_type == "EXPENSE" })
+        h.remote.scripted.clear()
+        job.cancel()
+    }
+
+    @Test
+    fun `a new device downloads a group whole once and then only listens to its history`() = runTest {
+        val h = Harness(this)
+        val g = h.env.groups.create(trip, "Ana")
+        val ana = h.env.members.observeMembersOnce(g).single().id
+        val e = h.env.expenses.create(g, dinner(ana))
+        h.engine.pushNow()
+
+        // Same account on a second phone: same server, empty database.
+        val other = TestEnv(this)
+        val engine = SyncEngine(other.db, h.remote, other.ctx, other.dispatcher, Random(0))
+        val job = engine.start(this, "uid-ana")
+        h.settle()
+
+        assertEquals("Cena", other.expenses.get(e)!!.title)
+        assertEquals(listOf("Ana"), other.members.observeMembersOnce(g).map { it.name })
+        assertEquals(3, other.db.changeLogQueries.selectByGroup(g).executeAsList().size)
+        assertEquals(
+            listOf(
+                RemoteCollection.CHANGELOG,
+                RemoteCollection.MEMBERS,
+                RemoteCollection.EXPENSES,
+                RemoteCollection.TRANSFERS
+            ),
+            h.remote.pulls.map { it.second },
+        )
+        // Its entries came with the bootstrap: the listener fetches none of them again.
+        assertTrue(h.remote.fetches.isEmpty())
+        assertEquals(1, h.remote.listening[g to RemoteCollection.CHANGELOG])
+
+        // Restarted later: no second download.
+        job.cancel()
+        val again = engine.start(this, "uid-ana")
+        h.settle()
+        assertEquals(4, h.remote.pulls.size)
+        again.cancel()
     }
 
     @Test

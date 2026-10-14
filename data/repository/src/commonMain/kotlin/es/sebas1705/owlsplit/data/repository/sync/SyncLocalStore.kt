@@ -94,3 +94,17 @@ internal class SyncLocalStore(private val db: AppDatabase, private val writer: W
 
 /** Meta key marking a group that dropped me (Outbox.sq countUploadable reads the same prefix). */
 internal fun accessLostKey(groupId: String) = "accessLost:$groupId"
+
+/** What [GroupPuller] remembers between runs, besides the cursors. */
+internal class PullMarks(private val db: AppDatabase) {
+    /** The group had its first full pull by query; from then on the changelog drives what is fetched. */
+    fun isBootstrapped(groupId: String): Boolean =
+        db.metaQueries.get(bootstrappedKey(groupId)).executeAsOneOrNull() == "1"
+
+    fun setBootstrapped(groupId: String) = db.metaQueries.put(bootstrappedKey(groupId), "1")
+
+    /** The history entry is already here: written on this device, or pulled with what it points at. */
+    fun isChangeLogKnown(id: String): Boolean = db.changeLogQueries.selectById(id).executeAsOneOrNull() != null
+
+    private fun bootstrappedKey(groupId: String) = "pulled:$groupId"
+}

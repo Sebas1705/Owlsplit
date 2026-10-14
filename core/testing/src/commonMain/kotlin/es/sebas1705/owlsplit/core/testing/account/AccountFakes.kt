@@ -98,6 +98,13 @@ class FakeSync(var online: Boolean = true) : SyncControl {
     override suspend fun flush() = online
 
     override fun isAccessLost(groupId: String) = false
+
+    /** Groups whose catch-up was requested, in order. */
+    val refreshed = mutableListOf<String>()
+
+    override fun refreshGroup(groupId: String) {
+        refreshed += groupId
+    }
 }
 
 /** `users/{uid}` in memory. */

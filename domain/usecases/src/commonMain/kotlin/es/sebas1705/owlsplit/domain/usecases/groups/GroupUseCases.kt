@@ -14,6 +14,7 @@ import es.sebas1705.owlsplit.data.repository.MemberRepository
 import es.sebas1705.owlsplit.data.repository.TransferRepository
 import es.sebas1705.owlsplit.data.repository.account.AccountService
 import es.sebas1705.owlsplit.data.repository.account.ProfileRepository
+import es.sebas1705.owlsplit.data.repository.sync.SyncControl
 import es.sebas1705.owlsplit.domain.ledger.SuggestedPayment
 import es.sebas1705.owlsplit.domain.usecases.balances.GroupBalances
 import es.sebas1705.owlsplit.domain.usecases.balances.ObserveGroupBalances
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onStart
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
@@ -140,8 +142,12 @@ class ObserveGroupDetail(
     private val transfers: TransferRepository,
     private val balances: ObserveGroupBalances,
     private val accounts: AccountService,
+    private val sync: SyncControl? = null,
 ) {
-    /** Null once the group is gone (left, or never synced here). */
+    /**
+     * Null once the group is gone (left, or never synced here). Watching it asks the sync engine to
+     * catch the group up in the background (archived groups have no live listener); it never waits for it.
+     */
     operator fun invoke(groupId: String): Flow<GroupDetail?> = combine(
         combine(groups.observeGroup(groupId), members.observeMembers(groupId), accounts.session, ::Triple),
         expenses.observeExpenses(groupId),
@@ -152,7 +158,7 @@ class ObserveGroupDetail(
             val uid = session?.uid
             GroupDetail(it, memberList, expenseList, transferList, groupBalances, memberList.mine(uid)?.id, uid)
         }
-    }
+    }.onStart { sync?.refreshGroup(groupId) }
 }
 
 /** Creating and editing groups. The creator joins with the name (and pay handles) of their profile. */

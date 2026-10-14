@@ -80,6 +80,16 @@ sealed interface FetchResult {
     data object Missing : FetchResult
     data object NoAccess : FetchResult
     data object Transient : FetchResult
+
+    /** The document exists but cannot be read as its type (malformed, or from a newer app): retrying will not help. */
+    data object Unreadable : FetchResult
+}
+
+sealed interface PullResult {
+    /** The matching documents; unreadable ones are left out. */
+    data class Docs(val docs: List<RemoteDoc>) : PullResult
+    data object NoAccess : PullResult
+    data object Transient : PullResult
 }
 
 /** What the sync engine needs from the server. P6b implements it on Firestore (GitLive). */
@@ -95,6 +105,12 @@ interface RemoteStore {
     /** Every group whose `memberUids` contains [uid]; emits the full set on each change. */
     fun observeMyGroups(uid: String): Flow<List<RemoteDoc.GroupDoc>>
 
-    /** Documents of [collection] with `updatedAt >= sinceMillis`; emits the full set on each change. */
+    /**
+     * Documents of [collection] with `updatedAt >= sinceMillis`: the first emission brings them all,
+     * later ones at least those that changed. The engine only listens to the changelog this way.
+     */
     fun observe(groupId: String, collection: RemoteCollection, sinceMillis: Long): Flow<List<RemoteDoc>>
+
+    /** One-off read, from the server, of the documents of [collection] with `updatedAt >= sinceMillis`. */
+    suspend fun pull(groupId: String, collection: RemoteCollection, sinceMillis: Long): PullResult
 }

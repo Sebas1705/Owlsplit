@@ -10,8 +10,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -21,8 +27,9 @@ import kotlin.random.Random
 
 /**
  * Synchronises the local database with the server (docs/SYNC.md). [start] runs the upload loop
- * and the remote listeners until its scope is cancelled; [pushNow] is the hook for platform
- * triggers (WorkManager, app back in foreground).
+ * and the remote listeners ("my groups", plus one changelog listener per group not archived by me,
+ * see [GroupPuller]) until its scope is cancelled; [pushNow] is the hook for platform triggers
+ * (WorkManager, app back in foreground) and [refreshGroup] the one for a group on screen.
  */
 class SyncEngine(
     db: AppDatabase,
@@ -37,8 +44,10 @@ class SyncEngine(
     private val inFlight = InFlightUpload()
     private val processor = OutboxProcessor(local, applier, remote, random, inFlight)
     private val pushLock = Mutex()
+    private val puller = GroupPuller(local, PullMarks(db), remote, ::receive)
+    private val refreshRequests =
+        MutableSharedFlow<String>(extraBufferCapacity = 16, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
-    /** Number of writes waiting to be uploaded. */
     /** Pending changes that can still be uploaded: writes to groups that dropped me never will. */
     override val pendingCount: Flow<Long> = db.outboxQueries.countUploadable().asFlow().mapToOne(io)
 
@@ -83,8 +92,15 @@ class SyncEngine(
         }
     }
 
+    /** Queues a background catch-up of [groupId] (see [SyncControl.refreshGroup]); dropped while stopped. */
+    override fun refreshGroup(groupId: String) {
+        refreshRequests.tryEmit(groupId)
+    }
+
     private suspend fun pullMyGroups(uid: String) = coroutineScope {
         val listeners = HashMap<String, Job>()
+        val groups = MutableStateFlow<MyGroups?>(null)
+        launch { serveRefreshes(groups) }
         remote.observeMyGroups(uid).collect { docs ->
             // Before applying: once applied, a group that dropped me no longer lists me locally either.
             val known = local.syncedGroupIdsOf(uid)
@@ -92,22 +108,36 @@ class SyncEngine(
             val ids = docs.filterNot { it.group.meta.deleted }.mapTo(HashSet()) { it.id }
             (known - ids).forEach { local.setAccessLost(it, lost = true) }
             ids.filter(local::isAccessLost).forEach { local.setAccessLost(it, lost = false) }
-            (listeners.keys - ids).forEach { listeners.remove(it)?.cancel() }
-            (ids - listeners.keys).forEach { id -> listeners[id] = launch { pullGroup(id) } }
+            // Archived by me: no listener. It catches up when opened, or from its cursor once unarchived.
+            val active = docs.filter { it.id in ids && uid !in it.group.archivedBy }.mapTo(HashSet()) { it.id }
+            groups.value = MyGroups(ids, active)
+            (listeners.keys - active).forEach { listeners.remove(it)?.cancel() }
+            (active - listeners.keys).forEach { id -> listeners[id] = launch { puller.listen(id) } }
         }
     }
 
-    private suspend fun pullGroup(groupId: String) = coroutineScope {
-        RemoteCollection.entries.forEach { collection ->
-            launch {
-                val since = (local.cursor(groupId, collection) - CURSOR_MARGIN_MILLIS).coerceAtLeast(0)
-                remote.observe(groupId, collection, since).collect { docs ->
-                    docs.forEach(::receive)
-                    docs.maxOfOrNull { it.updatedAt }?.let { local.advanceCursor(groupId, collection, it) }
-                }
-            }
+    /**
+     * One catch-up at a time, at most one per group every [REFRESH_INTERVAL_MILLIS] (a screen reopened).
+     * A refresh while the group had a listener only pulled its members, so it does not hold back the
+     * changelog catch-up once I archive it.
+     */
+    private suspend fun serveRefreshes(groups: StateFlow<MyGroups?>) {
+        val refreshed = HashMap<String, Refresh>()
+        refreshRequests.collect { groupId ->
+            val mine = groups.filterNotNull().first()
+            val listened = groupId in mine.listened
+            val last = refreshed[groupId]
+            val now = local.now()
+            val recent = last != null && last.listened == listened && now - last.at < REFRESH_INTERVAL_MILLIS
+            if (groupId !in mine.all || recent) return@collect
+            if (puller.catchUp(groupId, listened) == PullStep.DONE) refreshed[groupId] = Refresh(now, listened)
         }
     }
+
+    private class Refresh(val at: Long, val listened: Boolean)
+
+    /** The groups that list me (not deleted) and, among them, those with a live listener (not archived by me). */
+    private class MyGroups(val all: Set<String>, val listened: Set<String>)
 
     /**
      * Applies a listener document, unless it is our own write: the echo of the upload in flight, or of
@@ -119,7 +149,6 @@ class SyncEngine(
     }
 
     private companion object {
-        /** Re-read a little before the cursor: concurrent writes can carry close server times. */
-        const val CURSOR_MARGIN_MILLIS = 5 * 60 * 1_000L
+        const val REFRESH_INTERVAL_MILLIS = 5 * 60 * 1_000L
     }
 }
