@@ -323,32 +323,25 @@ private fun Update(release: LatestRelease, onEvent: (HomeIntent) -> Unit) {
  */
 @Composable
 private fun StoreUpdateNotice(update: StoreUpdate, onEvent: (HomeIntent) -> Unit) {
-    val downloaded = update is StoreUpdate.Downloaded
-    val title = if (downloaded) Res.string.store_update_ready_title else Res.string.store_update_title
-    val body = if (downloaded) Res.string.store_update_ready_body else Res.string.store_update_body
-    OwlsplitContainer(title = stringResource(title)) {
-        Column(Modifier.padding(horizontal = Spacing.m), verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
-            Text(stringResource(body), style = Owlsplit.type.body, color = Owlsplit.colors.textSecondary)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.s)
-            ) {
-                if (downloaded) {
-                    PrimaryPillButton(
-                        stringResource(Res.string.store_update_restart),
-                        { onEvent(HomeIntent.CompleteStoreUpdate) },
-                        Modifier.weight(1f)
-                    )
-                } else {
-                    TextActionButton(stringResource(Res.string.nudge_dismiss), { onEvent(HomeIntent.DismissUpdate) })
-                    PrimaryPillButton(
-                        stringResource(Res.string.update_action),
-                        { onEvent(HomeIntent.StartStoreUpdate) },
-                        Modifier.weight(1f)
-                    )
-                }
-            }
-        }
+    if (update is StoreUpdate.Downloaded) {
+        // Downloaded: nothing to put off, only installing it is left.
+        CalloutCard(
+            icon = TablerIcons.Download,
+            title = stringResource(Res.string.store_update_ready_title),
+            body = stringResource(Res.string.store_update_ready_body),
+            actionLabel = stringResource(Res.string.store_update_restart),
+            onAction = { onEvent(HomeIntent.CompleteStoreUpdate) },
+        )
+    } else {
+        CalloutCard(
+            icon = TablerIcons.Download,
+            title = stringResource(Res.string.store_update_title),
+            body = stringResource(Res.string.store_update_body),
+            actionLabel = stringResource(Res.string.update_action),
+            onAction = { onEvent(HomeIntent.StartStoreUpdate) },
+            dismissLabel = stringResource(Res.string.nudge_dismiss),
+            onDismiss = { onEvent(HomeIntent.DismissUpdate) },
+        )
     }
 }
 
