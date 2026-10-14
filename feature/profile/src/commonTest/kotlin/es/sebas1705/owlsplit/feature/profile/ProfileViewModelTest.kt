@@ -85,7 +85,7 @@ class ProfileViewModelTest {
             DeleteAccount(NoGroups(), sync, accounts, remote, reset),
             ReauthenticateGoogle(google, accounts),
             if (switch) switchToGoogle() else null,
-            UnlinkGoogle(accounts, profiles, ledger.members),
+            UnlinkGoogle(accounts, profiles),
         )
 
         private fun switchToGoogle(): SwitchToGoogle {

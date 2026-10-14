@@ -23,10 +23,13 @@ internal class SyncLocalStore(private val db: AppDatabase, private val writer: W
 
     fun scheduleRetry(entry: Outbox, at: Long, error: String) = db.outboxQueries.scheduleRetry(at, error, entry.id)
 
-    fun isAccessLost(groupId: String): Boolean = db.metaQueries.get(accessKey(groupId)).executeAsOneOrNull() == "1"
+    fun isAccessLost(groupId: String): Boolean = db.metaQueries.get(accessLostKey(groupId)).executeAsOneOrNull() == "1"
 
     /** Lost: the group dropped me. Not lost: back in it (maybe with another account), it uploads again. */
-    fun setAccessLost(groupId: String, lost: Boolean) = db.metaQueries.put(accessKey(groupId), if (lost) "1" else "0")
+    fun setAccessLost(
+        groupId: String,
+        lost: Boolean
+    ) = db.metaQueries.put(accessLostKey(groupId), if (lost) "1" else "0")
 
     /** Local groups already known to the server that list [uid] as member. */
     fun syncedGroupIdsOf(uid: String): Set<String> =
@@ -87,6 +90,7 @@ internal class SyncLocalStore(private val db: AppDatabase, private val writer: W
             OutboxType.CHANGE_LOG -> Unit
         }
     }
-
-    private fun accessKey(groupId: String) = "accessLost:$groupId"
 }
+
+/** Meta key marking a group that dropped me (Outbox.sq countUploadable reads the same prefix). */
+internal fun accessLostKey(groupId: String) = "accessLost:$groupId"

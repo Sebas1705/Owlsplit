@@ -87,8 +87,8 @@ val accountModule = module {
     factory { SaveProfile(get(), get()) }
     factory { CompleteOnboarding(get(), get()) }
     factory { SignInWithGoogle(get(), get(), get()) }
-    factory { LinkGoogle(get(), get(), get(), get()) }
-    factory { UnlinkGoogle(get(), get(), get()) }
+    factory { LinkGoogle(get(), get(), get()) }
+    factory { UnlinkGoogle(get(), get()) }
     factory { CarryGroups(get(), get(), get(), get(), get(), get(), get()) }
     factory { SwitchToGoogle(get(), get(), get(), get(), get()) }
     factory { SyncMyLinked(get(), get()) }

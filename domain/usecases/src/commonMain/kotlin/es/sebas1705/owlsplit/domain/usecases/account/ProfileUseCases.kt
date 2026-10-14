@@ -106,44 +106,36 @@ class LinkGoogle(
     private val google: GoogleCredentials,
     private val accounts: AccountService,
     private val profiles: ProfileRepository,
-    private val members: MemberRepository? = null,
 ) {
     val isAvailable: Boolean get() = google.isAvailable
 
+    /**
+     * Nothing to sync afterwards: what the cloud has comes down and replaces this phone's profile
+     * (with nothing there, this phone's goes up to users/{uid}, which is not the sync queue). The
+     * "account with Google" badge on my members is caught up by [SyncMyLinked] when Home opens.
+     */
     suspend operator fun invoke(): GoogleOutcome {
         // One Google at a time: an account that already has it is not linked again (unlink first).
         if (accounts.currentSession()?.providers?.contains(GOOGLE_PROVIDER) == true) return GoogleOutcome.Done()
         val outcome = google.withToken(accounts::linkGoogle)
         if (outcome !is GoogleOutcome.Done) return outcome
-        // What the cloud has wins over this phone: it comes down and replaces the local profile (and
-        // how I am paid in my groups). With nothing in the cloud, this phone's profile goes up.
-        // Either way users/{uid} ends up listing the linked providers.
         val cloud = profiles.restore()
-        if (cloud != null) {
-            profiles.save(cloud)
-            members?.publishMyPayMethods(cloud.payMethods.orNull())
-        } else {
-            profiles.uploadCurrent()
-        }
-        members?.publishMyLinked(true)
+        if (cloud != null) profiles.save(cloud) else profiles.uploadCurrent()
         return GoogleOutcome.Done(cloud)
     }
 }
 
 /**
  * Removes Google from the account: one Google at a time, and only after unlinking can another be
- * linked. The groups stay; my members stop showing "linked to Google".
+ * linked. The groups stay and nothing goes up to the sync queue.
  */
 class UnlinkGoogle(
     private val accounts: AccountService,
     private val profiles: ProfileRepository,
-    private val members: MemberRepository? = null,
 ) {
     suspend operator fun invoke(): AccountResult = accounts.unlinkGoogle().also {
-        if (it == AccountResult.Done) {
-            profiles.uploadCurrent()
-            members?.publishMyLinked(false)
-        }
+        // users/{uid} lists the providers: no Google any more.
+        if (it == AccountResult.Done) profiles.uploadCurrent()
     }
 }
 

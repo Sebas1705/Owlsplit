@@ -28,6 +28,11 @@ SELECT * FROM outbox ORDER BY created_at, id;
 countAll:
 SELECT count(*) FROM outbox;
 
+-- What can still reach the server: not the writes to groups I lost access to (meta "accessLost:<id>").
+countUploadable:
+SELECT count(*) FROM outbox
+WHERE group_id NOT IN (SELECT substr(key, 12) FROM meta WHERE key LIKE 'accessLost:%' AND value = '1');
+
 selectById:
 SELECT * FROM outbox WHERE id = ?;
 
