@@ -65,6 +65,7 @@ class AccountUseCasesTest {
         override suspend fun save(session: Session, profile: UserProfile) = AccountResult.Done
         override suspend fun delete(uid: String) = AccountResult.Done.also { log += "deleteProfile $uid" }
         override suspend fun load(uid: String): UserProfile? = null
+        override suspend fun exists(uid: String): Boolean? = false
     }
 
     private val reset = DeviceReset { log += "reset" }

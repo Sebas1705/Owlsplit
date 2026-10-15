@@ -58,6 +58,13 @@ class FirestoreProfileRemote(
         null
     }
 
+    @Suppress("SwallowedException") // Unreachable or denied: unknown, so nothing gets overwritten.
+    override suspend fun exists(uid: String): Boolean? = try {
+        withTimeoutOrNull(timeout) { firestore.collection(USERS).document(uid).get().exists }
+    } catch (e: FirebaseFirestoreException) {
+        null
+    }
+
     /** Offline a write never completes (the SDK queues it): report it instead of waiting. */
     private suspend fun call(block: suspend () -> Unit): AccountResult = try {
         withTimeoutOrNull(timeout) { block() }?.let { AccountResult.Done } ?: AccountResult.Offline

@@ -42,4 +42,7 @@ interface ProfileRemote {
 
     /** The profile stored for [uid] (signing in on a new device); null if none or unreachable. */
     suspend fun load(uid: String): UserProfile?
+
+    /** Whether [uid] has a profile stored; null when the server cannot be reached to tell. */
+    suspend fun exists(uid: String): Boolean?
 }

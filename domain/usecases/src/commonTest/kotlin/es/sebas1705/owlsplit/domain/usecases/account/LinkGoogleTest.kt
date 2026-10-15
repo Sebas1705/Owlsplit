@@ -54,7 +54,7 @@ class LinkGoogleTest {
     }
 
     @Test
-    fun aFailedLinkTouchesNothing() = runTest {
+    fun withoutSwitchingAnAccountInUseIsReportedAndTouchesNothing() = runTest {
         val accounts = FakeAccounts().apply { linkResult = AccountResult.CredentialInUse }
         val profiles = FakeProfiles(local, remote = cloud)
         val outcome = LinkGoogle(FakeGoogle(), accounts, profiles)()

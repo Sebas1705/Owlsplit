@@ -21,8 +21,15 @@ interface ProfileRepository {
     /** The profile saved on the server for the signed-in account (after signing in on a new device). */
     suspend fun restore(): UserProfile?
 
-    /** Copies the local profile to the server, if there is one and a session (also after signing in). */
+    /** Copies the local profile to the server, if there is one and a session. */
     suspend fun uploadCurrent(): AccountResult
+
+    /**
+     * After signing in: copies the local profile up only when the account has none on the server
+     * (a first launch that was offline). An existing one is never overwritten, since a reinstall's
+     * fresh profile would erase it before it could be restored.
+     */
+    suspend fun uploadIfMissing(): AccountResult
 }
 
 class ProfileRepositoryImpl(
@@ -51,5 +58,15 @@ class ProfileRepositoryImpl(
         val session = accounts.currentSession() ?: return AccountResult.Offline
         val profile = profile.first() ?: return AccountResult.Done
         return remote.save(session, profile)
+    }
+
+    override suspend fun uploadIfMissing(): AccountResult {
+        val session = accounts.currentSession() ?: return AccountResult.Offline
+        return when (remote.exists(session.uid)) {
+            false -> uploadCurrent()
+            true -> AccountResult.Done
+            // Unreachable: better to upload nothing than to risk overwriting it.
+            null -> AccountResult.Offline
+        }
     }
 }
