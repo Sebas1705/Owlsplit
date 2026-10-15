@@ -1,6 +1,15 @@
 package es.sebas1705.owlsplit.feature.groups.stats
 
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Color
+import es.sebas1705.owlsplit.core.ui.components.Avatar
+import es.sebas1705.owlsplit.feature.groups.resources.stats_count
+import es.sebas1705.owlsplit.feature.groups.resources.stats_per_day_value
+import es.sebas1705.owlsplit.feature.groups.resources.stats_spent
+import org.jetbrains.compose.resources.pluralStringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -120,10 +129,10 @@ fun StatsScreen(
             contentPadding = PaddingValues(Spacing.l),
             verticalArrangement = Arrangement.spacedBy(Spacing.l),
         ) {
-            item { Figures(stats, currency, format) }
+            item { Hero(stats, currency, format) }
+            item { CategoryDonut(stats.categories, currency, format) }
+            if (stats.months.size > 1) item { MonthColumns(stats.months, currency, format) }
             item { People(detail, stats, currency, format) }
-            item { CategoryBars(stats.categories, currency, format) }
-            if (stats.months.size > 1) item { MonthBars(stats.months, currency, format) }
         }
     }
 }
@@ -155,28 +164,20 @@ private fun ExportMenu(onExport: (pdf: Boolean) -> Unit) {
 }
 
 @Composable
-private fun Figures(stats: GroupStats, currency: Currency, format: MoneyFormat) {
-    OwlsplitContainer {
-        Row(Modifier.padding(Spacing.m), horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
-            Figure(
-                stringResource(Res.string.stats_total),
-                format.format(stats.totalMinor, currency),
-                Modifier.weight(1f)
-            )
-            Figure(stringResource(Res.string.stats_expenses), stats.expenseCount.toString(), Modifier.weight(1f))
-            Figure(
-                stringResource(Res.string.stats_per_day),
-                format.format(stats.perDayMinor, currency),
-                Modifier.weight(1f)
-            )
-        }
-    }
+private fun Hero(stats: GroupStats, currency: Currency, format: MoneyFormat) {
+    val count = pluralStringResource(Res.plurals.stats_count, stats.expenseCount, stats.expenseCount)
+    val perDay = stringResource(Res.string.stats_per_day_value, format.format(stats.perDayMinor, currency))
+    SpendHero(stringResource(Res.string.stats_spent), stats.totalMinor, currency, format, "$count · $perDay")
 }
 
+/** Each person: what they paid against their share, as two bars, and the balance that leaves. */
 @Composable
 private fun People(detail: GroupDetail, stats: GroupStats, currency: Currency, format: MoneyFormat) {
+    val largest = stats.members.maxOfOrNull { maxOf(it.paidMinor, it.shareMinor) }?.coerceAtLeast(1) ?: return
+    val colors = Owlsplit.colors
     OwlsplitContainer(title = stringResource(Res.string.stats_people)) {
         stats.members.forEach { member ->
+            val name = detail.members.nameOf(member.memberId)
             val balance = detail.balances?.balances?.get(member.memberId) ?: (member.paidMinor - member.shareMinor)
             Row(
                 Modifier
@@ -185,13 +186,13 @@ private fun People(detail: GroupDetail, stats: GroupStats, currency: Currency, f
                     .padding(horizontal = Spacing.m, vertical = Spacing.s)
                     .semantics(mergeDescendants = true) {},
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.m),
             ) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        detail.members.nameOf(member.memberId),
-                        style = Owlsplit.type.bodyStrong,
-                        color = Owlsplit.colors.textPrimary,
-                    )
+                Avatar(name)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    Text(name, style = Owlsplit.type.bodyStrong, color = colors.textPrimary)
+                    PersonBar(member.paidMinor.toFloat() / largest, colors.accent)
+                    PersonBar(member.shareMinor.toFloat() / largest, colors.accent.copy(alpha = SHARE_ALPHA))
                     Text(
                         stringResource(
                             Res.string.stats_paid_share,
@@ -199,15 +200,28 @@ private fun People(detail: GroupDetail, stats: GroupStats, currency: Currency, f
                             format.format(member.shareMinor, currency),
                         ),
                         style = Owlsplit.type.caption,
-                        color = Owlsplit.colors.textSecondary,
+                        color = colors.textSecondary,
                     )
                 }
                 Text(
                     format.format(balance, currency, showPlus = true),
                     style = Owlsplit.type.bodyStrong,
-                    color = if (balance > 0) Owlsplit.colors.positive else Owlsplit.colors.textPrimary,
+                    color = if (balance > 0) colors.positive else colors.textPrimary,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun PersonBar(fraction: Float, color: Color) {
+    Box(Modifier.fillMaxWidth().height(6.dp).background(Owlsplit.colors.surfaceVariant, RoundedCornerShape(3.dp))) {
+        if (fraction > 0f) {
+            Box(
+                Modifier.fillMaxWidth(
+                    fraction.coerceIn(MIN_BAR, 1f)
+                ).height(6.dp).background(color, RoundedCornerShape(3.dp)),
+            )
         }
     }
 }
@@ -253,3 +267,6 @@ private fun reportLabels(): ReportLabels {
         transferTitle = { from, to -> transferTitle.replace("\u0001", from).replace("\u0002", to) },
     )
 }
+
+private const val SHARE_ALPHA = 0.35f
+private const val MIN_BAR = 0.02f

@@ -10,7 +10,10 @@ import es.sebas1705.owlsplit.domain.usecases.stats.MySpending
 import es.sebas1705.owlsplit.domain.usecases.stats.SpendingGroup
 import es.sebas1705.owlsplit.domain.usecases.stats.SpendingPeriod
 import es.sebas1705.owlsplit.domain.usecases.stats.SpendingSource
+import es.sebas1705.owlsplit.domain.usecases.stats.GroupStats
 import es.sebas1705.owlsplit.feature.groups.stats.MySpendingScreen
+import es.sebas1705.owlsplit.feature.groups.stats.StatsScreen
+import es.sebas1705.owlsplit.feature.groups.stats.StatsState
 import es.sebas1705.owlsplit.feature.groups.stats.MySpendingState
 import es.sebas1705.owlsplit.core.ui.format.LocalMoneyFormat
 import es.sebas1705.owlsplit.core.ui.format.MoneyFormat
@@ -279,4 +282,32 @@ class GroupsScreenshotTest {
             it.copy(spending = it.spending!!.copy(expenseCount = 0))
         }
     )
+
+    private fun summary(name: String, dark: Boolean = false) {
+        val stats = GroupStats.of("EUR", members, detail.expenses + septemberDinner)
+        compose.setContent {
+            OwlsplitTheme(darkTheme = dark) {
+                StatsScreen(
+                    StatsState(
+                        loaded = true,
+                        detail = detail.copy(expenses = detail.expenses + septemberDinner),
+                        stats = stats
+                    ),
+                    {},
+                    { _, _, _ -> true },
+                )
+            }
+        }
+        compose.assertAccessible()
+        compose.onRoot().captureRoboImage("screenshots/group_summary_$name.png")
+    }
+
+    private val septemberDinner =
+        expense("e4", "Cena de bienvenida", ExpenseCategory.FOOD, 12_000, "luis", LocalDate(2026, 9, 28))
+
+    @Test
+    fun summary() = summary("light")
+
+    @Test
+    fun summaryDark() = summary("dark", dark = true)
 }

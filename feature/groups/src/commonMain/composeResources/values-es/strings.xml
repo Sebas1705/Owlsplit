@@ -175,4 +175,7 @@
         <item quantity="other">%1$d gastos</item>
     </plurals>
     <string name="stats_per_day_value">%1$s al día</string>
+    <string name="stats_percent">%1$d %</string>
+    <string name="stats_rest">Otras</string>
+    <string name="spending_paid_value">Has pagado %1$s</string>
 </resources>

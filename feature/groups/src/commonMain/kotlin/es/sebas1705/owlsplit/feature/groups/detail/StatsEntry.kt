@@ -26,7 +26,11 @@ import compose.icons.TablerIcons
 import compose.icons.tablericons.ChartBar
 import compose.icons.tablericons.ChevronRight
 import es.sebas1705.owlsplit.core.money.Currency
+import es.sebas1705.owlsplit.core.ui.components.ChartSlice
 import es.sebas1705.owlsplit.core.ui.components.OwlsplitContainer
+import es.sebas1705.owlsplit.core.ui.components.StackedBar
+import es.sebas1705.owlsplit.core.ui.components.chartColors
+import es.sebas1705.owlsplit.core.ui.components.chartRestColor
 import es.sebas1705.owlsplit.core.ui.format.MoneyFormat
 import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
 import es.sebas1705.owlsplit.core.ui.theme.Sizes
@@ -59,8 +63,13 @@ internal fun StatsEntry(detail: GroupDetail, currency: Currency, format: MoneyFo
         stringResource(Res.string.stats_per_day_value, format.format(stats.perDayMinor, currency))
     val open = stringResource(Res.string.stats_open)
     val spent = stringResource(Res.string.stats_spent)
+    val palette = chartColors(Owlsplit.colors)
+    val rest = chartRestColor(Owlsplit.colors)
+    val slices = stats.categories.mapIndexed { i, category ->
+        ChartSlice(category.amountMinor.toFloat(), palette.getOrElse(i) { rest })
+    }
     OwlsplitContainer {
-        Row(
+        Column(
             Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onOpen)
@@ -70,22 +79,33 @@ internal fun StatsEntry(detail: GroupDetail, currency: Currency, format: MoneyFo
                     contentDescription = "$spent $total, $details. $open"
                     role = Role.Button
                 },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.m),
+            verticalArrangement = Arrangement.spacedBy(Spacing.m),
         ) {
-            Box(
-                Modifier.size(40.dp).background(Owlsplit.colors.surfaceVariant, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(TablerIcons.ChartBar, null, tint = Owlsplit.colors.accent, modifier = Modifier.size(22.dp))
-            }
-            Column(Modifier.weight(1f)) {
-                Text(spent, style = Owlsplit.type.caption, color = Owlsplit.colors.textSecondary)
-                Text(total, style = Owlsplit.type.bodyStrong, color = Owlsplit.colors.textPrimary)
-                Text(details, style = Owlsplit.type.caption, color = Owlsplit.colors.textSecondary)
-            }
-            Text(stringResource(Res.string.stats_title), style = Owlsplit.type.label, color = Owlsplit.colors.accent)
-            Icon(TablerIcons.ChevronRight, null, tint = Owlsplit.colors.accent, modifier = Modifier.size(18.dp))
+            Summary(spent, total, details)
+            if (slices.size > 1) StackedBar(slices, height = 8.dp)
         }
+    }
+}
+
+@Composable
+private fun Summary(spent: String, total: String, details: String) {
+    Row(
+        Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.m),
+    ) {
+        Box(
+            Modifier.size(40.dp).background(Owlsplit.colors.surfaceVariant, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(TablerIcons.ChartBar, null, tint = Owlsplit.colors.accent, modifier = Modifier.size(22.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(spent, style = Owlsplit.type.caption, color = Owlsplit.colors.textSecondary)
+            Text(total, style = Owlsplit.type.bodyStrong, color = Owlsplit.colors.textPrimary)
+            Text(details, style = Owlsplit.type.caption, color = Owlsplit.colors.textSecondary)
+        }
+        Text(stringResource(Res.string.stats_title), style = Owlsplit.type.label, color = Owlsplit.colors.accent)
+        Icon(TablerIcons.ChevronRight, null, tint = Owlsplit.colors.accent, modifier = Modifier.size(18.dp))
     }
 }
