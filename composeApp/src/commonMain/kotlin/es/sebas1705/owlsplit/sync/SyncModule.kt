@@ -57,7 +57,8 @@ class SyncStarter(
                 } else {
                     // Scoped to this user: a new auth state cancels the engine of the previous one.
                     coroutineScope {
-                        launch { profiles.value.uploadCurrent() }
+                        // Never over an existing profile: a reinstall that signs in must get it back, not erase it.
+                        launch { profiles.value.uploadIfMissing() }
                         engine.value.start(this, user.uid)
                     }
                 }

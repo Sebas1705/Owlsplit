@@ -25,7 +25,7 @@ import kotlin.time.Duration.Companion.seconds
 class SwitchToGoogleTest {
     // A new install that started without signing in; the Google account already exists elsewhere.
     private val ledger = InMemoryLedger(uid = "uid-ana")
-    private val fake = FakeAccounts()
+    private val fake = FakeAccounts().apply { linkResult = AccountResult.CredentialInUse }
 
     /** Signing in changes who the ledger writes as, like the app's session does. */
     private val accounts = object : AccountService by fake {
@@ -47,16 +47,21 @@ class SwitchToGoogleTest {
         JoinGroup(invites, ledger.groups, accounts, arrival = 1.seconds),
         ClaimMember(ledger.members, profiles, accounts),
     )
-    private fun switch() = SwitchToGoogle(FakeGoogle(), accounts, profiles, sync, carry)
+    private val google = FakeGoogle()
+
+    /** "Link Google" with a Google account that already has data: what the app runs. */
+    private fun link() = LinkGoogle(google, accounts, profiles, SwitchToGoogle(accounts, profiles, sync, carry))
 
     @Test
     fun signsInToTheExistingAccountAndTakesThisDevicesGroupsWithTheSameMember() = runTest {
         val g = ledger.groups.create(GroupInput("Piso nuevo", "home", "GREEN", "EUR"), "Ana")
         val mine = ledger.members.observeMembers(g).first().single()
 
-        val outcome = switch()()
+        val outcome = link()()
 
         assertEquals(GoogleOutcome.Done(UserProfile("Ana G", "accent:GREEN", "EUR")), outcome)
+        // One Google sheet: its sign-in is reused, nothing asks again.
+        assertEquals(1, google.requests)
         assertEquals("uid-google", accounts.currentSession()!!.uid)
         assertEquals(UserProfile("Ana G", "accent:GREEN", "EUR"), profiles.profile.value)
         val group = ledger.groups.observeGroup(g).first()!!
@@ -73,7 +78,7 @@ class SwitchToGoogleTest {
         val g = ledger.groups.create(GroupInput("Piso nuevo", "home", "GREEN", "EUR"), "Ana")
         sync.online = false
 
-        val outcome = switch()()
+        val outcome = link()()
 
         assertEquals(GoogleOutcome.Failed(AccountResult.Offline), outcome)
         assertFalse(fake.calls.any { it.startsWith("signInWithGoogle") })
@@ -86,7 +91,7 @@ class SwitchToGoogleTest {
         val mine = ledger.members.observeMembers(g).first().single()
         fake.signInResult = AccountResult.Failed("network")
 
-        switch()()
+        link()()
 
         assertEquals(listOf("uid-ana"), ledger.groups.observeGroup(g).first()!!.memberUids)
         assertEquals("uid-ana", ledger.members.observeMembers(g).first().single { it.id == mine.id }.userUid)

@@ -101,11 +101,17 @@ class SignInWithGoogle(
     }
 }
 
-/** Links Google to the anonymous account: same uid, same data. */
+/**
+ * Links Google to the anonymous account: same uid, same data. If that Google account already has
+ * data (a reinstall), it signs in to it instead with the same Google sign-in ([switch]): one sign-in,
+ * no question, and what the cloud has wins.
+ */
 class LinkGoogle(
     private val google: GoogleCredentials,
     private val accounts: AccountService,
     private val profiles: ProfileRepository,
+    /** Null in tests that do not need it: then an existing Google account is only reported. */
+    private val switch: SwitchToGoogle? = null,
 ) {
     val isAvailable: Boolean get() = google.isAvailable
 
@@ -117,8 +123,14 @@ class LinkGoogle(
     suspend operator fun invoke(): GoogleOutcome {
         // One Google at a time: an account that already has it is not linked again (unlink first).
         if (accounts.currentSession()?.providers?.contains(GOOGLE_PROVIDER) == true) return GoogleOutcome.Done()
-        val outcome = google.withToken(accounts::linkGoogle)
+        var switched: Switched? = null
+        val outcome = google.withToken { idToken, accessToken ->
+            val linked = accounts.linkGoogle(idToken, accessToken)
+            if (linked != AccountResult.CredentialInUse || switch == null) return@withToken linked
+            switch.signIn(idToken, accessToken).also { switched = it }.result
+        }
         if (outcome !is GoogleOutcome.Done) return outcome
+        switched?.let { return GoogleOutcome.Done(it.restored) }
         val cloud = profiles.restore()
         if (cloud != null) profiles.save(cloud) else profiles.uploadCurrent()
         return GoogleOutcome.Done(cloud)

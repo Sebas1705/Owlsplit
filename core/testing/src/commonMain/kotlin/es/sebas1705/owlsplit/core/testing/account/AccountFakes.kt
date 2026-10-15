@@ -83,13 +83,19 @@ class FakeProfiles(initial: UserProfile? = null, private val remote: UserProfile
     override suspend fun restore(): UserProfile? = remote
 
     override suspend fun uploadCurrent() = AccountResult.Done
+
+    override suspend fun uploadIfMissing() = AccountResult.Done
 }
 
 class FakeGoogle(
     override val isAvailable: Boolean = true,
     var next: GoogleTokenResult = GoogleTokenResult.Token("google-token"),
 ) : GoogleCredentials {
-    override suspend fun requestIdToken() = next
+    /** How many times the Google sheet was shown. */
+    var requests = 0
+        private set
+
+    override suspend fun requestIdToken() = next.also { requests++ }
 }
 
 class FakeSync(var online: Boolean = true) : SyncControl {
@@ -119,6 +125,8 @@ class FakeProfileRemote : ProfileRemote {
     }
 
     override suspend fun load(uid: String): UserProfile? = null
+
+    override suspend fun exists(uid: String): Boolean? = false
 }
 
 /** A user without groups (account flows that only need to list them). */

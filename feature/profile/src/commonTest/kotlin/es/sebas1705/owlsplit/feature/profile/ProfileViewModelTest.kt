@@ -80,11 +80,10 @@ class ProfileViewModelTest {
             ObserveAccount(accounts, profiles),
             display,
             SaveProfile(profiles, ledger.members),
-            LinkGoogle(google, accounts, profiles),
+            LinkGoogle(google, accounts, profiles, if (switch) switchToGoogle() else null),
             SignOut(sync, accounts, reset),
             DeleteAccount(NoGroups(), sync, accounts, remote, reset),
             ReauthenticateGoogle(google, accounts),
-            if (switch) switchToGoogle() else null,
             UnlinkGoogle(accounts, profiles),
         )
 
@@ -99,7 +98,7 @@ class ProfileViewModelTest {
                 JoinGroup(invites, ledger.groups, accounts),
                 ClaimMember(ledger.members, profiles, accounts),
             )
-            return SwitchToGoogle(google, accounts, profiles, sync, carry)
+            return SwitchToGoogle(accounts, profiles, sync, carry)
         }
     }
 
@@ -173,14 +172,13 @@ class ProfileViewModelTest {
     }
 
     @Test
-    fun aGoogleAccountWithDataIsOfferedAndSigningInToItSwitchesTheAccount() = runTest {
+    fun aGoogleAccountWithDataIsSignedInToWithOneGoogleSheetAndNoQuestion() = runTest {
         val env = Env(switch = true)
         env.accounts.linkResult = AccountResult.CredentialInUse
         env.vm.onEvent(ProfileIntent.Link)
-        assertEquals(ProfileDialog.SWITCH_ACCOUNT, env.vm.uiState.value.dialog)
 
-        env.vm.onEvent(ProfileIntent.ConfirmSwitch)
         assertEquals(null, env.vm.uiState.value.dialog)
+        assertEquals(1, env.google.requests)
         assertEquals("uid-google", env.accounts.currentSession()!!.uid)
         assertFalse(env.vm.uiState.value.isAnonymous)
         assertEquals(ProfileMessage.LINKED, env.vm.uiState.value.message)

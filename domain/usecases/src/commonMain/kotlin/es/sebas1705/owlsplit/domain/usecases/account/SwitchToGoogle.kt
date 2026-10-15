@@ -2,6 +2,7 @@ package es.sebas1705.owlsplit.domain.usecases.account
 
 import es.sebas1705.owlsplit.data.models.AccountResult
 import es.sebas1705.owlsplit.data.models.PreviewResult
+import es.sebas1705.owlsplit.data.models.UserProfile
 import es.sebas1705.owlsplit.data.repository.GroupRepository
 import es.sebas1705.owlsplit.data.repository.MemberRepository
 import es.sebas1705.owlsplit.data.repository.account.AccountService
@@ -53,35 +54,36 @@ class CarryGroups(
     }
 }
 
+/** How [SwitchToGoogle] went: [restored] is the profile of the account it signed in to. */
+data class Switched(val result: AccountResult, val restored: UserProfile? = null)
+
 /**
- * "Link Google" found an account that already has Owlsplit data (a new install that started without
- * signing in): sign in to it instead. Its groups come down with the sync; the groups made here
+ * "Link Google" found that this Google account already has Owlsplit data (a reinstall that started
+ * without signing in): sign in to it with that same Google sign-in, without asking again. Its groups
+ * come down with the sync and its profile replaces the one on this phone; the groups made here
  * meanwhile go along with it. If signing in fails, they are rejoined by the account that left them.
  */
 class SwitchToGoogle(
-    private val google: GoogleCredentials,
     private val accounts: AccountService,
     private val profiles: ProfileRepository,
     private val sync: SyncControl,
     private val carry: CarryGroups,
 ) {
-    suspend operator fun invoke(): GoogleOutcome {
+    /** With the tokens of the Google sign-in that [LinkGoogle] could not link. */
+    suspend fun signIn(idToken: String, accessToken: String?): Switched {
         val local = profiles.profile.first()
-        var carried = emptyList<CarriedGroup>()
-        val outcome = google.withToken { idToken, accessToken ->
-            // Everything this account wrote must be on the server before it gives way.
-            if (!sync.flush()) return@withToken AccountResult.Offline
-            carried = carry.leaveAll() ?: return@withToken AccountResult.Offline
-            if (!sync.flush()) return@withToken AccountResult.Offline
-            accounts.signInWithGoogle(idToken, accessToken)
-        }
-        if (outcome !is GoogleOutcome.Done) {
+        // Everything this account wrote must be on the server before it gives way.
+        if (!sync.flush()) return Switched(AccountResult.Offline)
+        val carried = carry.leaveAll() ?: return Switched(AccountResult.Offline)
+        val result = if (sync.flush()) accounts.signInWithGoogle(idToken, accessToken) else AccountResult.Offline
+        if (result != AccountResult.Done) {
             carry.rejoinAll(carried)
-            return outcome
+            return Switched(result)
         }
+        // The cloud wins: the profile on this phone only stands in when the account has none.
         val restored = profiles.restore()
         (restored ?: local)?.let { profiles.save(it) }
         carry.rejoinAll(carried)
-        return GoogleOutcome.Done(restored)
+        return Switched(AccountResult.Done, restored)
     }
 }
