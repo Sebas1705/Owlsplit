@@ -4,7 +4,7 @@
 |---|---|---|
 | `composeApp` | Android/iOS entry point (iOS: `iosApp/project.yml` with XcodeGen; sharing, scanner, Google via `GoogleSignInBridge`), root DI, `AppConfig` and `isDebugBuild`, Crashlytics (`CrashReporting`), App Check (`AppCheckSetup` per Android build type, `iOSApp.swift`), app language (`LocalAppLocale`), navigation (onboarding → Home · Activity · Stats · Profile tabs), `SyncStarter`, Google with Credential Manager, `TextSharer` (share sheet), `AndroidQrScanner`, App Links (`IncomingInvites`), Google Play In-App Updates on Play installs (`PlayStoreUpdates`, flexible flow) | P9 |
 | `core:common` | MVI base (`execute` errors go to `UnexpectedErrors`), `AppResult`, utilities | — |
-| `core:ui` | `OwlsplitTheme` (tokens, Inter, shapes), `MoneyFormat` and `LocalMoneyFormat`, components (including `QrCode` and `SwitchRow`) and `DesignCatalog`; Roborazzi screenshots | P9 |
+| `core:ui` | `OwlsplitTheme` (tokens, Inter, shapes), `MoneyFormat` and `LocalMoneyFormat`, components (including `QrCode`, `SwitchRow` and charts: `DonutChart`, `StackedBar`, `ColumnChart`) and `DesignCatalog`; Roborazzi screenshots | P9 |
 | `core:security` | `SecureStorage` | — |
 | `core:network` | Per-platform Ktor client | P9 (exchange rates) |
 | `core:datastore` | Preferences (`AppPreferences`: theme, language, local profile, link reminder; `DisplaySettings`) | — |

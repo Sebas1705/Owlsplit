@@ -38,6 +38,9 @@ class DateTexts(private val pattern: String, private val months: List<String>) {
     /** [month] is 1..12. */
     fun month(year: Int, month: Int): String = "${months[month - 1]} $year"
 
+    /** "jul" / "Jul": [month] is 1..12. */
+    fun monthName(month: Int): String = months[month - 1]
+
     private companion object {
         const val DAY = "\u0001"
         const val MONTH = "\u0002"
