@@ -55,4 +55,7 @@
     <string name="repeat_month">Every month</string>
     <string name="repeat_year">Every year</string>
     <string name="repeat_hint">It is added on its own on each date, with the amount and split of the latest one. To stop it, choose “Never” on any of them.</string>
+    <string name="quick_label">Or type it</string>
+    <string name="quick_placeholder">Ana paid 45 for dinner with Luis</string>
+    <string name="quick_apply">Fill in</string>
 </resources>

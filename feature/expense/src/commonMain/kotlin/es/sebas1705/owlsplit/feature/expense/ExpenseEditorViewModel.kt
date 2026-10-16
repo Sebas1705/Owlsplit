@@ -16,6 +16,7 @@ import es.sebas1705.owlsplit.domain.usecases.expenses.DeleteExpense
 import es.sebas1705.owlsplit.domain.usecases.expenses.DraftCheck
 import es.sebas1705.owlsplit.domain.usecases.expenses.ExpenseDraft
 import es.sebas1705.owlsplit.domain.usecases.expenses.ExpenseDrafts
+import es.sebas1705.owlsplit.domain.usecases.expenses.QuickEntryParser
 import es.sebas1705.owlsplit.domain.usecases.expenses.ExpensePayers
 import es.sebas1705.owlsplit.domain.usecases.expenses.RepeatUnit
 import es.sebas1705.owlsplit.domain.usecases.expenses.SaveExpense
@@ -54,6 +55,8 @@ data class ExpenseEditorState(
     val payerTexts: Map<String, String> = emptyMap(),
     val rate: RateState = RateState(),
     val confirmDelete: Boolean = false,
+    /** A new expense typed as a sentence ("Ana pagó 45 de cena con Luis"), until it fills the form. */
+    val quickText: String = "",
     /** Saved or deleted: the editor closes. */
     val done: Boolean = false,
 ) : MVIBaseState {
@@ -70,6 +73,8 @@ data class ExpenseEditorState(
 
 sealed interface ExpenseEditorIntent : MVIBaseIntent {
     data class Key(val key: KeypadKey) : ExpenseEditorIntent
+    data class QuickTextChanged(val text: String) : ExpenseEditorIntent
+    data object ApplyQuickText : ExpenseEditorIntent
     data class KeypadOpen(val open: Boolean) : ExpenseEditorIntent
     data class TitleChanged(val title: String) : ExpenseEditorIntent
     data class CategoryChanged(val category: ExpenseCategory) : ExpenseEditorIntent
@@ -138,6 +143,9 @@ class ExpenseEditorViewModel(
     override fun intentHandler(intent: ExpenseEditorIntent): Job = execute {
         when (intent) {
             is ExpenseEditorIntent.Key -> typeAmount(intent.key)
+            is ExpenseEditorIntent.QuickTextChanged ->
+                updateState { it.copy(quickText = intent.text.take(MAX_QUICK_TEXT)) }
+            ExpenseEditorIntent.ApplyQuickText -> applyQuickText()
             is ExpenseEditorIntent.KeypadOpen -> updateState { it.copy(keypadOpen = intent.open) }
             is ExpenseEditorIntent.TitleChanged ->
                 updateDraft { it.copy(title = intent.title.take(ExpenseDrafts.MAX_TITLE)) }
@@ -174,6 +182,32 @@ class ExpenseEditorViewModel(
             draft = draft.copy(values = ExpenseDrafts.defaults(SplitType.EXACT, state.included(), amount.minorUnits))
         }
         state.copy(amount = amount).withDraft(draft)
+    }
+
+    /**
+     * Fills the form from the sentence: only what it says changes (amount, title, category, who paid,
+     * who takes part), and the form stays open to check it before saving.
+     */
+    private fun applyQuickText() = updateState { state ->
+        val decimals = Currency.of(state.currency).decimals
+        val entry = QuickEntryParser.parse(state.quickText, state.members, state.myMemberId, decimals)
+        var draft = state.draft
+        var amount = state.amount
+        entry.amountMinor?.let { minor ->
+            amount = AmountInput.of(minor, decimals)
+            draft = ExpensePayers.withAmount(draft, minor)
+        }
+        entry.title?.let { draft = draft.copy(title = it) }
+        entry.category?.let { draft = draft.copy(category = it) }
+        entry.payerId?.let { draft = ExpensePayers.withPayer(draft, it) }
+        entry.participantIds?.let { ids ->
+            val included = state.members.filter { it.id in ids }
+            if (included.isNotEmpty()) {
+                draft = draft.copy(values = ExpenseDrafts.defaults(draft.splitType, included, draft.amountMinor))
+            }
+        }
+        valuesEdited = false
+        state.copy(amount = amount, quickText = "", keypadOpen = false).withDraft(draft)
     }
 
     private suspend fun changeCurrency(code: String) {
@@ -270,5 +304,6 @@ class ExpenseEditorViewModel(
 
     private companion object {
         const val PERCENT_DECIMALS = 2
+        const val MAX_QUICK_TEXT = 200
     }
 }

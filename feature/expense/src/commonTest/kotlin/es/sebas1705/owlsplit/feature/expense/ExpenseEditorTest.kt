@@ -111,6 +111,28 @@ class ExpenseEditorTest {
     }
 
     @Test
+    fun aTypedSentenceFillsTheFormToCheckBeforeSaving() = runTest {
+        val (g, ana, luis) = group()
+        ledger.members.add(g, MemberInput("Marta"))
+        val vm = editor(g)
+
+        vm.onEvent(ExpenseEditorIntent.QuickTextChanged("Luis pagó 45 de cena con Ana"))
+        vm.onEvent(ExpenseEditorIntent.ApplyQuickText)
+
+        val state = vm.uiState.value
+        assertEquals(4_500, state.draft.amountMinor)
+        assertEquals("45", state.amount.text(','))
+        assertEquals("Cena", state.draft.title)
+        assertEquals(ExpenseCategory.FOOD, state.draft.category)
+        assertEquals(luis, state.draft.payerId)
+        // Marta is not in it: only Luis and Ana, half each.
+        assertEquals(mapOf(luis to 2_250L, ana to 2_250L), state.check.shares)
+        assertEquals("", state.quickText)
+        assertFalse(state.keypadOpen)
+        assertTrue(state.check.canSave)
+    }
+
+    @Test
     fun exactAmountsFollowTheTotalUntilEditedAndSayWhatIsMissing() = runTest {
         val (g, ana, luis) = group()
         val vm = editor(g)

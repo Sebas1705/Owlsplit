@@ -1,5 +1,7 @@
 package es.sebas1705.owlsplit.feature.expense
 
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.ColumnScope
@@ -80,6 +82,9 @@ import es.sebas1705.owlsplit.data.models.SplitType
 import es.sebas1705.owlsplit.domain.ledger.SplitIssue
 import es.sebas1705.owlsplit.domain.usecases.expenses.DraftProblem
 import es.sebas1705.owlsplit.feature.expense.resources.Res
+import es.sebas1705.owlsplit.feature.expense.resources.quick_apply
+import es.sebas1705.owlsplit.feature.expense.resources.quick_label
+import es.sebas1705.owlsplit.feature.expense.resources.quick_placeholder
 import es.sebas1705.owlsplit.feature.expense.resources.amount_hint
 import es.sebas1705.owlsplit.feature.expense.resources.backspace
 import es.sebas1705.owlsplit.feature.expense.resources.cancel
@@ -167,6 +172,10 @@ fun ExpenseEditorScreen(
                 }
             }
         }
+        // Outside the body: it stays the same field (and keeps its focus) when the keypad closes.
+        if (!state.editing) {
+            Box(Modifier.padding(horizontal = Spacing.l, vertical = Spacing.s)) { QuickEntry(state, onEvent) }
+        }
         val scroll = rememberScrollState()
         EditorBody(state, onEvent, format, currency, myMemberId, scroll)
         BottomActionBar(contentBelow = !state.keypadOpen && scroll.canScrollForward) {
@@ -219,6 +228,41 @@ private fun ColumnScope.EditorBody(
             CurrencyLine(state, format, onEvent)
             Details(state, onEvent, format, currency, myMemberId)
         }
+    }
+}
+
+/**
+ * A new expense typed as a sentence: "Fill in" reads it into the form below, to check before saving.
+ * Typing here closes the amount keypad so the keyboard has room.
+ */
+@Composable
+private fun QuickEntry(state: ExpenseEditorState, onEvent: (ExpenseEditorIntent) -> Unit) {
+    val focus = LocalFocusManager.current
+    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
+        OwlsplitTextField(
+            value = state.quickText,
+            onValueChange = { onEvent(ExpenseEditorIntent.QuickTextChanged(it)) },
+            label = stringResource(Res.string.quick_label),
+            placeholder = stringResource(Res.string.quick_placeholder),
+            modifier = Modifier
+                .weight(1f)
+                .onFocusChanged {
+                    if (it.isFocused && state.keypadOpen) {
+                        onEvent(
+                            ExpenseEditorIntent.KeypadOpen(false)
+                        )
+                    }
+                },
+        )
+        TextActionButton(
+            stringResource(Res.string.quick_apply),
+            {
+                // The keyboard goes away so the filled-in form shows.
+                focus.clearFocus()
+                onEvent(ExpenseEditorIntent.ApplyQuickText)
+            },
+            enabled = state.quickText.isNotBlank(),
+        )
     }
 }
 
