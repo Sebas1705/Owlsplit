@@ -27,7 +27,7 @@ const LANG_KEY = 'owlsplit.lang';
  * the Firebase console). Empty while it is not set up: the web goes without, which is fine as long as
  * App Check is not enforced.
  */
-const RECAPTCHA_SITE_KEY = '';
+const RECAPTCHA_SITE_KEY = '6LcWG_ItAAAAAMCfoXeiwO0E-fGzjChJ0iLWuKUl';
 // The app's exchange rates (AppConfig.FX_API_BASE_URL): ECB, no key, CORS open.
 const FX_URL = 'https://api.frankfurter.dev/v1';
 

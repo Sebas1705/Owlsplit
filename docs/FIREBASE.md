@@ -145,7 +145,7 @@ The apps send App Check tokens, but **nothing is enforced yet**: until enforceme
 | Android debug (`es.sebas1705.owlsplit.debug`) | Debug provider; logs its debug token at start-up (logcat tag `DebugAppCheckProvider`, plus `OwlsplitAppCheck` while it is not registered) | `composeApp/src/androidDebug/.../appcheck/AppCheckSetup.kt` (`firebase-appcheck-debug`, debug builds only) |
 | iOS debug | Debug provider; the token is printed in the Xcode console | `iosApp/iosApp/iOSApp.swift` |
 | iOS release | DeviceCheck. **Pending**: needs the Apple Team ID (DeviceCheck key, or App Attest with its entitlement) | `iosApp/iosApp/iOSApp.swift` |
-| Web for guests ("Owlsplit web") | reCAPTCHA v3; on `localhost` a debug token printed in the browser console. Off while `RECAPTCHA_SITE_KEY` is empty | `firebase/hosting/js/guest.js` |
+| Web for guests ("Owlsplit web") | reCAPTCHA v3; on `localhost` a debug token printed in the browser console. Site key in `RECAPTCHA_SITE_KEY` (key "owlsplit web", 2026-10-16) | `firebase/hosting/js/guest.js` |
 
 Owner steps in the console (Firebase → **App Check**):
 
