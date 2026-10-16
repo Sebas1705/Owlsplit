@@ -188,4 +188,7 @@
     <string name="pay_qr_hide">Ocultar el QR</string>
     <string name="pay_qr_description">QR de pago con tu IBAN, el importe y el concepto</string>
     <string name="pay_qr_hint">Que lo escanee con la app de su banco: se rellenan tu IBAN, el importe y el concepto.</string>
+    <string name="pay_open_bank">Abrir %1$s</string>
+    <string name="pay_other_bank">Otro banco</string>
+    <string name="pay_choose_bank">¿Con qué banco haces Bizum?</string>
 </resources>
