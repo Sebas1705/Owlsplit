@@ -56,6 +56,7 @@ import es.sebas1705.owlsplit.feature.groups.stats.StatsRoute
 import es.sebas1705.owlsplit.feature.history.HistoryRoute
 import es.sebas1705.owlsplit.feature.home.HomeNavigation
 import es.sebas1705.owlsplit.feature.home.HomeRoute
+import es.sebas1705.owlsplit.feature.home.QuickAction
 import es.sebas1705.owlsplit.feature.invite.InviteRoute
 import es.sebas1705.owlsplit.feature.invite.JoinRoute
 import es.sebas1705.owlsplit.feature.onboarding.OnboardingRoute
@@ -169,6 +170,16 @@ private fun Tabs(modifier: Modifier, startChoice: StartChoice?, onStartHandled: 
     val entry by nav.currentBackStackEntryAsState()
     val current = Tab.entries.firstOrNull { tab -> entry?.destination?.hasRoute(tab.route::class) == true }
     val inviteLink by IncomingInvites.link.collectAsState()
+    val shortcut by IncomingShortcuts.shortcut.collectAsState()
+    // "Add expense" from the widget: Home runs it once it has the groups (it may ask which one).
+    var homeAction by remember { mutableStateOf<QuickAction?>(null) }
+    LaunchedEffect(shortcut) {
+        if (shortcut == Shortcut.ADD_EXPENSE) {
+            nav.navigateToTab(HomeTab)
+            homeAction = QuickAction.EXPENSE
+            IncomingShortcuts.consume()
+        }
+    }
     LaunchedEffect(startChoice) {
         when (startChoice) {
             StartChoice.CREATE_GROUP -> nav.navigate(GroupEditorDest())
@@ -190,7 +201,7 @@ private fun Tabs(modifier: Modifier, startChoice: StartChoice?, onStartHandled: 
         bottomBar = { if (current != null) BottomBar(nav, current) },
     ) { padding ->
         NavHost(nav, startDestination = HomeTab, modifier = Modifier.padding(padding)) {
-            composable<HomeTab> { HomeRoute(homeNavigation(nav)) }
+            composable<HomeTab> { HomeRoute(homeNavigation(nav), startAction = homeAction) { homeAction = null } }
             composable<ActivityTab> { HistoryRoute(groupId = null, onBack = null) }
             composable<StatsTab> { MySpendingRoute(onOpenGroup = { nav.navigate(GroupDest(it)) }) }
             composable<ProfileTab> {

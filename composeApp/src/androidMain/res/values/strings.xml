@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Owlsplit</string>
+    <!-- Home-screen widget and launcher shortcut (the rest of the UI is in Compose resources). -->
+    <string name="widget_description">Your balance across groups, and add an expense in a tap</string>
+    <string name="widget_balance">Your balance</string>
+    <string name="widget_no_groups">Create your first group</string>
+    <plurals name="widget_groups">
+        <item quantity="one">In %1$d group</item>
+        <item quantity="other">In %1$d groups</item>
+    </plurals>
+    <string name="widget_add">Add expense</string>
+    <string name="shortcut_add_expense">Add expense</string>
 </resources>

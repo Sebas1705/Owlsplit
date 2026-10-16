@@ -28,6 +28,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -101,9 +102,21 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun HomeRoute(navigation: HomeNavigation, modifier: Modifier = Modifier) {
+fun HomeRoute(
+    navigation: HomeNavigation,
+    modifier: Modifier = Modifier,
+    /** A quick action asked from outside (the widget), run once the groups are loaded. */
+    startAction: QuickAction? = null,
+    onStartActionHandled: () -> Unit = {},
+) {
     val viewModel = koinViewModel<HomeViewModel>()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    LaunchedEffect(startAction, state.loaded) {
+        if (startAction == null || !state.loaded) return@LaunchedEffect
+        // Without groups there is nowhere to add it: Home already invites to create the first one.
+        if (state.groups.isNotEmpty()) quickAction(state, startAction, navigation, viewModel::onEvent)
+        onStartActionHandled()
+    }
     HomeScreen(state, viewModel::onEvent, navigation, modifier)
 }
 
@@ -115,10 +128,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     format: MoneyFormat = LocalMoneyFormat.current,
 ) {
-    val quick = { action: QuickAction ->
-        val single = state.groups.singleOrNull()?.group?.id
-        if (single != null) navigation.run(action, single) else onEvent(HomeIntent.Pick(action))
-    }
+    val quick = { action: QuickAction -> quickAction(state, action, navigation, onEvent) }
     Column(
         modifier
             .fillMaxSize()
@@ -165,6 +175,17 @@ fun HomeScreen(
             navigation.run(action, groupId)
         }
     }
+}
+
+/** With one group it goes straight there; with several, the user picks which. */
+private fun quickAction(
+    state: HomeState,
+    action: QuickAction,
+    navigation: HomeNavigation,
+    onEvent: (HomeIntent) -> Unit
+) {
+    val single = state.groups.singleOrNull()?.group?.id
+    if (single != null) navigation.run(action, single) else onEvent(HomeIntent.Pick(action))
 }
 
 private fun HomeNavigation.run(action: QuickAction, groupId: String) = when (action) {

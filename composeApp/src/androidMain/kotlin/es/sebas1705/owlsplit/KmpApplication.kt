@@ -31,6 +31,7 @@ import es.sebas1705.owlsplit.share.AndroidTextSharer
 import es.sebas1705.owlsplit.sync.SyncStarter
 import es.sebas1705.owlsplit.sync.SyncWorker
 import es.sebas1705.owlsplit.sync.syncModule
+import es.sebas1705.owlsplit.widget.WidgetUpdates
 import kotlinx.coroutines.CoroutineScope
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -74,6 +75,8 @@ class KmpApplication : Application() {
             val scope = koin.get<CoroutineScope>()
             koin.get<SyncStarter>().start(scope, this)
             SyncWorker.scheduleOnPending(this, koin.get(), scope)
+            WidgetUpdates.start(this, koin.get(), scope)
         }
+        WidgetUpdates.publishShortcut(this)
     }
 }

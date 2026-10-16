@@ -102,6 +102,7 @@ kotlin {
             implementation(libs.google.identity.googleid)
             implementation(libs.play.services.code.scanner)
             implementation(libs.play.app.update.ktx)
+            implementation(libs.glance.appwidget)
         }
     }
 }
