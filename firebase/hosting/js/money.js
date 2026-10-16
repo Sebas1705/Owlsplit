@@ -7,6 +7,9 @@ export const RATE_SCALE = 1_000_000_000n;
 export const FULL_PERCENT = 10_000n;
 export const MAX_EXPENSE_MINOR = 1_000_000_000_000n;
 
+/** The currencies the apps offer (core/money CurrencyTable). */
+export const CURRENCIES = ['AED', 'ARS', 'AUD', 'BGN', 'BHD', 'BRL', 'CAD', 'CHF', 'CLP', 'CNY', 'COP', 'CZK', 'DKK', 'EGP', 'EUR', 'GBP', 'HKD', 'HUF', 'IDR', 'ILS', 'INR', 'ISK', 'JOD', 'JPY', 'KRW', 'KWD', 'MAD', 'MXN', 'MYR', 'NOK', 'NZD', 'OMR', 'PEN', 'PHP', 'PLN', 'QAR', 'RON', 'RSD', 'SAR', 'SEK', 'SGD', 'THB', 'TND', 'TRY', 'TWD', 'UAH', 'USD', 'UYU', 'VND', 'ZAR'];
+
 const ZERO_DECIMALS = ["CLP", "ISK", "JPY", "KRW", "VND"];
 const THREE_DECIMALS = ["BHD", "JOD", "KWD", "OMR", "TND"];
 

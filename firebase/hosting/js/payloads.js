@@ -40,8 +40,13 @@ export function claimMember(f, uid, member) {
   return { userUid: uid, active: true, version: member.version + 1, updatedAt: f.serverTimestamp(), updatedBy: uid };
 }
 
-/** A new expense in the group currency, with one payer for the whole amount. */
-export function newExpense(f, uid, { title, category, date, currency, amountMinor, payerId, splitType, splitValues, now }) {
+/**
+ * A new expense with one payer for the whole amount. In another currency than the group's,
+ * [fxRateScaled] is the rate frozen in it (group currency per unit, ×10⁹), as the apps do.
+ */
+export function newExpense(f, uid, {
+  title, category, date, currency, amountMinor, payerId, splitType, splitValues, now, fxRateScaled = RATE_ONE,
+}) {
   return {
     title: title.trim().slice(0, 80),
     category,
@@ -49,7 +54,7 @@ export function newExpense(f, uid, { title, category, date, currency, amountMino
     date,
     currency,
     amountMinor,
-    fxRateScaled: RATE_ONE,
+    fxRateScaled,
     payers: { [payerId]: amountMinor },
     splitType,
     splitValues,
@@ -140,4 +145,47 @@ export function fullyEditable(expense, baseCurrency) {
   return Object.keys(expense.payers).length === 1
     && (expense.splitType === 'EQUAL' || expense.splitType === 'WEIGHTS')
     && expense.currency === baseCurrency;
+}
+
+// ── Exchange rates (data/fx FrankfurterRates and core/money FxRate) ───────────────────────────────
+
+/**
+ * A JSON number as a plain decimal with at most 9 decimals ("3.75e-05" → "0.0000375"); extra digits
+ * are cut, never rounded up. Read from the text, never through a float.
+ */
+export function plainDecimal(number) {
+  const [mantissa, exp] = number.toLowerCase().split('e');
+  const exponent = exp === undefined ? 0 : parseInt(exp, 10);
+  const [integerDigits, fractionDigits = ''] = mantissa.split('.');
+  const digits = integerDigits + fractionDigits;
+  const point = integerDigits.length + exponent;
+  const padded = point <= 0 ? '0'.repeat(-point + 1) + digits
+    : point > digits.length ? digits + '0'.repeat(point - digits.length) : digits;
+  const split = Math.max(point, 1);
+  const integer = padded.slice(0, split).replace(/^0+/, '') || '0';
+  const fraction = padded.slice(split).slice(0, 9).replace(/0+$/, '');
+  return fraction ? `${integer}.${fraction}` : integer;
+}
+
+/** "0.923456789" or "1,5" as the fixed-point rate (×10⁹); null when it is not one. */
+export function parseRate(decimal) {
+  const match = /^(\d{1,6})(?:[.,](\d{1,9}))?$/.exec((decimal ?? '').trim());
+  if (!match) return null;
+  const scaled = Number(match[1]) * 1_000_000_000 + Number((match[2] ?? '').padEnd(9, '0'));
+  return scaled > 0 ? scaled : null;
+}
+
+/** The rate [to] in a Frankfurter response, read from its text: { scaled, day } or null. */
+export function rateFromFrankfurter(body, to) {
+  const rate = new RegExp(`"${to}"\\s*:\\s*([0-9.eE+-]+)`).exec(body)?.[1];
+  const day = /"date"\s*:\s*"([0-9-]+)"/.exec(body)?.[1] ?? '';
+  const scaled = rate ? parseRate(plainDecimal(rate)) : null;
+  return scaled ? { scaled, day } : null;
+}
+
+/** [amountMinor] of [from] in minor units of [to] at [fxRateScaled], truncated (Conversion.convert). */
+export function convertMinor(amountMinor, fromDecimals, toDecimals, fxRateScaled) {
+  const value = (BigInt(amountMinor) * BigInt(fxRateScaled) * 10n ** BigInt(toDecimals))
+    / (1_000_000_000n * 10n ** BigInt(fromDecimals));
+  return Number(value);
 }

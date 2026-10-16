@@ -27,3 +27,26 @@ describe('money.js', () => {
     expect(myShare({ ...dinner, splitType: 'EXACT' }, members, 'a')).toBe(0);
   });
 });
+
+describe('exchange rates, as the apps read them', () => {
+  test('plain decimals from JSON numbers (FrankfurterRatesTest)', async () => {
+    const { plainDecimal } = await import('../../hosting/js/payloads.js');
+    expect(plainDecimal('3.75e-05')).toBe('0.0000375');
+    expect(plainDecimal('0.92345')).toBe('0.92345');
+    expect(plainDecimal('1.5E3')).toBe('1500');
+    expect(plainDecimal('161.1234567891234')).toBe('161.123456789');
+  });
+  test('fixed point (FxRateTest) and a Frankfurter response', async () => {
+    const { parseRate, rateFromFrankfurter, convertMinor } = await import('../../hosting/js/payloads.js');
+    expect(parseRate('0.923456789')).toBe(923_456_789);
+    expect(parseRate('1,5')).toBe(1_500_000_000);
+    expect(parseRate('163.5')).toBe(163_500_000_000);
+    expect(parseRate('abc')).toBeNull();
+    const body = '{"amount":1.0,"base":"USD","date":"2026-10-15","rates":{"EUR":0.89222}}';
+    expect(rateFromFrankfurter(body, 'EUR')).toEqual({ scaled: 892_220_000, day: '2026-10-15' });
+    expect(rateFromFrankfurter(body, 'GBP')).toBeNull();
+    // 10.00 USD at 0.89222 → 8.92 EUR (truncated); 1 500 JPY at 0.0059 → 8.85 EUR.
+    expect(convertMinor(1000, 2, 2, 892_220_000)).toBe(892);
+    expect(convertMinor(1500, 0, 2, 5_900_000)).toBe(885);
+  });
+});
