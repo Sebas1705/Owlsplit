@@ -24,12 +24,14 @@
     </div>
   </div>
   <h1 id="title" data-en="You've been invited to a group">Te han invitado a un grupo</h1>
-  <p id="lead" data-en="Open it in the app to see the group and join.">Ábrelo en la app para ver el grupo y unirte.</p>
+  <p id="lead" data-en="Open it in the app, or continue in the browser without installing anything.">Ábrelo en la app, o sigue en el navegador sin instalar nada.</p>
   <div class="card" id="card">
     <div class="label" data-en="Code">Código</div>
     <div class="code" id="code"></div>
   </div>
   <a class="button" id="open" href="#" data-en="Open in Owlsplit">Abrir en Owlsplit</a>
+  <!-- The web for guests (guest.html): the group in the browser, without installing anything. -->
+  <a class="button link-button" id="web" href="#" data-en="Continue in the browser">Seguir en el navegador</a>
   <button class="button link-button" id="copy" type="button" data-en="Copy code">Copiar código</button>
   <div>
     <p><strong data-en="Don't have the app?">¿No tienes la app?</strong></p>
@@ -120,10 +122,11 @@
     applyLang();
 
     if (!valid) {
-      ['card', 'open', 'copy'].forEach(function (id) { document.getElementById(id).classList.add('hidden'); });
+      ['card', 'open', 'web', 'copy'].forEach(function (id) { document.getElementById(id).classList.add('hidden'); });
       return;
     }
     document.getElementById('code').textContent = shown;
+    document.getElementById('web').href = '/g/' + code;
 
     // The app people install (debug builds open the links through App Links, not this button).
     var pkg = 'es.sebas1705.owlsplit';
