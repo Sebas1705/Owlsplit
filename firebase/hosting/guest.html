@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Owlsplit</title>
+  <meta name="description" content="Gastos compartidos: entra en el grupo desde el navegador.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="/brand.css">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/guest.css">
+</head>
+<body>
+<!-- The web for guests (docs/designs/2026-10-16-web-guests.md): js/guest.js draws everything here. -->
+<main class="narrow guest">
+  <div class="page-top">
+    <a class="brand" href="/"><img src="/favicon.svg" alt="" width="30" height="30">owlsplit</a>
+    <div class="lang-toggle" id="lang" role="group" aria-label="Idioma / Language">
+      <button type="button" data-lang="es" lang="es" aria-label="Español" aria-pressed="true">ES</button>
+      <button type="button" data-lang="en" lang="en" aria-label="English" aria-pressed="false">EN</button>
+    </div>
+  </div>
+  <div id="app" aria-live="polite"><p class="muted">Cargando…</p></div>
+  <noscript><p>Necesitas JavaScript para usar Owlsplit en el navegador. / You need JavaScript to use Owlsplit in the browser.</p></noscript>
+</main>
+<script type="module" src="/js/guest.js"></script>
+</body>
+</html>

@@ -3,6 +3,7 @@ package es.sebas1705.owlsplit.domain.usecases.balances
 import es.sebas1705.owlsplit.core.money.Currency
 import es.sebas1705.owlsplit.core.money.FxRate
 import es.sebas1705.owlsplit.data.models.Expense
+import es.sebas1705.owlsplit.data.models.Member
 import es.sebas1705.owlsplit.data.models.Transfer
 import es.sebas1705.owlsplit.data.repository.ExpenseRepository
 import es.sebas1705.owlsplit.data.repository.GroupRepository
@@ -43,44 +44,57 @@ class ObserveGroupBalances(
         expenses.observeExpenses(groupId),
         transfers.observeTransfers(groupId),
     ) { group, memberList, expenseList, transferList ->
-        if (group == null) return@combine null
-        val base = Currency.of(group.baseCurrency)
-        val ledgerMembers = memberList.map { LedgerMember(it.id, it.sortKey) }
-        val invalid = mutableListOf<String>()
-        val validExpenses = expenseList.map { it.toEntry() }.filter { entry ->
-            isValid(invalid) { NetCalculator.expenseNet(entry, ledgerMembers, base) }
-        }
-        val validTransfers = transferList.map { it.toEntry() }.filter { entry ->
-            isValid(invalid) { NetCalculator.transferNet(entry, ledgerMembers, base) }
-        }
-        val balances = BalanceCalculator.balances(ledgerMembers, validExpenses, validTransfers, base)
-        GroupBalances(group.baseCurrency, balances, DebtSimplifier.simplify(balances, ledgerMembers), invalid)
+        group?.let { groupBalancesOf(it.baseCurrency, memberList, expenseList, transferList) }
+    }
+}
+
+/**
+ * A group's balances and suggested payments from its members (not deleted, inactive ones too) and its
+ * expenses and transfers (not deleted). An inconsistent entry is left out and reported. The web for
+ * guests computes the same (firebase/hosting/js/money.js, checked by LedgerFixturesTest).
+ */
+fun groupBalancesOf(
+    baseCurrency: String,
+    memberList: List<Member>,
+    expenseList: List<Expense>,
+    transferList: List<Transfer>,
+): GroupBalances {
+    val base = Currency.of(baseCurrency)
+    val ledgerMembers = memberList.map { LedgerMember(it.id, it.sortKey) }
+    val invalid = mutableListOf<String>()
+    val validExpenses = expenseList.map { it.toEntry() }.filter { entry ->
+        isValid(invalid) { NetCalculator.expenseNet(entry, ledgerMembers, base) }
+    }
+    val validTransfers = transferList.map { it.toEntry() }.filter { entry ->
+        isValid(invalid) { NetCalculator.transferNet(entry, ledgerMembers, base) }
+    }
+    val balances = BalanceCalculator.balances(ledgerMembers, validExpenses, validTransfers, base)
+    return GroupBalances(baseCurrency, balances, DebtSimplifier.simplify(balances, ledgerMembers), invalid)
+}
+
+private inline fun isValid(invalid: MutableList<String>, check: () -> Unit): Boolean =
+    try {
+        check()
+        true
+    } catch (e: InvalidEntryException) {
+        invalid += e.entryId
+        false
     }
 
-    private inline fun isValid(invalid: MutableList<String>, check: () -> Unit): Boolean =
-        try {
-            check()
-            true
-        } catch (e: InvalidEntryException) {
-            invalid += e.entryId
-            false
-        }
+private fun Expense.toEntry() = ExpenseEntry(
+    id = id,
+    amountMinor = amountMinor,
+    currency = Currency.of(currency),
+    fxRateToBase = FxRate(fxRateScaled),
+    payers = payers,
+    split = SplitSpec(SplitType.valueOf(splitType.name), splitValues),
+)
 
-    private fun Expense.toEntry() = ExpenseEntry(
-        id = id,
-        amountMinor = amountMinor,
-        currency = Currency.of(currency),
-        fxRateToBase = FxRate(fxRateScaled),
-        payers = payers,
-        split = SplitSpec(SplitType.valueOf(splitType.name), splitValues),
-    )
-
-    private fun Transfer.toEntry() = TransferEntry(
-        id = id,
-        fromMemberId = fromMemberId,
-        toMemberId = toMemberId,
-        amountMinor = amountMinor,
-        currency = Currency.of(currency),
-        fxRateToBase = FxRate(fxRateScaled),
-    )
-}
+private fun Transfer.toEntry() = TransferEntry(
+    id = id,
+    fromMemberId = fromMemberId,
+    toMemberId = toMemberId,
+    amountMinor = amountMinor,
+    currency = Currency.of(currency),
+    fxRateToBase = FxRate(fxRateScaled),
+)

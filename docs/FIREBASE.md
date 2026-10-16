@@ -8,7 +8,7 @@ A single Firebase project, **`owlsplit`** (decided 2026-10-08: until there are r
 
 | Project | Status | Firestore | Apps |
 |---|---|---|---|
-| `owlsplit` | Created 2026-10-08 (P11b); Authentication enabled (Anonymous, Google) | `(default)`, `eur3` | Android `1:596963610720:android:44ad7ca230b5953346f305` (`es.sebas1705.owlsplit`, release builds: testers and users) · Android `1:596963610720:android:61aa6038a2186e6a46f305` (`es.sebas1705.owlsplit.debug`, local debug builds) · iOS `1:596963610720:ios:c3a61a92a48f3cd446f305` (`es.sebas1705.owlsplit`) |
+| `owlsplit` | Created 2026-10-08 (P11b); Authentication enabled (Anonymous, Google) | `(default)`, `eur3` | Android `1:596963610720:android:44ad7ca230b5953346f305` (`es.sebas1705.owlsplit`, release builds: testers and users) · Android `1:596963610720:android:61aa6038a2186e6a46f305` (`es.sebas1705.owlsplit.debug`, local debug builds) · iOS `1:596963610720:ios:c3a61a92a48f3cd446f305` (`es.sebas1705.owlsplit`) · Web `1:596963610720:web:bb1f763b3bfaaff346f305` ("Owlsplit web", the web for guests at `/g/{code}`; its config is read from Hosting's `/__/firebase/init.json`) |
 
 Debug builds are a separate app in the same project so they can be installed alongside the testers' one (the signature differs) and do not send their crashes to Crashlytics; they share the database, so local testing uses clearly identifiable test groups. The `owlsplit-dev` (P2–P11a) and `owlsplit-stg` (P11b) projects were deleted.
 
