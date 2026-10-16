@@ -17,22 +17,21 @@ Owlsplit is built in independent subprojects. Each one goes through **design →
 | **Going back into a group I left** (the "group bin": groups cannot be deleted, only left) | beta.13 |
 | **New expenses follow the members' weights** (the default split per group) | beta.13 |
 | **Natural-language entry** in Spanish and English, on the device ("Ana pagó 45 de cena con Luis") | beta.13 |
-| **Web for guests** at `owlsplit.web.app/g/{code}`: join, see expenses and balances, add, edit and delete expenses (other currencies at the ECB rate), record and undo payments, and save the account with Google ([design](designs/2026-10-16-web-guests.md)) | site, 2026-10-16 |
+| **Web for guests** at `owlsplit.web.app/g/{code}`: join, see expenses and balances, add, edit and delete expenses (other currencies at the ECB rate), record and undo payments, and save the account with Google ([design](designs/2026-10-16-web-guests.md)); App Check with reCAPTCHA Enterprise, verified | site, 2026-10-16 |
 
 ## Next
 
 | # | Subproject | Effort | Needs |
 |---|---|---|---|
 | 1 | **Push notifications and reminders**: new expense, you are owed, you were paid; automatic, rate-limited reminders | M–L | Blaze, FCM, Cloud Functions |
-| 2 | **App Check on the web**: a reCAPTCHA provider for "Owlsplit web" before enforcing App Check (otherwise the web is cut off) | S | A reCAPTCHA key (free) |
-| 3 | **App Store** (TestFlight, review) | M | Apple Developer account |
-| 4 | **Receipts**: photo, on-device OCR (ML Kit / Vision), line-by-line split with tax and tip prorated | L | Cloud Storage (Blaze) for the photos |
-| 5 | **Comments on expenses** | M | After 1 |
-| 6 | **Polish settling up, the rest**: a bank picker for Bizum (needs the banks' Android package names checked), and testing whether revolut.me fills in the amount | S | Nothing |
-| 7 | **Import from Tricount**, only if a real export file can be had | S–M | A sample file |
-| 8 | **Budgets** per group or trip | M | Nothing |
+| 2 | **App Store** (TestFlight, review) | M | Apple Developer account |
+| 3 | **Receipts**: photo, on-device OCR (ML Kit / Vision), line-by-line split with tax and tip prorated | L | Cloud Storage (Blaze) for the photos |
+| 4 | **Comments on expenses** | M | After 1 |
+| 5 | **Polish settling up, the rest**: a bank picker for Bizum (needs the banks' Android package names checked), and testing whether revolut.me fills in the amount | S | Nothing |
+| 6 | **Import from Tricount**, only if a real export file can be had | S–M | A sample file |
+| 7 | **Budgets** per group or trip | M | Nothing |
 
-What is left at the top needs a paid Firebase plan (1, 4) or an Apple account (3).
+What is left at the top needs a paid Firebase plan (1, 3) or an Apple account (2). Enforcing App Check (Firestore first) is an owner step once its metrics stay close to 100 % verified (docs/FIREBASE.md).
 
 ## Not now
 
