@@ -40,4 +40,13 @@
     <string name="store_update_ready_title">Update downloaded</string>
     <string name="store_update_ready_body">Restart Owlsplit to install it; your groups stay.</string>
     <string name="store_update_restart">Restart</string>
+    <string name="left_show">Groups you left (%1$d)</string>
+    <string name="left_hide">Hide groups you left (%1$d)</string>
+    <string name="rejoin_title">Go back into %1$s?</string>
+    <string name="rejoin_body">You get your member back, with its expenses and balance, without asking for an invite.</string>
+    <string name="rejoin_needs_invite">The code this phone kept no longer opens the group (it was changed). Ask someone in it for a new invite.</string>
+    <string name="rejoin_offline">No connection. Try again when you are online.</string>
+    <string name="rejoin_confirm">Go back in</string>
+    <string name="rejoin_busy">Going back in…</string>
+    <string name="rejoin_cancel">Cancel</string>
 </resources>
