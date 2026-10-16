@@ -1,14 +1,15 @@
 // The web for guests writes with these payloads (hosting/js/payloads.js): the rules must accept them,
 // with the history entry in the same batch, for a guest who joins with the code.
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { arrayUnion, doc, getDoc, increment, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
+import { arrayRemove, arrayUnion, doc, getDoc, increment, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { afterAll, beforeAll, beforeEach, describe, test } from 'vitest';
 import { CODE, GROUP, as, createEnv, expenseData, groupData, memberData, seed, transferData } from './helpers.mjs';
 import {
-  changelogEntry, claimMember, defaultSplit, expenseDiff, expenseUpdate, joinGroup, markDeleted, newExpense, newMember, newTransfer,
+  changelogEntry, claimMember, defaultSplit, expenseDiff, expenseUpdate, joinGroup, leaveGroup, markDeleted, markLinked, newExpense,
+  newMember, newTransfer, profileDoc, releaseMember,
 } from '../../hosting/js/payloads.js';
 
-const f = { serverTimestamp, arrayUnion, increment };
+const f = { serverTimestamp, arrayUnion, arrayRemove, increment };
 let env;
 
 beforeAll(async () => { env = await createEnv(); });
@@ -104,5 +105,31 @@ describe('web guests', () => {
     undo.update(doc(db, `groups/${GROUP}/transfers/t0`), markDeleted(f, 'zoe', { version: 1 }));
     undo.set(doc(db, `groups/${GROUP}/changelog/c5`), changelogEntry(f, 'zoe', { entityType: 'TRANSFER', entityId: 't0', action: 'DELETED', now: 6 }));
     await assertSucceeds(undo.commit());
+  });
+
+  test('saving with a Google account that already exists: release, leave, then that account joins and claims', async () => {
+    // The guest (anonymous "zoe") has claimed m2.
+    const zoe = await join('zoe');
+    await assertSucceeds(updateDoc(doc(zoe, `groups/${GROUP}/members/m2`), claimMember(f, 'zoe', { version: 1 })));
+    const mine = { version: 2, pastUids: [] };
+    const release = writeBatch(zoe);
+    release.update(doc(zoe, `groups/${GROUP}/members/m2`), releaseMember(f, 'zoe', mine));
+    release.set(doc(zoe, `groups/${GROUP}/changelog/c6`), changelogEntry(f, 'zoe', {
+      entityType: 'MEMBER', entityId: 'm2', action: 'UPDATED', diff: [{ field: 'userUid', before: 'zoe', after: null }], now: 7,
+    }));
+    await assertSucceeds(release.commit());
+    await assertSucceeds(updateDoc(doc(zoe, `groups/${GROUP}`), leaveGroup(f, 'zoe')));
+    // Signed in to the existing Google account ("zoeg"): it joins and takes the same member back.
+    const zoeg = await join('zoeg');
+    await assertSucceeds(updateDoc(doc(zoeg, `groups/${GROUP}/members/m2`), claimMember(f, 'zoeg', { version: 3 })));
+    await assertSucceeds(setDoc(doc(zoeg, 'users/zoeg'), profileDoc(f, { name: 'Zoe', currency: 'EUR' })));
+  });
+
+  test('a linked guest marks their member, and nobody else can', async () => {
+    const zoe = await join('zoe');
+    await assertSucceeds(updateDoc(doc(zoe, `groups/${GROUP}/members/m2`), claimMember(f, 'zoe', { version: 1 })));
+    await assertSucceeds(updateDoc(doc(zoe, `groups/${GROUP}/members/m2`), markLinked(f, 'zoe', { version: 2 })));
+    const max = await join('max');
+    await assertFails(updateDoc(doc(max, `groups/${GROUP}/members/m1`), markLinked(f, 'max', { version: 1 })));
   });
 });
