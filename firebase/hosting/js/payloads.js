@@ -101,3 +101,43 @@ export function parseAmount(text, decimals) {
   const minor = Number(match[1]) * 10 ** decimals + (decimals > 0 ? Number(fraction || '0') : 0);
   return minor > 0 ? minor : null;
 }
+
+// ── Edits ──────────────────────────────────────────────────────────────────────────────────────────
+
+/** A value as the apps' history writes it (Diffs.kt): maps sorted by key as "k=v,k2=v2", the rest as text. */
+function rendered(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'object') {
+    return Object.keys(value).sort().map((k) => `${k}=${value[k]}`).join(',');
+  }
+  return String(value);
+}
+
+const EXPENSE_FIELDS = ['title', 'amountMinor', 'currency', 'fxRateScaled', 'date', 'category', 'note', 'payers', 'splitType', 'splitValues'];
+
+/** The changed fields of an expense, in the apps' order, for its history entry. */
+export function expenseDiff(before, after) {
+  return EXPENSE_FIELDS
+    .map((field) => ({ field, before: rendered(before[field]), after: rendered(after[field]) }))
+    .filter((c) => c.before !== c.after);
+}
+
+/** An edit of [old]: the changed fields, the next version and the stamp (the rules check the version). */
+export function expenseUpdate(f, uid, old, changes) {
+  return { ...changes, version: old.version + 1, updatedAt: f.serverTimestamp(), updatedBy: uid };
+}
+
+/** Deleting (or restoring) an expense or a payment: it stays, marked, so it can be restored. */
+export function markDeleted(f, uid, old, deleted = true) {
+  return { deleted, version: old.version + 1, updatedAt: f.serverTimestamp(), updatedBy: uid };
+}
+
+/**
+ * Whether the web can edit the whole of an expense: one payer, an equal or weights split, in the group
+ * currency (what the web itself creates). The rest is edited in the app; here only its words and date.
+ */
+export function fullyEditable(expense, baseCurrency) {
+  return Object.keys(expense.payers).length === 1
+    && (expense.splitType === 'EQUAL' || expense.splitType === 'WEIGHTS')
+    && expense.currency === baseCurrency;
+}
