@@ -24,6 +24,8 @@ data class StoredProfile(
     val bizum: String? = null,
     val paypal: String? = null,
     val revolut: String? = null,
+    val iban: String? = null,
+    val ibanHolder: String? = null,
 )
 
 /** How the app looks and reads (theme, language); an interface so screens can be tested without a DataStore. */
@@ -77,6 +79,8 @@ class AppPreferences(private val dataStore: DataStore<Preferences>) : DisplaySet
             prefs[Keys.BIZUM],
             prefs[Keys.PAYPAL],
             prefs[Keys.REVOLUT],
+            prefs[Keys.IBAN],
+            prefs[Keys.IBAN_HOLDER],
         )
     }
     suspend fun setProfile(profile: StoredProfile) {
@@ -87,6 +91,8 @@ class AppPreferences(private val dataStore: DataStore<Preferences>) : DisplaySet
             it.setOrRemove(Keys.BIZUM, profile.bizum)
             it.setOrRemove(Keys.PAYPAL, profile.paypal)
             it.setOrRemove(Keys.REVOLUT, profile.revolut)
+            it.setOrRemove(Keys.IBAN, profile.iban)
+            it.setOrRemove(Keys.IBAN_HOLDER, profile.ibanHolder)
         }
     }
 
@@ -117,6 +123,8 @@ class AppPreferences(private val dataStore: DataStore<Preferences>) : DisplaySet
         val BIZUM = stringPreferencesKey("profile_bizum")
         val PAYPAL = stringPreferencesKey("profile_paypal")
         val REVOLUT = stringPreferencesKey("profile_revolut")
+        val IBAN = stringPreferencesKey("profile_iban")
+        val IBAN_HOLDER = stringPreferencesKey("profile_iban_holder")
         val LINK_NUDGE_DISMISSED = booleanPreferencesKey("link_nudge_dismissed")
         val DISMISSED_UPDATE = longPreferencesKey("dismissed_update")
     }

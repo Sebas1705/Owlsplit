@@ -97,6 +97,8 @@
     <string name="remind_bizum">by Bizum at %1$s</string>
     <string name="remind_paypal">with PayPal at %1$s</string>
     <string name="remind_revolut">with Revolut at %1$s</string>
+    <string name="remind_iban">by bank transfer to %1$s</string>
+    <string name="remind_iban_holder">by bank transfer to %1$s (%2$s)</string>
     <string name="remind_list_more">%1$s, %2$s</string>
     <string name="remind_list_last">%1$s or %2$s</string>
     <string name="remind_thanks">Thanks!</string>
@@ -178,4 +180,11 @@
     <string name="stats_percent">%1$d%</string>
     <string name="stats_rest">Others</string>
     <string name="spending_paid_value">You paid %1$s</string>
+    <string name="pay_by_transfer">Pay by bank transfer</string>
+    <string name="pay_iban_copied">IBAN copied: %1$s, holder %2$s. Paste it in your banking app and send %3$s.</string>
+    <string name="pay_qr_concept">Owlsplit: %1$s</string>
+    <string name="pay_qr_show">Show a QR to get paid</string>
+    <string name="pay_qr_hide">Hide the QR</string>
+    <string name="pay_qr_description">Payment QR with your IBAN, the amount and the concept</string>
+    <string name="pay_qr_hint">They scan it with their banking app: it fills in your IBAN, the amount and the concept.</string>
 </resources>

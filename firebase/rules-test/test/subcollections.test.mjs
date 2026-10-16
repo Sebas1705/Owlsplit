@@ -49,6 +49,17 @@ describe('members', () => {
     await assertFails(updateDoc(doc(db, path('members/m1')), { payMethods: { iban: 'ES00' }, ...bump('ana') }));
     await assertFails(updateDoc(doc(db, path('members/m1')), { payMethods: { bizum: '0'.repeat(21) }, ...bump('ana') }));
     await assertFails(updateDoc(doc(db, path('members/m1')), { payMethods: 'bizum', ...bump('ana') }));
+    await assertFails(updateDoc(doc(db, path('members/m1')), { payMethods: { swift: 'X' }, ...bump('ana') }));
+  });
+  test('an IBAN goes compact, in capitals, with an optional holder', async () => {
+    const db = as(env, 'ana');
+    const iban = { iban: 'ES9121000418450200051332', ibanHolder: 'Ana García López' };
+    await assertSucceeds(updateDoc(doc(db, path('members/m1')), { payMethods: iban, ...bump('ana') }));
+    await assertFails(updateDoc(doc(db, path('members/m1')), { payMethods: { iban: 'es91 2100 0418 4502 0005 1332' }, ...bump('ana') }));
+    await assertFails(updateDoc(doc(db, path('members/m1')), { payMethods: { iban: 'ES00' }, ...bump('ana') }));
+    await assertFails(updateDoc(doc(db, path('members/m1')), { payMethods: { ...iban, ibanHolder: 'A'.repeat(71) }, ...bump('ana') }));
+    // Only the person behind the member publishes it, like the rest.
+    await assertFails(updateDoc(doc(as(env, 'luis'), path('members/m1')), { payMethods: { iban: 'DE89370400440532013000' }, ...bump('luis') }));
   });
   test('leaving adds my own uid to pastUids, and nothing else can change it', async () => {
     const ana = as(env, 'ana');

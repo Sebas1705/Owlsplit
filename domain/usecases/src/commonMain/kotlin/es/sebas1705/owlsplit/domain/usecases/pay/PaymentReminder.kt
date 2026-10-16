@@ -15,6 +15,8 @@ data class ReminderWording(
     val bizum: (phone: String) -> String,
     val paypal: (url: String) -> String,
     val revolut: (url: String) -> String,
+    /** "by transfer to ES91 2100 … (Ana García)"; [holder] is null when it is my own name. */
+    val iban: (iban: String, holder: String?) -> String,
     /** Joins two items of a list that goes on: "a, b". */
     val listMore: (String, String) -> String,
     /** Joins the last item of a list: "a or b". */
@@ -47,6 +49,10 @@ object PaymentReminder {
                     PayLinks.paypalUrl(myMethods?.paypal.orEmpty(), amountMinor, currency)
                 )
                 PayMethod.REVOLUT -> wording.revolut(PayLinks.revolutUrl(myMethods?.revolut.orEmpty()))
+                PayMethod.IBAN -> wording.iban(
+                    BankTransfer.readableIban(myMethods?.iban.orEmpty()),
+                    myMethods?.ibanHolder
+                )
             }
         }
         return buildList {

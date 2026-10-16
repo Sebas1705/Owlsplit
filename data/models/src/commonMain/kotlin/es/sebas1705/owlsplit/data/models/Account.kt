@@ -43,11 +43,20 @@ sealed interface GoogleTokenResult {
 
 /**
  * How someone wants to be paid, shown to the people in their groups when they owe them.
- * [bizum]: phone number; [paypal]: PayPal.me name; [revolut]: Revolut tag. Blank means not set.
+ * [bizum]: phone number; [paypal]: PayPal.me name; [revolut]: Revolut tag; [iban]: account for a
+ * bank transfer, without spaces, with [ibanHolder] as the account holder's name (the bank checks it
+ * against the IBAN; blank means the member's name). Blank means not set.
  */
 @Serializable
-data class PayMethods(val bizum: String? = null, val paypal: String? = null, val revolut: String? = null) {
-    val isEmpty: Boolean get() = bizum.isNullOrBlank() && paypal.isNullOrBlank() && revolut.isNullOrBlank()
+data class PayMethods(
+    val bizum: String? = null,
+    val paypal: String? = null,
+    val revolut: String? = null,
+    val iban: String? = null,
+    val ibanHolder: String? = null,
+) {
+    val isEmpty: Boolean
+        get() = bizum.isNullOrBlank() && paypal.isNullOrBlank() && revolut.isNullOrBlank() && iban.isNullOrBlank()
 
     /** Null when nothing is set: that is what members store. */
     fun orNull(): PayMethods? = takeUnless { it.isEmpty }

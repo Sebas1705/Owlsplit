@@ -30,6 +30,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import compose.icons.TablerIcons
+import compose.icons.tablericons.BuildingBank
+import compose.icons.tablericons.Qrcode
+import es.sebas1705.owlsplit.core.ui.components.QrCode
+import androidx.compose.ui.text.style.TextAlign
 import compose.icons.tablericons.BrandPaypal
 import compose.icons.tablericons.CreditCard
 import compose.icons.tablericons.DeviceMobile
@@ -43,11 +47,19 @@ import es.sebas1705.owlsplit.core.ui.theme.Spacing
 import es.sebas1705.owlsplit.data.models.PayMethods
 import es.sebas1705.owlsplit.domain.ledger.SuggestedPayment
 import es.sebas1705.owlsplit.domain.usecases.groups.GroupDetail
+import es.sebas1705.owlsplit.domain.usecases.pay.BankTransfer
 import es.sebas1705.owlsplit.domain.usecases.pay.PayLinks
 import es.sebas1705.owlsplit.domain.usecases.pay.PayMethod
 import es.sebas1705.owlsplit.feature.groups.resources.Res
 import es.sebas1705.owlsplit.feature.groups.resources.cancel
 import es.sebas1705.owlsplit.feature.groups.resources.pay_bizum_copied
+import es.sebas1705.owlsplit.feature.groups.resources.pay_by_transfer
+import es.sebas1705.owlsplit.feature.groups.resources.pay_iban_copied
+import es.sebas1705.owlsplit.feature.groups.resources.pay_qr_concept
+import es.sebas1705.owlsplit.feature.groups.resources.pay_qr_show
+import es.sebas1705.owlsplit.feature.groups.resources.pay_qr_hide
+import es.sebas1705.owlsplit.feature.groups.resources.pay_qr_description
+import es.sebas1705.owlsplit.feature.groups.resources.pay_qr_hint
 import es.sebas1705.owlsplit.feature.groups.resources.pay_hint_add_yours
 import es.sebas1705.owlsplit.feature.groups.resources.pay_with
 import es.sebas1705.owlsplit.feature.groups.resources.remind_action
@@ -59,7 +71,8 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * Settling one suggested payment. When I am the one paying and the other person published how to be
  * paid, their services are a tap away (the payment is still recorded here by hand: the app never
- * sees money move). When I am the one being paid, I can send them a reminder with my details.
+ * sees money move). When I am the one being paid, I can send them a reminder with my details or, with
+ * an IBAN and in euros, show a QR their banking app scans to fill in the transfer.
  */
 @Suppress("LongParameterList") // What the dialog shows, the reminder and its two outcomes.
 @Composable
@@ -95,7 +108,8 @@ internal fun SettleDialog(
                 when {
                     payment.fromMemberId == detail.myMemberId && payeeMethods != null ->
                         PayOptions(payee.name, payeeMethods, payment.amountMinor, currency, format)
-                    payment.toMemberId == detail.myMemberId -> RequestPayment(detail, onRemind)
+                    payment.toMemberId == detail.myMemberId ->
+                        RequestPayment(detail, payment.amountMinor, currency, onRemind)
                 }
             }
         },
@@ -108,13 +122,13 @@ internal fun SettleDialog(
 private fun PayOptions(name: String, methods: PayMethods, amountMinor: Long, currency: Currency, format: MoneyFormat) {
     val uri = LocalUriHandler.current
     val clipboard = LocalClipboardManager.current
-    var copied by remember { mutableStateOf(false) }
+    var copied by remember { mutableStateOf<PayMethod?>(null) }
     PayLinks.available(methods).forEach { method ->
         when (method) {
             PayMethod.BIZUM -> OptionRow(TablerIcons.DeviceMobile, stringResource(Res.string.pay_with, "Bizum")) {
                 // Bizum has no public link: the phone goes to the clipboard for the bank app.
                 clipboard.setText(AnnotatedString(methods.bizum.orEmpty()))
-                copied = true
+                copied = PayMethod.BIZUM
             }
             PayMethod.PAYPAL -> OptionRow(TablerIcons.BrandPaypal, stringResource(Res.string.pay_with, "PayPal")) {
                 uri.openUri(PayLinks.paypalUrl(methods.paypal.orEmpty(), amountMinor, currency))
@@ -122,16 +136,27 @@ private fun PayOptions(name: String, methods: PayMethods, amountMinor: Long, cur
             PayMethod.REVOLUT -> OptionRow(TablerIcons.CreditCard, stringResource(Res.string.pay_with, "Revolut")) {
                 uri.openUri(PayLinks.revolutUrl(methods.revolut.orEmpty()))
             }
+            // The IBAN goes to the clipboard, ready to paste as the payee in the banking app.
+            PayMethod.IBAN -> OptionRow(TablerIcons.BuildingBank, stringResource(Res.string.pay_by_transfer)) {
+                clipboard.setText(AnnotatedString(methods.iban.orEmpty()))
+                copied = PayMethod.IBAN
+            }
         }
     }
-    if (copied) {
+    val amount = format.format(amountMinor, currency)
+    val note = when (copied) {
+        PayMethod.BIZUM -> stringResource(Res.string.pay_bizum_copied, methods.bizum.orEmpty(), amount, name)
+        PayMethod.IBAN -> stringResource(
+            Res.string.pay_iban_copied,
+            BankTransfer.readableIban(methods.iban.orEmpty()),
+            methods.ibanHolder ?: name,
+            amount,
+        )
+        else -> null
+    }
+    if (note != null) {
         Text(
-            stringResource(
-                Res.string.pay_bizum_copied,
-                methods.bizum.orEmpty(),
-                format.format(amountMinor, currency),
-                name,
-            ),
+            note,
             style = Owlsplit.type.caption,
             color = Owlsplit.colors.positive,
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
@@ -139,11 +164,20 @@ private fun PayOptions(name: String, methods: PayMethods, amountMinor: Long, cur
     }
 }
 
-/** The same reminder as the bell on the row; without my pay methods it only says what I am owed. */
+/**
+ * The same reminder as the bell on the row (without my pay methods it only says what I am owed) and,
+ * with my IBAN and in euros, a QR for them to scan with their banking app here and now.
+ */
 @Composable
-private fun RequestPayment(detail: GroupDetail, onRemind: () -> Unit) {
+private fun RequestPayment(detail: GroupDetail, amountMinor: Long, currency: Currency, onRemind: () -> Unit) {
     OptionRow(TablerIcons.BellRinging, stringResource(Res.string.remind_action), onRemind)
-    val mine = detail.members.firstOrNull { it.id == detail.myMemberId }?.payMethods
+    val me = detail.members.firstOrNull { it.id == detail.myMemberId }
+    val mine = me?.payMethods
+    val concept = stringResource(Res.string.pay_qr_concept, detail.group.name)
+    val qr = mine?.iban?.let { iban ->
+        BankTransfer.epcPayload(mine.ibanHolder ?: me.name, iban, amountMinor, currency, concept)
+    }
+    if (qr != null) TransferQr(qr)
     if (PayLinks.available(mine).isEmpty()) {
         Text(
             stringResource(Res.string.pay_hint_add_yours),
@@ -169,3 +203,29 @@ private fun OptionRow(icon: ImageVector, label: String, onClick: () -> Unit) {
         Text(label, style = Owlsplit.type.bodyStrong, color = Owlsplit.colors.accentText)
     }
 }
+
+/** A "pay me" QR, shown on demand: the payer scans it with their banking app (EPC, SEPA transfer). */
+@Composable
+private fun TransferQr(payload: String) {
+    var shown by remember { mutableStateOf(false) }
+    OptionRow(TablerIcons.Qrcode, stringResource(if (shown) Res.string.pay_qr_hide else Res.string.pay_qr_show)) {
+        shown = !shown
+    }
+    if (shown) {
+        Column(
+            Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Spacing.s),
+        ) {
+            QrCode(payload, stringResource(Res.string.pay_qr_description), Modifier.size(QR_SIZE))
+            Text(
+                stringResource(Res.string.pay_qr_hint),
+                style = Owlsplit.type.caption,
+                color = Owlsplit.colors.textSecondary,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+private val QR_SIZE = 200.dp

@@ -41,4 +41,54 @@ class PayLinksTest {
         assertEquals(PayMethods(paypal = "ana"), PayLinks.normalise(typed))
         assertEquals(listOf(PayMethod.PAYPAL), PayLinks.available(PayLinks.normalise(typed)))
     }
+
+    @Test
+    fun ibansAreCompactedAndTheirCheckDigitsVerified() {
+        assertEquals("ES9121000418450200051332", BankTransfer.iban(" es91 2100 0418 4502 0005 1332 "))
+        assertEquals("DE89370400440532013000", BankTransfer.iban("DE89-3704-0044-0532-0130-00"))
+        // One digit off, too short, or not an IBAN at all.
+        assertNull(BankTransfer.iban("ES9121000418450200051333"))
+        assertNull(BankTransfer.iban("ES91"))
+        assertNull(BankTransfer.iban("600111222"))
+        assertEquals("ES91 2100 0418 4502 0005 1332", BankTransfer.readableIban("ES9121000418450200051332"))
+    }
+
+    @Test
+    fun anIbanIsAMethodAndItsHolderIsKeptWithIt() {
+        val typed = PayMethods(iban = "es91 2100 0418 4502 0005 1332", ibanHolder = "  Ana García López ")
+        val clean = PayLinks.normalise(typed)
+        assertEquals(PayMethods(iban = "ES9121000418450200051332", ibanHolder = "Ana García López"), clean)
+        assertEquals(listOf(PayMethod.IBAN), PayLinks.available(clean))
+        assertEquals(setOf(PayMethod.IBAN), PayLinks.invalid(PayMethods(iban = "ES00 1234")))
+        // Without an IBAN the holder means nothing.
+        assertEquals(PayMethods(), PayLinks.normalise(PayMethods(ibanHolder = "Ana")))
+    }
+
+    @Test
+    fun theEpcQrCarriesHolderIbanEuroAmountAndConcept() {
+        val payload = BankTransfer.epcPayload(
+            "Ana García",
+            "ES9121000418450200051332",
+            1250,
+            Currency.of("EUR"),
+            "Owlsplit: Piso"
+        )
+        assertEquals(
+            "BCD\n002\n1\nSCT\n\nAna García\nES9121000418450200051332\nEUR12.50\n\n\nOwlsplit: Piso",
+            payload,
+        )
+        // SEPA transfers are in euros, from one cent.
+        assertNull(BankTransfer.epcPayload("Ana", "ES9121000418450200051332", 1250, Currency.of("USD"), "x"))
+        assertNull(BankTransfer.epcPayload("Ana", "ES9121000418450200051332", 0, Currency.of("EUR"), "x"))
+        // Holder and concept are cut to what the standard allows (70 and 140 characters).
+        val long = BankTransfer.epcPayload(
+            "A".repeat(90),
+            "ES9121000418450200051332",
+            100,
+            Currency.of("EUR"),
+            "c".repeat(200)
+        )!!
+        assertEquals(70, long.lines()[5].length)
+        assertEquals(140, long.lines()[10].length)
+    }
 }

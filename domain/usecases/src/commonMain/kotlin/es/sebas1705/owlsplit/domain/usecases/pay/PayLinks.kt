@@ -4,9 +4,9 @@ import es.sebas1705.owlsplit.core.money.Currency
 import es.sebas1705.owlsplit.data.models.PayMethods
 
 /**
- * Reading what people type as their pay handles, and the links that open each service. Nothing
- * here moves money: the app opens the service (or copies the phone for Bizum, which has no public
- * link) and the payment is recorded by hand afterwards.
+ * Reading what people type as their pay handles and the links that open each service ([BankTransfer]
+ * for the IBAN). Nothing here moves money: the app opens the service (or copies the phone for
+ * Bizum, which has no public link) and the payment is recorded by hand afterwards.
  */
 object PayLinks {
     private val PAYPAL_NAME = Regex("^[A-Za-z0-9]{1,20}$")
@@ -14,18 +14,26 @@ object PayLinks {
     private const val MIN_PHONE_DIGITS = 9
     private const val MAX_PHONE_DIGITS = 15
 
-    /** Each handle cleaned up; null when blank or not valid (see [invalid]). */
-    fun normalise(methods: PayMethods): PayMethods = PayMethods(
-        bizum = methods.bizum?.let(::bizum),
-        paypal = methods.paypal?.let(::paypal),
-        revolut = methods.revolut?.let(::revolut),
-    )
+    /** Each handle cleaned up; null when blank or not valid (see [invalid]). The holder goes with the IBAN. */
+    fun normalise(methods: PayMethods): PayMethods {
+        val iban = methods.iban?.let(BankTransfer::iban)
+        return PayMethods(
+            bizum = methods.bizum?.let(::bizum),
+            paypal = methods.paypal?.let(::paypal),
+            revolut = methods.revolut?.let(::revolut),
+            iban = iban,
+            ibanHolder = methods.ibanHolder?.trim()?.take(
+                BankTransfer.MAX_HOLDER
+            )?.takeIf { iban != null && it.isNotEmpty() },
+        )
+    }
 
     /** The fields of [typed] that are filled in but not valid. */
     fun invalid(typed: PayMethods): Set<PayMethod> = buildSet {
         typed.bizum?.takeIf { it.isNotBlank() && bizum(it) == null }?.let { add(PayMethod.BIZUM) }
         typed.paypal?.takeIf { it.isNotBlank() && paypal(it) == null }?.let { add(PayMethod.PAYPAL) }
         typed.revolut?.takeIf { it.isNotBlank() && revolut(it) == null }?.let { add(PayMethod.REVOLUT) }
+        typed.iban?.takeIf { it.isNotBlank() && BankTransfer.iban(it) == null }?.let { add(PayMethod.IBAN) }
     }
 
     /** A phone number: digits and an optional leading "+", spaces and dashes dropped. */
@@ -56,6 +64,7 @@ object PayLinks {
         if (!methods.bizum.isNullOrBlank()) add(PayMethod.BIZUM)
         if (!methods.paypal.isNullOrBlank()) add(PayMethod.PAYPAL)
         if (!methods.revolut.isNullOrBlank()) add(PayMethod.REVOLUT)
+        if (!methods.iban.isNullOrBlank()) add(PayMethod.IBAN)
     }
 
     /** "12.50": a dot and the currency's decimals, as links expect whatever the language. */
@@ -76,4 +85,4 @@ object PayLinks {
     private const val DECIMAL_BASE = 10L
 }
 
-enum class PayMethod { BIZUM, PAYPAL, REVOLUT }
+enum class PayMethod { BIZUM, PAYPAL, REVOLUT, IBAN }

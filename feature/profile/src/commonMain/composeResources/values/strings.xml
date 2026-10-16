@@ -49,4 +49,8 @@
     <string name="pay_bizum_invalid">Type a phone number of 9 to 15 digits</string>
     <string name="pay_paypal_invalid">Type your PayPal.me name: letters and numbers, no spaces</string>
     <string name="pay_revolut_invalid">Type your Revtag: at least 3 letters or numbers</string>
+    <string name="pay_iban">IBAN (bank transfer)</string>
+    <string name="pay_iban_invalid">That IBAN is not right: check the letters and digits</string>
+    <string name="pay_iban_holder">Account holder</string>
+    <string name="pay_iban_holder_hint">As your bank has it: banks check the name against the IBAN. Blank uses your name.</string>
 </resources>

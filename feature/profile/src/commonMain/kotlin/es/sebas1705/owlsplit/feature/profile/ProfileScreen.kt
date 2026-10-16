@@ -89,6 +89,10 @@ import es.sebas1705.owlsplit.feature.profile.resources.name_label
 import es.sebas1705.owlsplit.feature.profile.resources.pay_bizum
 import es.sebas1705.owlsplit.feature.profile.resources.pay_bizum_invalid
 import es.sebas1705.owlsplit.feature.profile.resources.pay_body
+import es.sebas1705.owlsplit.feature.profile.resources.pay_iban
+import es.sebas1705.owlsplit.feature.profile.resources.pay_iban_holder
+import es.sebas1705.owlsplit.feature.profile.resources.pay_iban_holder_hint
+import es.sebas1705.owlsplit.feature.profile.resources.pay_iban_invalid
 import es.sebas1705.owlsplit.feature.profile.resources.pay_paypal
 import es.sebas1705.owlsplit.feature.profile.resources.pay_paypal_invalid
 import es.sebas1705.owlsplit.feature.profile.resources.pay_revolut
@@ -121,6 +125,9 @@ import org.koin.compose.viewmodel.koinViewModel
 private val PREFERRED_CURRENCIES = listOf("EUR", "USD", "GBP", "CHF", "MXN", "ARS", "COP", "CLP", "BRL", "JPY")
 
 private const val MESSAGE_MILLIS = 4_000L
+
+/** The holder name an EPC QR allows. */
+private const val MAX_IBAN_HOLDER = 70
 
 /** Profile tab. [onOpenCatalog] is null outside the development environment. */
 @Composable
@@ -248,6 +255,30 @@ private fun PayMethodsEditor(state: ProfileState, onEvent: (ProfileIntent) -> Un
             PayField(state, PayMethod.BIZUM, state.pay.bizum, Res.string.pay_bizum, "600 000 000", onEvent)
             PayField(state, PayMethod.PAYPAL, state.pay.paypal, Res.string.pay_paypal, "paypal.me/…", onEvent)
             PayField(state, PayMethod.REVOLUT, state.pay.revolut, Res.string.pay_revolut, "@revtag", onEvent)
+            PayField(
+                state,
+                PayMethod.IBAN,
+                state.pay.iban,
+                Res.string.pay_iban,
+                "ES00 0000 0000 0000 0000 0000",
+                onEvent
+            )
+            // Only with an IBAN: the bank checks this name against the account.
+            if (!state.pay.iban.isNullOrBlank()) {
+                OwlsplitTextField(
+                    value = state.pay.ibanHolder.orEmpty(),
+                    onValueChange = { onEvent(ProfileIntent.IbanHolderChanged(it)) },
+                    label = stringResource(Res.string.pay_iban_holder),
+                    placeholder = state.name,
+                    maxLength = MAX_IBAN_HOLDER,
+                    capitalization = KeyboardCapitalization.Words,
+                )
+                Text(
+                    stringResource(Res.string.pay_iban_holder_hint),
+                    style = Owlsplit.type.caption,
+                    color = Owlsplit.colors.textSecondary,
+                )
+            }
         }
     }
 }
@@ -265,6 +296,7 @@ private fun PayField(
         PayMethod.BIZUM -> Res.string.pay_bizum_invalid
         PayMethod.PAYPAL -> Res.string.pay_paypal_invalid
         PayMethod.REVOLUT -> Res.string.pay_revolut_invalid
+        PayMethod.IBAN -> Res.string.pay_iban_invalid
     }
     OwlsplitTextField(
         value = value.orEmpty(),
@@ -272,7 +304,7 @@ private fun PayField(
         label = stringResource(label),
         placeholder = placeholder,
         error = if (method in state.invalidPay) stringResource(error) else null,
-        capitalization = KeyboardCapitalization.None,
+        capitalization = if (method == PayMethod.IBAN) KeyboardCapitalization.Characters else KeyboardCapitalization.None,
         keyboardType = if (method == PayMethod.BIZUM) KeyboardType.Phone else KeyboardType.Text,
     )
 }
