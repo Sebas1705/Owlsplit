@@ -22,105 +22,99 @@ data class QuickEntry(
  * Bea", "todos", "with Luis") and, from what is left, the title and its category.
  */
 object QuickEntryParser {
-    @Suppress("CyclomaticComplexMethod", "LongMethod") // One pass over the words, each rule in place.
     fun parse(text: String, members: List<Member>, myMemberId: String?, decimals: Int = 2): QuickEntry {
-        val words = WORD.findAll(text).map { it.value }.toMutableList()
-        val keys = words.map(::key).toMutableList()
+        val sentence = Sentence(WORD.findAll(text).map { it.value }.toList(), members.filter { it.active }, myMemberId)
+        val amount = sentence.takeAmount(decimals)
+        val payer = sentence.takePayer()
+        val participants = sentence.takeParticipants(payer)
+        val (title, category) = sentence.rest()
+        return QuickEntry(amount, title, category, payer, participants)
+    }
+
+    /** The words of the sentence, compared without case or accents, crossed out as each rule takes them. */
+    private class Sentence(val words: List<String>, val members: List<Member>, val me: String?) {
+        val keys = words.map(::key)
         val used = BooleanArray(words.size)
-        val active = members.filter { it.active }
 
-        // The amount: the first number, with an optional currency next to it.
-        var amount: Long? = null
-        for (i in words.indices) {
-            val value = amountOf(keys[i], decimals) ?: continue
-            amount = value
-            used[i] = true
-            if (i + 1 < words.size && keys[i + 1] in CURRENCY_WORDS) used[i + 1] = true
-            break
+        private fun free(i: Int) = i in words.indices && !used[i]
+
+        private fun take(vararg indices: Int) = indices.forEach { if (it in words.indices) used[it] = true }
+
+        private fun memberAt(i: Int): String? = when {
+            !free(i) -> null
+            keys[i] in ME_WORDS -> me
+            else -> members.firstOrNull { matches(it.name, keys[i]) }?.id
         }
 
-        fun memberAt(i: Int): String? {
-            if (i !in words.indices || used[i]) return null
-            if (keys[i] in ME_WORDS) return myMemberId
-            return active.firstOrNull { matches(it.name, keys[i]) }?.id
+        /** The first number, with an optional currency word next to it. */
+        fun takeAmount(decimals: Int): Long? {
+            val i = keys.indices.firstOrNull { amountOf(keys[it], decimals) != null } ?: return null
+            take(i)
+            if (keys.getOrNull(i + 1) in CURRENCY_WORDS) take(i + 1)
+            return amountOf(keys[i], decimals)
         }
 
-        // Who paid: "pagué", "he pagado" or "I paid" is me; otherwise the name before the verb ("Ana
-        // pagó", "Ana ha pagado", "Luis paid") or after it ("pagado por Ana", "paid by Luis", "pagó Ana").
-        var payer: String? = null
-        for (i in words.indices) {
-            if (used[i] || (keys[i] !in PAID && keys[i] !in PAID_ME)) continue
-            used[i] = true
-            var before = i - 1
-            if (before >= 0 && keys[before] in AUXILIARIES) {
-                used[before] = true
-                if (keys[before] in AUX_ME) {
-                    payer = myMemberId
-                    break
-                }
+        /**
+         * "pagué", "he pagado" or "I paid" is me; otherwise the name before the verb ("Ana pagó", "Ana ha
+         * pagado", "Luis paid") or after it ("pagado por Ana", "paid by Luis", "pagó Ana").
+         */
+        fun takePayer(): String? {
+            val verb = keys.indices.firstOrNull { free(it) && (keys[it] in PAID || keys[it] in PAID_ME) } ?: return null
+            take(verb)
+            var before = verb - 1
+            val auxiliary = keys.getOrNull(before)
+            if (auxiliary in AUXILIARIES) {
+                take(before)
                 before--
             }
-            if (keys[i] in PAID_ME || (before >= 0 && keys[before] in ME_WORDS)) {
-                if (before >= 0 && keys[before] in ME_WORDS) used[before] = true
-                payer = myMemberId
-                break
+            val byMe = auxiliary in AUX_ME || keys[verb] in PAID_ME || keys.getOrNull(before) in ME_WORDS
+            if (byMe && keys.getOrNull(before) in ME_WORDS) take(before)
+            val after = if (keys.getOrNull(verb + 1) in BY_WORDS) verb + 2 else verb + 1
+            return when {
+                byMe -> me
+                memberAt(before) != null -> memberAt(before).also { take(before) }
+                memberAt(after) != null -> memberAt(after).also { for (k in verb + 1..after) take(k) }
+                else -> null
             }
-            memberAt(before)?.let {
-                payer = it
-                used[before] = true
-                break
-            }
-            val after = if (i + 1 < words.size && keys[i + 1] in BY_WORDS) i + 2 else i + 1
-            memberAt(after)?.let {
-                payer = it
-                for (k in i + 1..after) used[k] = true
-            }
-            break
         }
 
-        // Who takes part: the names after "con"/"with" (the payer too) or "entre"/"between" (only them).
-        var participants: Set<String>? = null
-        for (i in words.indices) {
-            if (used[i]) continue
-            val with = keys[i] in WITH_WORDS
-            val between = keys[i] in BETWEEN_WORDS
-            if (!with && !between) continue
+        /** The names after "con"/"with" (the payer too) or "entre"/"between" (only them); "todos" is everyone. */
+        fun takeParticipants(payer: String?): Set<String>? {
+            val start = keys.indices.firstOrNull { free(it) && (keys[it] in WITH_WORDS || keys[it] in BETWEEN_WORDS) }
             val found = mutableSetOf<String>()
-            var j = i + 1
             var all = false
-            while (j < words.size) {
-                when {
-                    keys[j] in ALL_WORDS -> all = true
-                    keys[j] in LIST_JOINERS -> Unit
-                    memberAt(j) != null -> found += memberAt(j)!!
-                    else -> break
+            if (start != null) {
+                val end = (start + 1..words.size).first { j -> j == words.size || !inList(j) }
+                for (j in start + 1 until end) {
+                    if (keys[j] in ALL_WORDS) all = true
+                    memberAt(j)?.let { found += it }
+                    take(j)
                 }
-                used[j] = true
-                j++
+                if (all || found.isNotEmpty()) take(start)
             }
-            if (all || found.isNotEmpty()) {
-                used[i] = true
-                participants = when {
-                    all -> null
-                    with -> found + listOfNotNull(payer ?: myMemberId)
-                    else -> found
-                }
+            return when {
+                all || found.isEmpty() -> null
+                keys[start!!] in WITH_WORDS -> found + listOfNotNull(payer ?: me)
+                else -> found
             }
-            break
-        }
-        if (participants == null) {
-            words.indices.firstOrNull { !used[it] && keys[it] in ALL_WORDS }?.let { used[it] = true }
         }
 
-        // The title: what is left, without the little words around it.
-        val rest = words.indices.filter { !used[it] }
-        val trimmed = rest.dropWhile { keys[it] in EDGE_WORDS }.dropLastWhile { keys[it] in EDGE_WORDS }
-        val title = trimmed.joinToString(" ") { words[it] }.takeIf { it.isNotBlank() }
-            ?.replaceFirstChar { it.uppercase() }
-            ?.take(ExpenseDrafts.MAX_TITLE)
-        val category = trimmed.firstNotNullOfOrNull { i -> CATEGORIES.entries.firstOrNull { keys[i] in it.value }?.key }
+        /** A word of a list of people: a name, "yo", "y"/"and", or "todos". */
+        private fun inList(j: Int) = keys[j] in ALL_WORDS || keys[j] in LIST_JOINERS || memberAt(j) != null
 
-        return QuickEntry(amount, title, category, payer, participants)
+        /** The title (what is left, without the little words around it) and the category it gives away. */
+        fun rest(): Pair<String?, ExpenseCategory?> {
+            // A loose "para todos" is the usual split: not part of the title.
+            keys.indices.firstOrNull { free(it) && keys[it] in ALL_WORDS }?.let { take(it) }
+            val left = words.indices.filter { !used[it] }
+                .dropWhile { keys[it] in EDGE_WORDS }
+                .dropLastWhile { keys[it] in EDGE_WORDS }
+            val title = left.joinToString(" ") { words[it] }.takeIf { it.isNotBlank() }
+                ?.replaceFirstChar { it.uppercase() }
+                ?.take(ExpenseDrafts.MAX_TITLE)
+            val category = left.firstNotNullOfOrNull { i -> CATEGORIES.entries.firstOrNull { keys[i] in it.value }?.key }
+            return title to category
+        }
     }
 
     /** "45", "12,50", "12.50€", "1.200" (thousands) in minor units of a currency with [decimals]. */
@@ -130,10 +124,10 @@ object QuickEntryParser {
         val whole = match.groupValues[1]
         val fraction = match.groupValues[2]
         // Three digits after a separator are thousands ("1.200"), not cents.
-        if (fraction.length == THOUSANDS) return ((whole + fraction).toLongOrNull() ?: return null) * pow10(decimals)
-        val units = whole.toLongOrNull() ?: return null
-        val cents = fraction.take(decimals).padEnd(decimals, '0').ifEmpty { "0" }.toLong()
-        return units * pow10(decimals) + cents
+        val thousands = fraction.length == THOUSANDS
+        val units = (if (thousands) whole + fraction else whole).toLongOrNull()
+        val cents = if (thousands) 0L else fraction.take(decimals).padEnd(decimals, '0').ifEmpty { "0" }.toLong()
+        return units?.let { it * pow10(decimals) + cents }
     }
 
     private fun pow10(n: Int): Long = (1..n).fold(1L) { acc, _ -> acc * DECIMAL_BASE }

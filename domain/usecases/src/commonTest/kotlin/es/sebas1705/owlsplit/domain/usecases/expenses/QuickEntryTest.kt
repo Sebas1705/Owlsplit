@@ -16,6 +16,7 @@ class QuickEntryTest {
     private val ana = "m0"
     private val luis = "m1"
     private val bea = "m2"
+    private val marta = "m3"
 
     private fun parse(text: String) = QuickEntryParser.parse(text, members, myMemberId = ana)
 
@@ -55,7 +56,7 @@ class QuickEntryTest {
             QuickEntry(1_800, "Pizza", ExpenseCategory.FOOD, payerId = ana, participantIds = setOf(luis, ana)),
             parse("I paid 18 for pizza with Luis"),
         )
-        assertEquals(marta(), parse("Uber 9.90 paid by Marta").payerId)
+        assertEquals(marta, parse("Uber 9.90 paid by Marta").payerId)
         assertEquals(ExpenseCategory.TRANSPORT, parse("Uber 9.90 paid by Marta").category)
     }
 
@@ -65,6 +66,4 @@ class QuickEntryTest {
         assertEquals(QuickEntry(amountMinor = 120_000), parse("1.200 €"))
         assertEquals(QuickEntry(), parse("   "))
     }
-
-    private fun marta() = "m3"
 }
