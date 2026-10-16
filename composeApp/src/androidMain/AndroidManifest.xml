@@ -5,7 +5,29 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <uses-sdk tools:overrideLibrary="io.kamel.image" />
-
+    <!-- Banking apps for Bizum (BankApps.SPANISH_BANKS): without this Android 11+ hides whether they are installed. -->
+    <queries>
+        <package android:name="com.bbva.bbvacontigo" />
+        <package android:name="es.lacaixa.mobile.android.newwapicon" />
+        <package android:name="es.bancosantander.apps" />
+        <package android:name="net.inverline.bancosabadell.officelocator.android" />
+        <package android:name="www.ingdirect.nativeframe" />
+        <package android:name="com.imaginbank.app" />
+        <package android:name="com.bankinter.launcher" />
+        <package android:name="es.openbank.mobile" />
+        <package android:name="es.unicajabanco.app" />
+        <package android:name="com.abanca.bancamovil.particulares" />
+        <package android:name="com.kutxabank.android" />
+        <package android:name="es.ibercaja.ibercajaapp" />
+        <package android:name="com.grupocajamar.wefferent" />
+        <package android:name="com.rsi.nba" />
+        <package android:name="com.tecnocom.cajalaboral" />
+        <package android:name="es.evobanco.bancamovil" />
+        <package android:name="com.myinvestor.es" />
+        <package android:name="es.eurocajarural.EurocajaRural" />
+        <package android:name="es.caixaontinyent.caixaontinyentapp" />
+        <package android:name="com.mediolanum.android.fullbanca" />
+    </queries>
     <application
         android:name=".KmpApplication"
         android:label="@string/app_name"

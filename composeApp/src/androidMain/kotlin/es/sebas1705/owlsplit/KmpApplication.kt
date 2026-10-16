@@ -10,6 +10,7 @@ import es.sebas1705.owlsplit.core.security.appContext
 import es.sebas1705.owlsplit.core.ui.components.QrScanner
 import es.sebas1705.owlsplit.core.ui.components.FilePicker
 import es.sebas1705.owlsplit.core.ui.components.FileSharer
+import es.sebas1705.owlsplit.core.ui.components.BankApps
 import es.sebas1705.owlsplit.core.ui.components.TextSharer
 import es.sebas1705.owlsplit.data.local.DatabaseDriverFactory
 import es.sebas1705.owlsplit.di.FirebaseStatus
@@ -27,6 +28,7 @@ import es.sebas1705.owlsplit.update.PlayStoreUpdates
 import es.sebas1705.owlsplit.share.AndroidQrScanner
 import es.sebas1705.owlsplit.share.AndroidFilePicker
 import es.sebas1705.owlsplit.share.AndroidFileSharer
+import es.sebas1705.owlsplit.share.AndroidBankApps
 import es.sebas1705.owlsplit.share.AndroidTextSharer
 import es.sebas1705.owlsplit.sync.SyncStarter
 import es.sebas1705.owlsplit.sync.SyncWorker
@@ -61,6 +63,7 @@ class KmpApplication : Application() {
                     single { firebase }
                     single<GoogleCredentials> { AndroidGoogleCredentials(this@KmpApplication, activities) }
                     single<TextSharer> { AndroidTextSharer(activities) }
+                    single<BankApps> { AndroidBankApps(this@KmpApplication, activities) }
                     single<FileSharer> { AndroidFileSharer(activities) }
                     single<FilePicker> { AndroidFilePicker(activities) }
                     single<QrScanner> { AndroidQrScanner(this@KmpApplication, activities) }

@@ -62,6 +62,8 @@ import es.sebas1705.owlsplit.core.ui.components.PrimaryPillButton
 import es.sebas1705.owlsplit.core.ui.components.SegmentedControl
 import es.sebas1705.owlsplit.core.ui.components.SettleSuggestionRow
 import es.sebas1705.owlsplit.core.ui.components.TextActionButton
+import es.sebas1705.owlsplit.core.ui.components.BankApps
+import es.sebas1705.owlsplit.core.ui.components.NoBankApps
 import es.sebas1705.owlsplit.core.ui.components.TextSharer
 import es.sebas1705.owlsplit.core.ui.format.MoneyFormat
 import es.sebas1705.owlsplit.core.ui.format.LocalMoneyFormat
@@ -127,7 +129,7 @@ fun GroupRoute(groupId: String, initialTab: GroupTab, navigation: GroupNavigatio
     val viewModel = koinViewModel<GroupViewModel>(key = "group-$groupId") { parametersOf(groupId, initialTab) }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(state.closed) { if (state.closed && state.loaded) navigation.back() }
-    GroupScreen(state, viewModel::onEvent, navigation, koinInject(), modifier)
+    GroupScreen(state, viewModel::onEvent, navigation, koinInject(), modifier, banks = koinInject())
 }
 
 @Composable
@@ -139,6 +141,8 @@ fun GroupScreen(
     modifier: Modifier = Modifier,
     format: MoneyFormat = LocalMoneyFormat.current,
     today: LocalDate = Today.System(),
+    /** The banking apps to open for Bizum (none in previews and tests). */
+    banks: BankApps = NoBankApps,
 ) {
     val detail = state.detail ?: return
     val currency = Currency.of(detail.group.baseCurrency)
@@ -176,7 +180,7 @@ fun GroupScreen(
             }
         }
     }
-    Dialogs(state, detail, currency, format, sharer, onEvent)
+    Dialogs(state, detail, currency, format, sharer, banks, onEvent)
 }
 
 @Composable
@@ -451,6 +455,7 @@ private fun Dialogs(
     currency: Currency,
     format: MoneyFormat,
     sharer: TextSharer,
+    banks: BankApps,
     onEvent: (GroupIntent) -> Unit,
 ) {
     val dismiss = { onEvent(GroupIntent.DismissDialog) }
@@ -461,6 +466,7 @@ private fun Dialogs(
             detail,
             currency,
             format,
+            banks,
             onRemind = { onEvent(GroupIntent.Remind(payment)) },
             onConfirm = { onEvent(GroupIntent.ConfirmSettle) },
             onDismiss = dismiss,

@@ -6,6 +6,8 @@ import dev.gitlive.firebase.apps
 import es.sebas1705.owlsplit.core.ui.components.QrScanner
 import es.sebas1705.owlsplit.core.ui.components.FilePicker
 import es.sebas1705.owlsplit.core.ui.components.FileSharer
+import es.sebas1705.owlsplit.core.ui.components.BankApps
+import es.sebas1705.owlsplit.core.ui.components.NoBankApps
 import es.sebas1705.owlsplit.core.ui.components.TextSharer
 import es.sebas1705.owlsplit.data.local.DatabaseDriverFactory
 import es.sebas1705.owlsplit.di.FirebaseStatus
@@ -48,6 +50,7 @@ fun MainViewController(googleSignIn: GoogleSignInBridge?) = ComposeUIViewControl
                     single { firebase }
                     single<GoogleCredentials> { IosGoogleCredentials(googleSignIn) }
                     single<TextSharer> { IosTextSharer() }
+                    single<BankApps> { NoBankApps }
                     single<FileSharer> { IosFileSharer() }
                     single<FilePicker> { IosFilePicker() }
                     single<QrScanner> { IosQrScanner() }

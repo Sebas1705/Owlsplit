@@ -34,6 +34,8 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import compose.icons.TablerIcons
 import compose.icons.tablericons.BuildingBank
 import compose.icons.tablericons.Qrcode
+import es.sebas1705.owlsplit.core.ui.components.BankApp
+import es.sebas1705.owlsplit.core.ui.components.BankApps
 import es.sebas1705.owlsplit.core.ui.components.QrCode
 import androidx.compose.ui.text.style.TextAlign
 import compose.icons.tablericons.BrandPaypal
@@ -56,6 +58,9 @@ import es.sebas1705.owlsplit.feature.groups.resources.Res
 import es.sebas1705.owlsplit.feature.groups.resources.cancel
 import es.sebas1705.owlsplit.feature.groups.resources.pay_bizum_copied
 import es.sebas1705.owlsplit.feature.groups.resources.pay_by_transfer
+import es.sebas1705.owlsplit.feature.groups.resources.pay_choose_bank
+import es.sebas1705.owlsplit.feature.groups.resources.pay_open_bank
+import es.sebas1705.owlsplit.feature.groups.resources.pay_other_bank
 import es.sebas1705.owlsplit.feature.groups.resources.pay_iban_copied
 import es.sebas1705.owlsplit.feature.groups.resources.pay_qr_concept
 import es.sebas1705.owlsplit.feature.groups.resources.pay_qr_show
@@ -86,6 +91,7 @@ internal fun SettleDialog(
     detail: GroupDetail,
     currency: Currency,
     format: MoneyFormat,
+    banks: BankApps,
     onRemind: () -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
@@ -119,7 +125,14 @@ internal fun SettleDialog(
                     payment.fromMemberId == detail.myMemberId && payeeMethods != null && back ->
                         DidYouPay(payee.name, format.format(payment.amountMinor, currency))
                     payment.fromMemberId == detail.myMemberId && payeeMethods != null ->
-                        PayOptions(payee.name, payeeMethods, payment.amountMinor, currency, format) { paying = true }
+                        PayOptions(
+                            payee.name,
+                            payeeMethods,
+                            payment.amountMinor,
+                            currency,
+                            format,
+                            banks
+                        ) { paying = true }
                     payment.toMemberId == detail.myMemberId ->
                         RequestPayment(detail, payment.amountMinor, currency, onRemind)
                 }
@@ -150,6 +163,7 @@ private fun PayOptions(
     amountMinor: Long,
     currency: Currency,
     format: MoneyFormat,
+    banks: BankApps,
     onLeave: () -> Unit,
 ) {
     val uri = LocalUriHandler.current
@@ -198,6 +212,40 @@ private fun PayOptions(
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
         )
     }
+    // Bizum has no link: with the phone copied, the banking app is the next step.
+    if (copied == PayMethod.BIZUM) OpenBank(banks, onLeave)
+}
+
+/**
+ * The bank used for Bizum, a tap away: the one chosen before (or the only one installed), or a list of
+ * the installed ones the first time; "Another bank" changes it. Nothing when none is installed (or on iOS).
+ */
+@Composable
+private fun OpenBank(banks: BankApps, onLeave: () -> Unit) {
+    val installed = remember(banks) { banks.installed() }
+    if (installed.isEmpty()) return
+    var preferred by remember(banks) { mutableStateOf(banks.preferred()) }
+    var choosing by remember { mutableStateOf(false) }
+    val open = { app: BankApp ->
+        banks.remember(app)
+        preferred = app
+        choosing = false
+        if (banks.open(app)) onLeave()
+    }
+    val current = preferred
+    if (current != null && !choosing) {
+        OptionRow(TablerIcons.BuildingBank, stringResource(Res.string.pay_open_bank, current.name)) { open(current) }
+        if (installed.size > 1) {
+            TextActionButton(stringResource(Res.string.pay_other_bank), { choosing = true })
+        }
+        return
+    }
+    Text(
+        stringResource(Res.string.pay_choose_bank),
+        style = Owlsplit.type.caption,
+        color = Owlsplit.colors.textSecondary
+    )
+    installed.forEach { app -> OptionRow(TablerIcons.BuildingBank, app.name) { open(app) } }
 }
 
 /**
