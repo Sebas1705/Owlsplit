@@ -13,6 +13,7 @@ Owlsplit is built in independent subprojects. Each one goes through **design →
 | **Import from Splitwise** (CSV, P13a) | beta.3 |
 | Update notice (P15, beta.5), Google Play in-app updates and App Check, not enforced (beta.9) | beta.5 |
 | **Pay by IBAN with an EPC (SEPA) QR**, and "did you pay?" on coming back from the payment app | beta.13 |
+| **Open your bank for Bizum** after copying the phone (20 Spanish banks; Android) | beta.15 |
 | **Android widget** with the balance and "add expense", plus a launcher shortcut | beta.13 |
 | **Going back into a group I left** (the "group bin": groups cannot be deleted, only left) | beta.13 |
 | **New expenses follow the members' weights** (the default split per group) | beta.13 |
@@ -27,7 +28,7 @@ Owlsplit is built in independent subprojects. Each one goes through **design →
 | 2 | **App Store** (TestFlight, review) | M | Apple Developer account |
 | 3 | **Receipts**: photo, on-device OCR (ML Kit / Vision), line-by-line split with tax and tip prorated | L | Cloud Storage (Blaze) for the photos |
 | 4 | **Comments on expenses** | M | After 1 |
-| 5 | **Polish settling up, the rest**: a bank picker for Bizum (needs the banks' Android package names checked), and testing whether revolut.me fills in the amount | S | Nothing |
+| 5 | **Polish settling up, the rest**: test on a real phone whether revolut.me fills in the amount | S | Nothing |
 | 6 | **Import from Tricount**, only if a real export file can be had | S–M | A sample file |
 | 7 | **Budgets** per group or trip | M | Nothing |
 
