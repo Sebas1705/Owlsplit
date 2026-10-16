@@ -120,7 +120,7 @@ class HomeViewModelTest {
         ),
         nudge,
         updates = if (checkForUpdate != null && updates != null) UpdateOffer(checkForUpdate, updates, store) else null,
-        rejoinGroup = rejoin,
+        chores = rejoin?.let { HomeChores(rejoin = it) },
     )
 
     @Test

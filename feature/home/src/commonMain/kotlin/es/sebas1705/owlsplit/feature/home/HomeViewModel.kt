@@ -79,10 +79,15 @@ sealed interface HomeIntent : MVIBaseIntent {
 }
 
 /**
- * Adds the repeating expenses that are due in every group, and shows my groups whether my account is
- * linked to Google.
+ * Work for my groups from Home: adding the repeating expenses that are due, showing my groups whether
+ * my account is linked to Google, and going back into a group I left. Each is null in tests that do
+ * not need it.
  */
-class HomeChores(val generateRecurring: GenerateRecurring, val syncMyLinked: SyncMyLinked)
+class HomeChores(
+    val generateRecurring: GenerateRecurring? = null,
+    val syncMyLinked: SyncMyLinked? = null,
+    val rejoin: RejoinGroup? = null,
+)
 
 /**
  * Finding a newer release and remembering which one the user put off. [check] covers APK installs (the
@@ -102,19 +107,17 @@ class HomeViewModel(
     private val convertTotal: ConvertTotal,
     private val nudge: LinkNudgeSettings,
     /** Work for every group when Inicio opens (null in tests that do not need it). */
-    chores: HomeChores? = null,
+    private val chores: HomeChores? = null,
     /** Looks for a newer release once per launch (null in tests that do not need it). */
     private val updates: UpdateOffer? = null,
-    /** Going back into a group I left (null in tests that do not need it). */
-    private val rejoinGroup: RejoinGroup? = null,
 ) : MVIBaseViewModel<HomeState, HomeIntent>() {
 
     override fun initState() = HomeState()
 
     init {
         chores?.let {
-            execute { it.generateRecurring.all() }
-            execute { it.syncMyLinked() }
+            it.generateRecurring?.let { recurring -> execute { recurring.all() } }
+            it.syncMyLinked?.let { linked -> execute { linked() } }
         }
         updates?.let { offer ->
             viewModelScope.launch {
@@ -188,7 +191,7 @@ class HomeViewModel(
 
     private suspend fun rejoin() {
         val asked = currentState.rejoin ?: return
-        val run = rejoinGroup ?: return
+        val run = chores?.rejoin ?: return
         updateState { it.copy(rejoin = asked.copy(busy = true, result = null)) }
         when (val result = run(asked.group.id)) {
             RejoinResult.JOINED -> updateState { it.copy(rejoin = null, rejoined = asked.group.id) }
