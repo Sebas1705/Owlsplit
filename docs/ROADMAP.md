@@ -12,26 +12,26 @@ Owlsplit is built in independent subprojects. Each one goes through **design →
 | **Statistics and export**: group summary with CSV and PDF (P12b); a Stats tab across groups (beta.10) and charts (beta.11) | beta.3 |
 | **Import from Splitwise** (CSV, P13a) | beta.3 |
 | Update notice (P15, beta.5), Google Play in-app updates and App Check, not enforced (beta.9) | beta.5 |
+| **Pay by IBAN with an EPC (SEPA) QR**, and "did you pay?" on coming back from the payment app | beta.13 |
+| **Android widget** with the balance and "add expense", plus a launcher shortcut | beta.13 |
+| **Going back into a group I left** (the "group bin": groups cannot be deleted, only left) | beta.13 |
+| **New expenses follow the members' weights** (the default split per group) | beta.13 |
+| **Natural-language entry** in Spanish and English, on the device ("Ana pagó 45 de cena con Luis") | beta.13 |
 
 ## Next
 
 | # | Subproject | Effort | Needs |
 |---|---|---|---|
-| 1 | **Pay by IBAN with an EPC (SEPA) QR**: IBAN and holder name in the profile, a QR the payer scans with their bank app, IBAN and amount to copy | S | Nothing |
-| 2 | **Polish settling up**: currency in PayPal.me, check revolut.me's amount, a bank picker for Bizum, "did you pay?" on coming back, a "pay me" QR | S | Nothing |
-| 3 | **Push notifications and reminders**: new expense, you are owed, you were paid; automatic, rate-limited reminders | M–L | Blaze, FCM, Cloud Functions |
-| 4 | **Web for guests** on the invite link: see balances, add an expense, mark a payment, "who are you?", without installing | L | Hosting and a light web client on the same rules and App Check |
-| 5 | **App Store** (TestFlight, review) | M | Apple Developer account |
-| 6 | **Receipts**: photo, on-device OCR (ML Kit / Vision), line-by-line split with tax and tip prorated | L | Cloud Storage (Blaze) for the photos |
-| 7 | **Natural-language entry** in Spanish and English ("Ana paid 45 for dinner"), always confirmed in the form | M–L | Local parser; optional LLM |
-| 8 | **Android widget** with the balance and quick add; quick settings tile and app actions | M | Jetpack Glance |
-| 9 | **Group bin**: deleted groups can be restored for 30 days | S–M | Soft delete and a scheduled clean-up |
-| 10 | **Default split per group** (couples, flats) beyond member weights | S | Nothing |
-| 11 | **Comments on expenses** | M | After 3 |
-| 12 | **Import from Tricount**, only if a real export file can be had | S–M | A sample file |
-| 13 | **Budgets** per group or trip | M | Nothing |
+| 1 | **Push notifications and reminders**: new expense, you are owed, you were paid; automatic, rate-limited reminders | M–L | Blaze, FCM, Cloud Functions |
+| 2 | **Web for guests** on the invite link: see balances, add an expense, mark a payment, "who are you?", without installing | L | Hosting and a light web client on the same rules and App Check |
+| 3 | **App Store** (TestFlight, review) | M | Apple Developer account |
+| 4 | **Receipts**: photo, on-device OCR (ML Kit / Vision), line-by-line split with tax and tip prorated | L | Cloud Storage (Blaze) for the photos |
+| 5 | **Comments on expenses** | M | After 1 |
+| 6 | **Polish settling up, the rest**: a bank picker for Bizum (needs the banks' Android package names checked), and testing whether revolut.me fills in the amount | S | Nothing |
+| 7 | **Import from Tricount**, only if a real export file can be had | S–M | A sample file |
+| 8 | **Budgets** per group or trip | M | Nothing |
 
-Items 1 and 2 go first although reach matters more: they are small, need no paid plan, and nobody else offers them, while 3 and 6 wait on the Blaze plan and 5 on an Apple account.
+What is left at the top needs a paid Firebase plan (1, 4) or an Apple account (3); 2 can start on the free plan (Hosting) but is the biggest piece.
 
 ## Not now
 
