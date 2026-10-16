@@ -14,6 +14,8 @@ import es.sebas1705.owlsplit.domain.usecases.pay.PaymentReminder
 import es.sebas1705.owlsplit.domain.usecases.pay.ReminderWording
 import es.sebas1705.owlsplit.feature.groups.resources.Res
 import es.sebas1705.owlsplit.feature.groups.resources.remind_bizum
+import es.sebas1705.owlsplit.feature.groups.resources.remind_iban
+import es.sebas1705.owlsplit.feature.groups.resources.remind_iban_holder
 import es.sebas1705.owlsplit.feature.groups.resources.remind_intro
 import es.sebas1705.owlsplit.feature.groups.resources.remind_list_last
 import es.sebas1705.owlsplit.feature.groups.resources.remind_list_more
@@ -73,6 +75,8 @@ private fun reminderWording(): ReminderWording {
     val bizum = stringResource(Res.string.remind_bizum, ARG1)
     val paypal = stringResource(Res.string.remind_paypal, ARG1)
     val revolut = stringResource(Res.string.remind_revolut, ARG1)
+    val iban = stringResource(Res.string.remind_iban, ARG1)
+    val ibanHolder = stringResource(Res.string.remind_iban_holder, ARG1, ARG2)
     val listMore = stringResource(Res.string.remind_list_more, ARG1, ARG2)
     val listLast = stringResource(Res.string.remind_list_last, ARG1, ARG2)
     val thanks = stringResource(Res.string.remind_thanks)
@@ -82,6 +86,7 @@ private fun reminderWording(): ReminderWording {
         bizum = { bizum.fill(it) },
         paypal = { paypal.fill(it) },
         revolut = { revolut.fill(it) },
+        iban = { number, holder -> holder?.let { ibanHolder.fill(number, it) } ?: iban.fill(number) },
         listMore = { a, b -> listMore.fill(a, b) },
         listLast = { a, b -> listLast.fill(a, b) },
         thanks = thanks,

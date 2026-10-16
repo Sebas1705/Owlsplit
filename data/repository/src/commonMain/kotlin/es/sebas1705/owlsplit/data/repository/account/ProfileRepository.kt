@@ -41,13 +41,29 @@ class ProfileRepositoryImpl(
 ) : ProfileRepository {
     override val profile: Flow<UserProfile?> =
         prefs.profile.map {
-            it?.let { p -> UserProfile(p.name, p.avatar, p.currency, PayMethods(p.bizum, p.paypal, p.revolut)) }
+            it?.let { p ->
+                UserProfile(
+                    p.name,
+                    p.avatar,
+                    p.currency,
+                    PayMethods(p.bizum, p.paypal, p.revolut, p.iban, p.ibanHolder)
+                )
+            }
         }
 
     override suspend fun save(profile: UserProfile) {
         val pay = profile.payMethods
         prefs.setProfile(
-            StoredProfile(profile.name, profile.avatar, profile.currency, pay.bizum, pay.paypal, pay.revolut)
+            StoredProfile(
+                profile.name,
+                profile.avatar,
+                profile.currency,
+                pay.bizum,
+                pay.paypal,
+                pay.revolut,
+                pay.iban,
+                pay.ibanHolder,
+            )
         )
         scope.launch { uploadCurrent() }
     }

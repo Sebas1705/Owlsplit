@@ -141,6 +141,27 @@ class ProfileViewModelTest {
     }
 
     @Test
+    fun anIbanIsCheckedThenSavedCompactWithItsHolderAndReachesMyMembers() = runTest {
+        val env = Env()
+        val group = env.ledger.groups.create(GroupInput("Piso", "home", "GREEN", "EUR"), "Ana")
+
+        env.vm.onEvent(ProfileIntent.PayChanged(PayMethod.IBAN, "ES91 2100 0418 4502 0005 1333"))
+        assertEquals(setOf(PayMethod.IBAN), env.vm.uiState.value.invalidPay)
+        assertFalse(env.vm.uiState.value.canSave)
+
+        env.vm.onEvent(ProfileIntent.PayChanged(PayMethod.IBAN, "es91 2100 0418 4502 0005 1332"))
+        env.vm.onEvent(ProfileIntent.IbanHolderChanged("Ana García López"))
+        // The Save button shows only for changes it sees.
+        assertTrue(env.vm.uiState.value.dirty)
+        env.vm.onEvent(ProfileIntent.Save)
+
+        val saved = PayMethods(iban = "ES9121000418450200051332", ibanHolder = "Ana García López")
+        assertEquals(saved, env.profiles.profile.value?.payMethods)
+        assertEquals(saved, env.ledger.members.observeMembers(group).first().single().payMethods)
+        assertFalse(env.vm.uiState.value.dirty)
+    }
+
+    @Test
     fun currencyThemeAndLanguageApplyAtOnce() = runTest {
         val env = Env()
         env.vm.onEvent(ProfileIntent.CurrencyChanged("USD"))

@@ -95,9 +95,14 @@ service cloud.firestore {
         }
         // How to pay someone: only they publish it (on their own member); anyone may clear it.
         function isPayMethods(p) {
-          return p == null || (p is map && p.keys().hasOnly(['bizum', 'paypal', 'revolut'])
+          return p == null || (p is map && p.keys().hasOnly(['bizum', 'paypal', 'revolut', 'iban', 'ibanHolder'])
             && isOptText(p.get('bizum', null), 20) && isOptText(p.get('paypal', null), 40)
-            && isOptText(p.get('revolut', null), 40));
+            && isOptText(p.get('revolut', null), 40) && isOptIban(p.get('iban', null))
+            && isOptText(p.get('ibanHolder', null), 70));
+        }
+        // Compact and in capitals, as the app stores it; the check digits are verified by the client.
+        function isOptIban(v) {
+          return v == null || (v is string && v.matches('[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}'));
         }
         function payMethodsAreOwn() {
           return !changedKeys().hasAny(['payMethods']) || data().get('payMethods', null) == null

@@ -66,6 +66,7 @@ sealed interface ProfileIntent : MVIBaseIntent {
     data class NameChanged(val name: String) : ProfileIntent
     data class AccentChanged(val accent: GroupAccent) : ProfileIntent
     data class PayChanged(val method: PayMethod, val value: String) : ProfileIntent
+    data class IbanHolderChanged(val holder: String) : ProfileIntent
     data object Save : ProfileIntent
     data class CurrencyChanged(val code: String) : ProfileIntent
     data class ThemeChanged(val mode: ThemeMode) : ProfileIntent
@@ -82,8 +83,13 @@ sealed interface ProfileIntent : MVIBaseIntent {
 }
 
 /** Blank fields as null, so a saved profile and an untouched form compare equal. */
-private fun PayMethods.trimmed() =
-    PayMethods(bizum?.trim()?.ifEmpty { null }, paypal?.trim()?.ifEmpty { null }, revolut?.trim()?.ifEmpty { null })
+private fun PayMethods.trimmed() = PayMethods(
+    bizum?.trim()?.ifEmpty { null },
+    paypal?.trim()?.ifEmpty { null },
+    revolut?.trim()?.ifEmpty { null },
+    iban?.trim()?.ifEmpty { null },
+    ibanHolder?.trim()?.ifEmpty { null },
+)
 
 /** Account and preferences. Signing out and deleting reset the device: the app returns to onboarding. */
 @Suppress("LongParameterList") // One use case per action keeps each one testable on its own.
@@ -137,6 +143,8 @@ class ProfileViewModel(
             is ProfileIntent.NameChanged -> updateState { it.copy(name = intent.name.take(MAX_NAME)) }
             is ProfileIntent.AccentChanged -> updateState { it.copy(accent = intent.accent) }
             is ProfileIntent.PayChanged -> updateState { it.copy(pay = it.pay.with(intent.method, intent.value)) }
+            is ProfileIntent.IbanHolderChanged ->
+                updateState { it.copy(pay = it.pay.copy(ibanHolder = intent.holder.take(MAX_HOLDER))) }
             ProfileIntent.Save -> save()
             is ProfileIntent.CurrencyChanged -> currentState.saved?.let { saveProfile(it.copy(currency = intent.code)) }
             is ProfileIntent.ThemeChanged -> display.setThemeMode(intent.mode)
@@ -226,12 +234,14 @@ class ProfileViewModel(
             PayMethod.BIZUM -> copy(bizum = text)
             PayMethod.PAYPAL -> copy(paypal = text)
             PayMethod.REVOLUT -> copy(revolut = text)
+            PayMethod.IBAN -> copy(iban = text)
         }
     }
 
     private companion object {
         const val MAX_NAME = 40
         const val MAX_HANDLE = 60
+        const val MAX_HOLDER = 70
         const val GOOGLE = "google.com"
     }
 }

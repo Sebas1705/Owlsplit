@@ -97,6 +97,8 @@
     <string name="remind_bizum">por Bizum al %1$s</string>
     <string name="remind_paypal">por PayPal en %1$s</string>
     <string name="remind_revolut">por Revolut en %1$s</string>
+    <string name="remind_iban">por transferencia al IBAN %1$s</string>
+    <string name="remind_iban_holder">por transferencia al IBAN %1$s (a nombre de %2$s)</string>
     <string name="remind_list_more">%1$s, %2$s</string>
     <string name="remind_list_last">%1$s o %2$s</string>
     <string name="remind_thanks">¡Gracias!</string>
@@ -178,4 +180,11 @@
     <string name="stats_percent">%1$d %</string>
     <string name="stats_rest">Otras</string>
     <string name="spending_paid_value">Has pagado %1$s</string>
+    <string name="pay_by_transfer">Pagar por transferencia</string>
+    <string name="pay_iban_copied">IBAN copiado: %1$s, a nombre de %2$s. Pégalo en la app de tu banco y envía %3$s.</string>
+    <string name="pay_qr_concept">Owlsplit: %1$s</string>
+    <string name="pay_qr_show">Mostrar un QR para que te paguen</string>
+    <string name="pay_qr_hide">Ocultar el QR</string>
+    <string name="pay_qr_description">QR de pago con tu IBAN, el importe y el concepto</string>
+    <string name="pay_qr_hint">Que lo escanee con la app de su banco: se rellenan tu IBAN, el importe y el concepto.</string>
 </resources>

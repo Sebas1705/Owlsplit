@@ -49,4 +49,8 @@
     <string name="pay_bizum_invalid">Escribe un teléfono de 9 a 15 cifras</string>
     <string name="pay_paypal_invalid">Escribe tu nombre de PayPal.me: letras y números, sin espacios</string>
     <string name="pay_revolut_invalid">Escribe tu Revtag: al menos 3 letras o números</string>
+    <string name="pay_iban">IBAN (transferencia)</string>
+    <string name="pay_iban_invalid">Ese IBAN no es correcto: revisa las letras y los números</string>
+    <string name="pay_iban_holder">Titular de la cuenta</string>
+    <string name="pay_iban_holder_hint">Como lo tiene tu banco: los bancos comprueban el nombre con el IBAN. Si lo dejas vacío, se usa tu nombre.</string>
 </resources>
