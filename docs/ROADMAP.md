@@ -17,13 +17,14 @@ Owlsplit is built in independent subprojects. Each one goes through **design →
 | **Going back into a group I left** (the "group bin": groups cannot be deleted, only left) | beta.13 |
 | **New expenses follow the members' weights** (the default split per group) | beta.13 |
 | **Natural-language entry** in Spanish and English, on the device ("Ana pagó 45 de cena con Luis") | beta.13 |
+| **Web for guests** at `owlsplit.web.app/g/{code}`: join, see expenses and balances, add expenses, record payments ([design](designs/2026-10-16-web-guests.md)) | site, 2026-10-16 |
 
 ## Next
 
 | # | Subproject | Effort | Needs |
 |---|---|---|---|
 | 1 | **Push notifications and reminders**: new expense, you are owed, you were paid; automatic, rate-limited reminders | M–L | Blaze, FCM, Cloud Functions |
-| 2 | **Web for guests** on the invite link: see balances, add an expense, mark a payment, "who are you?", without installing | L | Hosting and a light web client on the same rules and App Check |
+| 2 | **Web for guests, next**: edit and delete expenses, other currencies, "Save with Google" so the guest keeps the account in the app, and a reCAPTCHA App Check provider before enforcing it | M | Nothing (reCAPTCHA is free) |
 | 3 | **App Store** (TestFlight, review) | M | Apple Developer account |
 | 4 | **Receipts**: photo, on-device OCR (ML Kit / Vision), line-by-line split with tax and tip prorated | L | Cloud Storage (Blaze) for the photos |
 | 5 | **Comments on expenses** | M | After 1 |
@@ -31,7 +32,7 @@ Owlsplit is built in independent subprojects. Each one goes through **design →
 | 7 | **Import from Tricount**, only if a real export file can be had | S–M | A sample file |
 | 8 | **Budgets** per group or trip | M | Nothing |
 
-What is left at the top needs a paid Firebase plan (1, 4) or an Apple account (3); 2 can start on the free plan (Hosting) but is the biggest piece.
+What is left at the top needs a paid Firebase plan (1, 4) or an Apple account (3).
 
 ## Not now
 
