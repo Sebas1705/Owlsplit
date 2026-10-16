@@ -9,7 +9,8 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { decimalsOf, groupBalances, myShare } from './money.js';
 import {
-  changelogEntry, claimMember, defaultSplit, joinGroup, newExpense, newMember, newTransfer, parseAmount,
+  changelogEntry, claimMember, defaultSplit, expenseDiff, expenseUpdate, fullyEditable, joinGroup, markDeleted,
+  newExpense, newMember, newTransfer, parseAmount,
 } from './payloads.js';
 
 const f = { serverTimestamp, arrayUnion, increment };
@@ -38,6 +39,11 @@ const TEXT = {
     needAmount: 'Escribe un importe.', needTitle: 'Escribe un concepto.', needPeople: 'Elige al menos una persona.',
     saveFailed: 'No se pudo guardar. Revisa tu conexión e inténtalo otra vez.',
     getApp: 'Con la app tienes además avisos, estadísticas y modo sin conexión.', download: 'Descargar Owlsplit',
+    editExpense: 'Editar gasto', delete: 'Borrar', confirmDelete: '¿Borrar este gasto? Queda en el historial y se puede recuperar desde la app.',
+    deleted: 'Gasto borrado.', saved: 'Gasto guardado.', inApp: 'Este gasto usa un reparto que solo se edita en la app: aquí puedes cambiar el concepto, la categoría y la fecha, o borrarlo.',
+    conflict: 'Alguien lo ha cambiado mientras tanto. Vuelve a abrirlo e inténtalo otra vez.',
+    payments: 'Pagos registrados', undo: 'Deshacer', confirmUndo: '¿Deshacer este pago? El saldo vuelve a como estaba.', undone: 'Pago deshecho.',
+    paymentLine: (a, b) => `${a} → ${b}`,
     otherCurrency: 'Los gastos en otras divisas se cuentan a su cambio guardado.',
     categories: { FOOD: 'Comida', GROCERIES: 'Súper', TRANSPORT: 'Transporte', ACCOMMODATION: 'Alojamiento', LEISURE: 'Ocio', SHOPPING: 'Compras', HOME: 'Casa', UTILITIES: 'Suministros', HEALTH: 'Salud', GIFTS: 'Regalos', OTHER: 'Otros' },
   },
@@ -61,6 +67,11 @@ const TEXT = {
     needAmount: 'Enter an amount.', needTitle: 'Enter a description.', needPeople: 'Pick at least one person.',
     saveFailed: 'Could not save. Check your connection and try again.',
     getApp: 'The app also gives you notifications, statistics and offline use.', download: 'Download Owlsplit',
+    editExpense: 'Edit expense', delete: 'Delete', confirmDelete: 'Delete this expense? It stays in the history and can be restored from the app.',
+    deleted: 'Expense deleted.', saved: 'Expense saved.', inApp: 'This expense uses a split that is only edited in the app: here you can change its description, category and date, or delete it.',
+    conflict: 'Someone changed it meanwhile. Open it again and retry.',
+    payments: 'Recorded payments', undo: 'Undo', confirmUndo: 'Undo this payment? The balances go back to how they were.', undone: 'Payment undone.',
+    paymentLine: (a, b) => `${a} → ${b}`,
     otherCurrency: 'Expenses in other currencies count at their saved rate.',
     categories: { FOOD: 'Food', GROCERIES: 'Groceries', TRANSPORT: 'Transport', ACCOMMODATION: 'Accommodation', LEISURE: 'Leisure', SHOPPING: 'Shopping', HOME: 'Home', UTILITIES: 'Utilities', HEALTH: 'Health', GIFTS: 'Gifts', OTHER: 'Other' },
   },
@@ -80,7 +91,7 @@ const t = () => TEXT[lang];
 const code = decodeURIComponent(location.pathname.split('/g/')[1] || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
 const state = {
   screen: 'loading', uid: null, invite: null, groupId: null, group: null,
-  members: [], expenses: [], transfers: [], tab: 'expenses', adding: false, confirming: null,
+  members: [], expenses: [], transfers: [], tab: 'expenses', adding: false, confirming: null, confirmingDelete: false, undoing: null,
   busy: false, error: null, notice: null,
 };
 let db;
@@ -196,13 +207,13 @@ function expensesTab(base) {
     .sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : b.createdAt - a.createdAt));
   const foreign = list.some((e) => e.currency !== base);
   return [
-    h('button', { class: 'button', type: 'button', onclick: () => { state.adding = true; state.error = null; state.notice = null; render(); } }, `+ ${T.add}`),
+    h('button', { class: 'button', type: 'button', onclick: () => openForm('new') }, `+ ${T.add}`),
     list.length === 0
       ? h('p', { class: 'muted' }, T.noExpenses)
       : h('div', { class: 'list' }, list.map((e) => {
         const share = mine ? myShare(e, state.members, mine.id) : 0;
         const payers = Object.keys(e.payers).map(nameOf).join(', ');
-        return h('div', { class: 'row' },
+        return h('button', { class: 'row', type: 'button', onclick: () => openForm(e.id), 'aria-label': `${T.editExpense}: ${e.title}` },
           h('div', { class: 'main' },
             h('div', { class: 'title' }, e.title),
             h('div', { class: 'sub' }, `${e.date} · ${T.paidBy(payers)}`)),
@@ -224,6 +235,29 @@ function balancesTab(result, base) {
 }
 
 function settleTab(result, base) {
+  return [...suggestionsList(result, base), ...paymentsList()];
+}
+
+/** The latest payments, so a mistaken one can be undone (it is kept, marked as deleted). */
+function paymentsList() {
+  const T = t();
+  const list = state.transfers.filter((x) => !x.deleted)
+    .sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : b.createdAt - a.createdAt)).slice(0, 10);
+  if (list.length === 0) return [];
+  return [h('h2', {}, T.payments), h('div', { class: 'list' }, list.map((x) => {
+    const confirming = state.undoing === x.id;
+    return h('div', {},
+      h('div', { class: 'row' },
+        h('div', { class: 'main' }, h('div', { class: 'title' }, T.paymentLine(nameOf(x.fromMemberId), nameOf(x.toMemberId))), h('div', { class: 'sub' }, x.date)),
+        h('div', { class: 'end' }, money(x.amountMinor, x.currency))),
+      confirming && h('p', { class: 'muted', style: 'padding: 0 16px 8px' }, T.confirmUndo),
+      h('div', { class: 'pay' },
+        h('button', { type: 'button', disabled: state.busy, onclick: () => (confirming ? undoPayment(x) : ((state.undoing = x.id), render())) }, T.undo),
+        confirming && h('button', { type: 'button', onclick: () => { state.undoing = null; render(); } }, T.cancel)));
+  }))];
+}
+
+function suggestionsList(result, base) {
   const T = t();
   const mine = me();
   if (result.suggestions.length === 0) return [h('p', { class: 'muted' }, T.allSettled)];
@@ -266,28 +300,57 @@ function payOptions(payment, base) {
   return options.length > 0 ? h('div', { class: 'pay' }, options) : null;
 }
 
+function openForm(which) {
+  state.adding = which;
+  state.error = null;
+  state.notice = null;
+  state.confirmingDelete = false;
+  render();
+}
+
+/** "12,50" for the field, in the page language's separator. */
+function amountText(minor, decimals) {
+  const text = (minor / 10 ** decimals).toFixed(decimals);
+  return lang === 'es' ? text.replace('.', ',') : text;
+}
+
 function expenseForm() {
   const T = t();
   const base = state.group.baseCurrency;
-  const active = visibleMembers().filter((m) => m.active);
+  const editing = state.adding === 'new' ? null : state.expenses.find((e) => e.id === state.adding);
+  const full = !editing || fullyEditable(editing, base);
+  const decimals = decimalsOf(editing?.currency ?? base);
+  // Who can take part: the active members, plus anyone already in the expense.
+  const active = visibleMembers().filter((m) => m.active || (editing && (m.id in editing.splitValues || m.id in editing.payers)));
   const mine = me();
-  const amount = h('input', { class: 'amount-input', type: 'text', inputmode: 'decimal', placeholder: money(0, base), 'aria-label': T.amount });
+  const amount = h('input', { class: 'amount-input', type: 'text', inputmode: 'decimal', placeholder: money(0, base), 'aria-label': T.amount, disabled: !full });
   const title = h('input', { type: 'text', maxlength: '80', placeholder: T.titlePh });
   const category = h('select', {}, CATEGORIES.map((c) => h('option', { value: c }, T.categories[c])));
-  category.value = 'OTHER';
-  const date = h('input', { type: 'date', value: today() });
-  const payer = h('select', {}, active.map((m) => h('option', { value: m.id }, m.name)));
-  if (mine) payer.value = mine.id;
-  const checks = active.map((m) => h('input', { type: 'checkbox', value: m.id, checked: true, 'aria-label': m.name }));
+  const date = h('input', { type: 'date', value: editing?.date ?? today() });
+  const payer = h('select', { disabled: !full }, active.map((m) => h('option', { value: m.id }, m.name)));
+  const checks = active.map((m) => h('input', {
+    type: 'checkbox', value: m.id, 'aria-label': m.name, disabled: !full,
+    checked: editing ? (editing.splitValues[m.id] ?? 0) > 0 : m.active,
+  }));
+  category.value = editing?.category ?? 'OTHER';
+  if (editing) {
+    amount.value = amountText(editing.amountMinor, decimals);
+    title.value = editing.title;
+    payer.value = Object.keys(editing.payers)[0];
+  } else if (mine) {
+    payer.value = mine.id;
+  }
   const save = () => {
-    const amountMinor = parseAmount(amount.value, decimalsOf(base));
+    const amountMinor = full ? parseAmount(amount.value, decimals) : editing.amountMinor;
     const ids = checks.filter((c) => c.checked).map((c) => c.value);
     state.error = !amountMinor ? T.needAmount : !title.value.trim() ? T.needTitle : ids.length === 0 ? T.needPeople : null;
     if (state.error) { render(); return; }
-    addExpense({ title: title.value, category: category.value, date: date.value || today(), amountMinor, payerId: payer.value, ids });
+    const values = { title: title.value, category: category.value, date: date.value || today(), amountMinor, payerId: payer.value, ids };
+    if (editing) saveEdit(editing, values, full); else addExpense(values);
   };
   return h('div', { class: 'form' },
-    h('h2', {}, T.newExpense),
+    h('h2', {}, editing ? T.editExpense : T.newExpense),
+    editing && !full && h('p', { class: 'notice' }, T.inApp),
     h('label', {}, T.amount, amount),
     h('label', {}, T.title, title),
     h('label', {}, T.category, category),
@@ -296,8 +359,13 @@ function expenseForm() {
     h('div', {}, h('div', { class: 'label' }, T.who2),
       h('div', { class: 'checks' }, active.map((m, i) => h('label', {}, checks[i], m.name)))),
     state.error && h('p', { class: 'error', role: 'alert' }, state.error),
+    editing && state.confirmingDelete && h('p', { class: 'notice', role: 'alert' }, T.confirmDelete),
     h('div', { class: 'actions' },
       h('button', { class: 'button', type: 'button', disabled: state.busy, onclick: save }, state.busy ? T.saving : T.save),
+      editing && h('button', {
+        class: 'button link-button', type: 'button', disabled: state.busy,
+        onclick: () => (state.confirmingDelete ? deleteExpense(editing) : (state.confirmingDelete = true, render())),
+      }, T.delete),
       h('button', { class: 'button link-button', type: 'button', onclick: () => { state.adding = false; state.error = null; render(); } }, T.cancel)));
 }
 
@@ -314,7 +382,7 @@ async function busy(work) {
     await work();
   } catch (e) {
     console.error(e);
-    state.error = t().saveFailed;
+    state.error = e?.code === 'permission-denied' ? t().conflict : t().saveFailed;
   } finally {
     state.busy = false;
     render();
@@ -364,10 +432,60 @@ function addExpense({ title, category, date, amountMinor, payerId, ids }) {
     await batch.commit();
     state.adding = false;
     state.tab = 'expenses';
+    state.notice = t().saved;
   });
 }
 
 const payKey = (p) => `${p.fromMemberId}>${p.toMemberId}`;
+
+/** The new values of an edited expense: only what changed is written, with its history diff. */
+function saveEdit(old, values, full) {
+  return busy(async () => {
+    const next = { ...old, title: values.title.trim().slice(0, 80), category: values.category, date: values.date };
+    if (full) {
+      next.amountMinor = values.amountMinor;
+      next.payers = { [values.payerId]: values.amountMinor };
+      // Weights keep the ones the expense had; equal splits mark everyone with 1.
+      const split = defaultSplit(state.members, values.ids);
+      next.splitType = old.splitType === 'WEIGHTS' ? 'WEIGHTS' : split.splitType;
+      next.splitValues = next.splitType === 'WEIGHTS'
+        ? Object.fromEntries(values.ids.map((id) => [id, old.splitValues[id] ?? state.members.find((m) => m.id === id)?.defaultWeight ?? 1]))
+        : split.splitValues;
+    }
+    const diff = expenseDiff(old, next);
+    if (diff.length === 0) { state.adding = false; return; }
+    const changes = Object.fromEntries(diff.map((c) => [c.field, next[c.field]]));
+    const batch = writeBatch(db);
+    batch.update(sub('expenses', old.id), expenseUpdate(f, state.uid, old, changes));
+    batch.set(sub('changelog', uuid()), changelogEntry(f, state.uid, { entityType: 'EXPENSE', entityId: old.id, action: 'UPDATED', diff, now: Date.now() }));
+    await batch.commit();
+    state.adding = false;
+    state.notice = t().saved;
+  });
+}
+
+function deleteExpense(old) {
+  return busy(async () => {
+    const batch = writeBatch(db);
+    batch.update(sub('expenses', old.id), markDeleted(f, state.uid, old));
+    batch.set(sub('changelog', uuid()), changelogEntry(f, state.uid, { entityType: 'EXPENSE', entityId: old.id, action: 'DELETED', now: Date.now() }));
+    await batch.commit();
+    state.adding = false;
+    state.confirmingDelete = false;
+    state.notice = t().deleted;
+  });
+}
+
+function undoPayment(old) {
+  return busy(async () => {
+    const batch = writeBatch(db);
+    batch.update(sub('transfers', old.id), markDeleted(f, state.uid, old));
+    batch.set(sub('changelog', uuid()), changelogEntry(f, state.uid, { entityType: 'TRANSFER', entityId: old.id, action: 'DELETED', now: Date.now() }));
+    await batch.commit();
+    state.undoing = null;
+    state.notice = t().undone;
+  });
+}
 
 function askRecord(payment) {
   state.confirming = payKey(payment);

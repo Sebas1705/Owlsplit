@@ -3,9 +3,9 @@
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { arrayUnion, doc, getDoc, increment, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
 import { afterAll, beforeAll, beforeEach, describe, test } from 'vitest';
-import { CODE, GROUP, as, createEnv, groupData, memberData, seed } from './helpers.mjs';
+import { CODE, GROUP, as, createEnv, expenseData, groupData, memberData, seed, transferData } from './helpers.mjs';
 import {
-  changelogEntry, claimMember, defaultSplit, joinGroup, newExpense, newMember, newTransfer,
+  changelogEntry, claimMember, defaultSplit, expenseDiff, expenseUpdate, joinGroup, markDeleted, newExpense, newMember, newTransfer,
 } from '../../hosting/js/payloads.js';
 
 const f = { serverTimestamp, arrayUnion, increment };
@@ -78,5 +78,31 @@ describe('web guests', () => {
   test('weights decide the split when they differ', () => {
     const split = defaultSplit([{ id: 'a', defaultWeight: 3 }, { id: 'b', defaultWeight: 2 }], ['a', 'b']);
     if (split.splitType !== 'WEIGHTS' || split.splitValues.a !== 3) throw new Error(JSON.stringify(split));
+  });
+
+  test('edits and deletes an expense with its history, and a stale version is refused', async () => {
+    await seed(env, { [`groups/${GROUP}/expenses/e0`]: expenseData({ payers: { m1: 4860 }, splitValues: { m1: 1, m2: 1 } }) });
+    const db = await join('zoe');
+    const old = { ...expenseData(), version: 1 };
+    const next = { ...old, title: 'Cena de despedida', amountMinor: 5000, payers: { m1: 5000 } };
+    const diff = expenseDiff(old, next);
+    if (diff.map((c) => c.field).join() !== 'title,amountMinor,payers') throw new Error(JSON.stringify(diff));
+    const changes = Object.fromEntries(diff.map((c) => [c.field, next[c.field]]));
+    const edit = writeBatch(db);
+    edit.update(doc(db, `groups/${GROUP}/expenses/e0`), expenseUpdate(f, 'zoe', old, changes));
+    edit.set(doc(db, `groups/${GROUP}/changelog/c4`), changelogEntry(f, 'zoe', { entityType: 'EXPENSE', entityId: 'e0', action: 'UPDATED', diff, now: 5 }));
+    await assertSucceeds(edit.commit());
+    // Someone else's edit got in first: the version the web had is no longer the next one.
+    await assertFails(updateDoc(doc(db, `groups/${GROUP}/expenses/e0`), expenseUpdate(f, 'zoe', old, { title: 'Otra' })));
+    await assertSucceeds(updateDoc(doc(db, `groups/${GROUP}/expenses/e0`), markDeleted(f, 'zoe', { version: 2 })));
+  });
+
+  test('undoes a recorded payment', async () => {
+    await seed(env, { [`groups/${GROUP}/transfers/t0`]: transferData() });
+    const db = await join('zoe');
+    const undo = writeBatch(db);
+    undo.update(doc(db, `groups/${GROUP}/transfers/t0`), markDeleted(f, 'zoe', { version: 1 }));
+    undo.set(doc(db, `groups/${GROUP}/changelog/c5`), changelogEntry(f, 'zoe', { entityType: 'TRANSFER', entityId: 't0', action: 'DELETED', now: 6 }));
+    await assertSucceeds(undo.commit());
   });
 });
