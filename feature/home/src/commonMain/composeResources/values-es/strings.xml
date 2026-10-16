@@ -40,4 +40,13 @@
     <string name="store_update_ready_title">Actualización descargada</string>
     <string name="store_update_ready_body">Reinicia Owlsplit para instalarla; tus grupos se quedan.</string>
     <string name="store_update_restart">Reiniciar</string>
+    <string name="left_show">Grupos que dejaste (%1$d)</string>
+    <string name="left_hide">Ocultar grupos que dejaste (%1$d)</string>
+    <string name="rejoin_title">¿Volver a %1$s?</string>
+    <string name="rejoin_body">Recuperas tu miembro, con sus gastos y su saldo, sin pedir invitación.</string>
+    <string name="rejoin_needs_invite">El código que guardaba este móvil ya no abre el grupo (lo cambiaron). Pide una invitación nueva a alguien del grupo.</string>
+    <string name="rejoin_offline">Sin conexión. Inténtalo cuando tengas internet.</string>
+    <string name="rejoin_confirm">Volver a entrar</string>
+    <string name="rejoin_busy">Entrando…</string>
+    <string name="rejoin_cancel">Cancelar</string>
 </resources>

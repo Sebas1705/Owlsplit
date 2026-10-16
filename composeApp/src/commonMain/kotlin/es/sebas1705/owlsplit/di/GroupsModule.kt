@@ -19,6 +19,7 @@ import es.sebas1705.owlsplit.domain.usecases.importer.ImportGroup
 import es.sebas1705.owlsplit.domain.usecases.groups.MemberActions
 import es.sebas1705.owlsplit.domain.usecases.groups.ObserveGroupDetail
 import es.sebas1705.owlsplit.domain.usecases.groups.ObserveHome
+import es.sebas1705.owlsplit.domain.usecases.groups.RejoinGroup
 import es.sebas1705.owlsplit.domain.usecases.fx.ConvertTotal
 import es.sebas1705.owlsplit.domain.usecases.stats.ObserveMySpending
 import es.sebas1705.owlsplit.domain.usecases.fx.GetFxRate
@@ -51,7 +52,8 @@ val groupsModule = module {
     factory { ObserveHome(get(), get(), get(), get(), get(), get(), get()) }
     factory { ObserveGroupDetail(get(), get(), get(), get(), get(), get(), get()) }
     factory { ObservePendingChanges(get()) }
-    factory { GroupActions(get(), get(), get()) }
+    factory { GroupActions(get(), get(), get(), get()) }
+    factory { RejoinGroup(get(), get(), get(), get()) }
     factory { ImportGroup(get(), get(), get(), get(), get()) }
     factory { MemberActions(get()) }
     factory { SettleUp(get()) }
@@ -75,7 +77,7 @@ val groupsModule = module {
     factory { ResolveConflict(get()) }
 
     factory { UpdateOffer(get(), get(), get()) }
-    factory { HomeChores(get(), get()) }
+    factory { HomeChores(get(), get(), get()) }
     viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { (groupId: String?) -> GroupEditorViewModel(groupId, get(), get(), get()) }
     viewModel { (groupId: String, tab: GroupTab) -> GroupViewModel(groupId, tab, get(), get(), get(), get(), get()) }
