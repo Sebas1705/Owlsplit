@@ -67,6 +67,7 @@
     <string name="settle_title">Record the payment?</string>
     <string name="settle_body">%1$s. It will be recorded as a transfer dated today.</string>
     <string name="settle_confirm">Record</string>
+    <string name="settle_did_you_pay">Did you pay %2$s %1$s? Tap Record so the balances add up.</string>
     <string name="transfers">Recorded payments</string>
     <string name="transfer_title">%1$s → %2$s</string>
     <string name="you">You</string>
