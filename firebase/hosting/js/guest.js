@@ -3,6 +3,7 @@
 // expenses and balances, adds expenses and records payments. Writes are the app's documents with their
 // history entry (payloads.js); balances are the app's arithmetic (money.js).
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
+import { ReCaptchaV3Provider, initializeAppCheck } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app-check.js';
 import {
   GoogleAuthProvider, getAuth, linkWithPopup, onAuthStateChanged, signInAnonymously, signInWithCredential,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
@@ -21,6 +22,12 @@ const f = { serverTimestamp, arrayUnion, arrayRemove, increment };
 const CATEGORIES = ['FOOD', 'GROCERIES', 'TRANSPORT', 'ACCOMMODATION', 'LEISURE', 'SHOPPING', 'HOME', 'UTILITIES', 'HEALTH', 'GIFTS', 'OTHER'];
 const ALPHABET = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}$/;
 const LANG_KEY = 'owlsplit.lang';
+/**
+ * App Check for "Owlsplit web" (docs/FIREBASE.md): the reCAPTCHA v3 site key (public; its secret lives in
+ * the Firebase console). Empty while it is not set up: the web goes without, which is fine as long as
+ * App Check is not enforced.
+ */
+const RECAPTCHA_SITE_KEY = '6LcWG_ItAAAAAMCfoXeiwO0E-fGzjChJ0iLWuKUl';
 // The app's exchange rates (AppConfig.FX_API_BASE_URL): ECB, no key, CORS open.
 const FX_URL = 'https://api.frankfurter.dev/v1';
 
@@ -705,6 +712,11 @@ async function start() {
   if (!ALPHABET.test(code)) { state.screen = 'invalid'; render(); return; }
   const config = await fetch('/__/firebase/init.json').then((r) => r.json());
   const app = initializeApp(config);
+  if (RECAPTCHA_SITE_KEY) {
+    // Local tests: a debug token, printed in the console, to register under the web app in App Check.
+    if (['localhost', '127.0.0.1'].includes(location.hostname)) self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    initializeAppCheck(app, { provider: new ReCaptchaV3Provider(RECAPTCHA_SITE_KEY), isTokenAutoRefreshEnabled: true });
+  }
   db = getFirestore(app);
   auth = getAuth(app);
   // The browser keeps the anonymous account: coming back later is the same guest.

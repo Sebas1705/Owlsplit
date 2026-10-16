@@ -145,6 +145,7 @@ The apps send App Check tokens, but **nothing is enforced yet**: until enforceme
 | Android debug (`es.sebas1705.owlsplit.debug`) | Debug provider; logs its debug token at start-up (logcat tag `DebugAppCheckProvider`, plus `OwlsplitAppCheck` while it is not registered) | `composeApp/src/androidDebug/.../appcheck/AppCheckSetup.kt` (`firebase-appcheck-debug`, debug builds only) |
 | iOS debug | Debug provider; the token is printed in the Xcode console | `iosApp/iosApp/iOSApp.swift` |
 | iOS release | DeviceCheck. **Pending**: needs the Apple Team ID (DeviceCheck key, or App Attest with its entitlement) | `iosApp/iosApp/iOSApp.swift` |
+| Web for guests ("Owlsplit web") | reCAPTCHA v3; on `localhost` a debug token printed in the browser console. Site key in `RECAPTCHA_SITE_KEY` (key "owlsplit web", 2026-10-16) | `firebase/hosting/js/guest.js` |
 
 Owner steps in the console (Firebase → **App Check**):
 
@@ -155,6 +156,7 @@ Owner steps in the console (Firebase → **App Check**):
    - Older app versions send no token at all: enforcing cuts them off.
 4. **Enforce** for Cloud Firestore first (APIs → Cloud Firestore → Enforce); then Authentication if the metrics stay clean. It can be undone from the same screen, and it takes up to 15 minutes to apply.
 5. iOS: register DeviceCheck (or App Attest) once there is an Apple Team ID, before enforcing, or iOS users are blocked.
+6. **Web**: create a reCAPTCHA **v3** key at [google.com/recaptcha/admin](https://www.google.com/recaptcha/admin/create) (domains `owlsplit.web.app`, `owlsplit.firebaseapp.com` and `localhost`). Its **site key** goes in `RECAPTCHA_SITE_KEY` (`firebase/hosting/js/guest.js`, public); its **secret key** goes in Firebase → App Check → Apps → Owlsplit web → **reCAPTCHA** → Save (never in the repo). Before enforcing, the web's requests must show as verified too, or guests are cut off.
 
 ## Deployments
 
