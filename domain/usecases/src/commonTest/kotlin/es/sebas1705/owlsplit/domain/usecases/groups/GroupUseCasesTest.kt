@@ -160,6 +160,25 @@ class GroupUseCasesTest {
     }
 
     @Test
+    fun aGroupWithCustomWeightsSplitsNewExpensesByThem() = runTest {
+        val g = trip()
+        val (ana, luis) = dinner(g)
+        // Equal weights: a new expense is split equally.
+        assertEquals(SplitType.EQUAL, ExpenseDrafts.new(ledger.members.observeMembers(g).first(), ana).splitType)
+
+        // A couple paying 60/40: Ana weighs 3 and Luis 2, and new expenses follow it.
+        val luisMember = ledger.members.observeMembers(g).first().first { it.id == luis }
+        memberActions.update(luisMember, "Luis", 2)
+        val anaMember = ledger.members.observeMembers(g).first().first { it.id == ana }
+        memberActions.update(anaMember, "Ana", 3)
+        val members = ledger.members.observeMembers(g).first()
+        val draft = ExpenseDrafts.new(members, ana).copy(amountMinor = 1_000, title = "Súper")
+
+        assertEquals(SplitType.WEIGHTS, draft.splitType)
+        assertEquals(mapOf(ana to 600L, luis to 400L), ExpenseDrafts.check(draft, members).shares)
+    }
+
+    @Test
     fun draftsValidateEveryKindOfSplit() = runTest {
         val g = trip()
         val (ana, luis) = dinner(g)
