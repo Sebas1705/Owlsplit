@@ -156,12 +156,15 @@ object QuickEntryParser {
     private const val DECIMAL_BASE = 10L
     private const val MIN_NAME = 2
 
-    private val ACCENTS = mapOf('á' to 'a', 'é' to 'e', 'í' to 'i', 'ó' to 'o', 'ú' to 'u', 'ü' to 'u', 'à' to 'a',
-        'è' to 'e', 'ò' to 'o', 'ï' to 'i', 'ç' to 'c')
+    private val ACCENTS = mapOf(
+        'á' to 'a', 'é' to 'e', 'í' to 'i', 'ó' to 'o', 'ú' to 'u', 'ü' to 'u', 'à' to 'a',
+        'è' to 'e', 'ò' to 'o', 'ï' to 'i', 'ç' to 'c'
+    )
     private val CURRENCY_WORDS = setOf("€", "eur", "euro", "euros", "$", "dolares", "dollars", "usd")
     private val ME_WORDS = setOf("yo", "mi", "me", "i", "myself")
     private val PAID_ME = setOf("pague", "puse")
     private val PAID = setOf("pago", "pagado", "paid", "pays", "puso", "pone")
+
     /** "ha pagado", "has paid"; "he pagado" is me. */
     private val AUXILIARIES = setOf("ha", "he", "has", "have")
     private val AUX_ME = setOf("he", "have")
@@ -170,25 +173,39 @@ object QuickEntryParser {
     private val BETWEEN_WORDS = setOf("entre", "between")
     private val ALL_WORDS = setOf("todos", "todas", "everyone", "everybody", "all")
     private val LIST_JOINERS = setOf("y", "e", "and", ",", "&")
-    private val EDGE_WORDS = setOf("de", "del", "la", "el", "los", "las", "en", "por", "para", "un", "una", "for",
-        "the", "a", "an", "on", "of", "y", "and")
+    private val EDGE_WORDS = setOf(
+        "de", "del", "la", "el", "los", "las", "en", "por", "para", "un", "una", "for",
+        "the", "a", "an", "on", "of", "y", "and"
+    )
 
     /** Words that give the category away, without accents. */
     private val CATEGORIES: Map<ExpenseCategory, Set<String>> = mapOf(
-        ExpenseCategory.FOOD to setOf("cena", "comida", "almuerzo", "desayuno", "restaurante", "bar", "cafe", "cafes",
-            "tapas", "pizza", "cervezas", "copas", "dinner", "lunch", "breakfast", "restaurant", "coffee", "drinks"),
-        ExpenseCategory.GROCERIES to setOf("super", "supermercado", "mercadona", "compra", "lidl", "carrefour",
-            "groceries", "supermarket"),
-        ExpenseCategory.TRANSPORT to setOf("taxi", "uber", "cabify", "gasolina", "tren", "bus", "autobus", "metro",
-            "parking", "peaje", "avion", "vuelo", "vuelos", "train", "fuel", "flight", "flights"),
-        ExpenseCategory.ACCOMMODATION to setOf("hotel", "airbnb", "apartamento", "hostal", "alojamiento", "booking",
-            "accommodation", "hostel"),
-        ExpenseCategory.LEISURE to setOf("cine", "entradas", "concierto", "museo", "fiesta", "discoteca", "cinema",
-            "tickets", "concert", "museum", "party"),
+        ExpenseCategory.FOOD to setOf(
+            "cena", "comida", "almuerzo", "desayuno", "restaurante", "bar", "cafe", "cafes",
+            "tapas", "pizza", "cervezas", "copas", "dinner", "lunch", "breakfast", "restaurant", "coffee", "drinks"
+        ),
+        ExpenseCategory.GROCERIES to setOf(
+            "super", "supermercado", "mercadona", "compra", "lidl", "carrefour",
+            "groceries", "supermarket"
+        ),
+        ExpenseCategory.TRANSPORT to setOf(
+            "taxi", "uber", "cabify", "gasolina", "tren", "bus", "autobus", "metro",
+            "parking", "peaje", "avion", "vuelo", "vuelos", "train", "fuel", "flight", "flights"
+        ),
+        ExpenseCategory.ACCOMMODATION to setOf(
+            "hotel", "airbnb", "apartamento", "hostal", "alojamiento", "booking",
+            "accommodation", "hostel"
+        ),
+        ExpenseCategory.LEISURE to setOf(
+            "cine", "entradas", "concierto", "museo", "fiesta", "discoteca", "cinema",
+            "tickets", "concert", "museum", "party"
+        ),
         ExpenseCategory.SHOPPING to setOf("ropa", "tienda", "clothes", "shopping"),
         ExpenseCategory.HOME to setOf("alquiler", "piso", "casa", "limpieza", "rent", "cleaning"),
-        ExpenseCategory.UTILITIES to setOf("luz", "agua", "internet", "wifi", "gas", "factura", "electricity",
-            "water", "bill"),
+        ExpenseCategory.UTILITIES to setOf(
+            "luz", "agua", "internet", "wifi", "gas", "factura", "electricity",
+            "water", "bill"
+        ),
         ExpenseCategory.HEALTH to setOf("farmacia", "medico", "pharmacy", "doctor"),
         ExpenseCategory.GIFTS to setOf("regalo", "regalos", "cumple", "cumpleanos", "gift", "gifts", "birthday"),
     )
