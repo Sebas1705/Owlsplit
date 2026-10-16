@@ -7,16 +7,18 @@ import { getAuth, onAuthStateChanged, signInAnonymously } from 'https://www.gsta
 import {
   arrayUnion, collection, doc, getDoc, getFirestore, increment, onSnapshot, serverTimestamp, updateDoc, writeBatch,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
-import { decimalsOf, groupBalances, myShare } from './money.js';
+import { CURRENCIES, decimalsOf, groupBalances, myShare } from './money.js';
 import {
-  changelogEntry, claimMember, defaultSplit, expenseDiff, expenseUpdate, fullyEditable, joinGroup, markDeleted,
-  newExpense, newMember, newTransfer, parseAmount,
+  changelogEntry, claimMember, convertMinor, defaultSplit, expenseDiff, expenseUpdate, fullyEditable, joinGroup,
+  markDeleted, newExpense, newMember, newTransfer, parseAmount, parseRate, rateFromFrankfurter,
 } from './payloads.js';
 
 const f = { serverTimestamp, arrayUnion, increment };
 const CATEGORIES = ['FOOD', 'GROCERIES', 'TRANSPORT', 'ACCOMMODATION', 'LEISURE', 'SHOPPING', 'HOME', 'UTILITIES', 'HEALTH', 'GIFTS', 'OTHER'];
 const ALPHABET = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}$/;
 const LANG_KEY = 'owlsplit.lang';
+// The app's exchange rates (AppConfig.FX_API_BASE_URL): ECB, no key, CORS open.
+const FX_URL = 'https://api.frankfurter.dev/v1';
 
 const TEXT = {
   es: {
@@ -40,11 +42,13 @@ const TEXT = {
     saveFailed: 'No se pudo guardar. Revisa tu conexión e inténtalo otra vez.',
     getApp: 'Con la app tienes además avisos, estadísticas y modo sin conexión.', download: 'Descargar Owlsplit',
     editExpense: 'Editar gasto', delete: 'Borrar', confirmDelete: '¿Borrar este gasto? Queda en el historial y se puede recuperar desde la app.',
-    deleted: 'Gasto borrado.', saved: 'Gasto guardado.', inApp: 'Este gasto usa un reparto que solo se edita en la app: aquí puedes cambiar el concepto, la categoría y la fecha, o borrarlo.',
+    deleted: 'Gasto borrado.', saved: 'Gasto guardado.', inApp: 'Este gasto está en otra divisa o tiene un reparto que solo se edita en la app: aquí puedes cambiar el concepto, la categoría y la fecha, o borrarlo.',
     conflict: 'Alguien lo ha cambiado mientras tanto. Vuelve a abrirlo e inténtalo otra vez.',
     payments: 'Pagos registrados', undo: 'Deshacer', confirmUndo: '¿Deshacer este pago? El saldo vuelve a como estaba.', undone: 'Pago deshecho.',
     paymentLine: (a, b) => `${a} → ${b}`,
     otherCurrency: 'Los gastos en otras divisas se cuentan a su cambio guardado.',
+    currency: 'Divisa', rate: (from, to) => `Cambio: ${to} por 1 ${from}`, rateDay: (d) => `BCE, ${d}`,
+    needRate: 'Escribe el tipo de cambio.',
     categories: { FOOD: 'Comida', GROCERIES: 'Súper', TRANSPORT: 'Transporte', ACCOMMODATION: 'Alojamiento', LEISURE: 'Ocio', SHOPPING: 'Compras', HOME: 'Casa', UTILITIES: 'Suministros', HEALTH: 'Salud', GIFTS: 'Regalos', OTHER: 'Otros' },
   },
   en: {
@@ -68,11 +72,13 @@ const TEXT = {
     saveFailed: 'Could not save. Check your connection and try again.',
     getApp: 'The app also gives you notifications, statistics and offline use.', download: 'Download Owlsplit',
     editExpense: 'Edit expense', delete: 'Delete', confirmDelete: 'Delete this expense? It stays in the history and can be restored from the app.',
-    deleted: 'Expense deleted.', saved: 'Expense saved.', inApp: 'This expense uses a split that is only edited in the app: here you can change its description, category and date, or delete it.',
+    deleted: 'Expense deleted.', saved: 'Expense saved.', inApp: 'This expense is in another currency or has a split that is only edited in the app: here you can change its description, category and date, or delete it.',
     conflict: 'Someone changed it meanwhile. Open it again and retry.',
     payments: 'Recorded payments', undo: 'Undo', confirmUndo: 'Undo this payment? The balances go back to how they were.', undone: 'Payment undone.',
     paymentLine: (a, b) => `${a} → ${b}`,
     otherCurrency: 'Expenses in other currencies count at their saved rate.',
+    currency: 'Currency', rate: (from, to) => `Rate: ${to} per 1 ${from}`, rateDay: (d) => `ECB, ${d}`,
+    needRate: 'Enter the exchange rate.',
     categories: { FOOD: 'Food', GROCERIES: 'Groceries', TRANSPORT: 'Transport', ACCOMMODATION: 'Accommodation', LEISURE: 'Leisure', SHOPPING: 'Shopping', HOME: 'Home', UTILITIES: 'Utilities', HEALTH: 'Health', GIFTS: 'Gifts', OTHER: 'Other' },
   },
 };
@@ -104,6 +110,7 @@ function h(tag, attrs = {}, ...children) {
     if (v === undefined || v === null || v === false) continue;
     if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
     else if (k === 'class') el.className = v;
+    else if (k === 'value') el.value = v;
     else el.setAttribute(k, v === true ? '' : v);
   }
   for (const c of children.flat()) if (c !== null && c !== undefined && c !== false) el.append(c instanceof Node ? c : String(c));
@@ -301,6 +308,26 @@ function payOptions(payment, base) {
 }
 
 function openForm(which) {
+  const base = state.group.baseCurrency;
+  const editing = which === 'new' ? null : state.expenses.find((e) => e.id === which);
+  const mine = me();
+  const active = visibleMembers().filter((m) => m.active);
+  // What is typed lives here: the group updating meanwhile redraws the form without losing it.
+  state.draft = editing
+    ? {
+      amount: amountText(editing.amountMinor, decimalsOf(editing.currency)),
+      title: editing.title,
+      category: editing.category,
+      date: editing.date,
+      payerId: Object.keys(editing.payers)[0],
+      ids: Object.keys(editing.splitValues).filter((id) => editing.splitValues[id] > 0),
+      currency: editing.currency,
+      rate: null,
+    }
+    : {
+      amount: '', title: '', category: 'OTHER', date: today(), payerId: mine?.id ?? active[0]?.id,
+      ids: active.map((m) => m.id), currency: base, rate: null,
+    };
   state.adding = which;
   state.error = null;
   state.notice = null;
@@ -314,44 +341,91 @@ function amountText(minor, decimals) {
   return lang === 'es' ? text.replace('.', ',') : text;
 }
 
+/** Another currency: the ECB rate into the group's (Frankfurter, as the app), read as text. */
+async function fetchRate(currency) {
+  const base = state.group.baseCurrency;
+  const draft = state.draft;
+  draft.rate = { text: '', day: '', loading: true };
+  render();
+  let found = null;
+  try {
+    const body = await fetch(`${FX_URL}/latest?base=${currency}&symbols=${base}`).then((r) => (r.ok ? r.text() : ''));
+    found = rateFromFrankfurter(body, base);
+  } catch { /* Offline: typed by hand. */ }
+  // The user may have picked another currency meanwhile.
+  if (state.draft !== draft || draft.currency !== currency) return;
+  const text = found ? (found.scaled / 1e9).toString() : '';
+  draft.rate = { text: lang === 'es' ? text.replace('.', ',') : text, day: found?.day ?? '', loading: false };
+  render();
+}
+
 function expenseForm() {
   const T = t();
   const base = state.group.baseCurrency;
+  const draft = state.draft;
   const editing = state.adding === 'new' ? null : state.expenses.find((e) => e.id === state.adding);
   const full = !editing || fullyEditable(editing, base);
-  const decimals = decimalsOf(editing?.currency ?? base);
+  const decimals = decimalsOf(draft.currency);
   // Who can take part: the active members, plus anyone already in the expense.
   const active = visibleMembers().filter((m) => m.active || (editing && (m.id in editing.splitValues || m.id in editing.payers)));
-  const mine = me();
-  const amount = h('input', { class: 'amount-input', type: 'text', inputmode: 'decimal', placeholder: money(0, base), 'aria-label': T.amount, disabled: !full });
-  const title = h('input', { type: 'text', maxlength: '80', placeholder: T.titlePh });
-  const category = h('select', {}, CATEGORIES.map((c) => h('option', { value: c }, T.categories[c])));
-  const date = h('input', { type: 'date', value: editing?.date ?? today() });
-  const payer = h('select', { disabled: !full }, active.map((m) => h('option', { value: m.id }, m.name)));
+  const field = (key) => (e) => { draft[key] = e.target.value; };
+  const amount = h('input', {
+    class: 'amount-input', type: 'text', inputmode: 'decimal', placeholder: money(0, draft.currency), 'aria-label': T.amount,
+    disabled: !full, value: draft.amount, oninput: (e) => { draft.amount = e.target.value; showEquivalent(); },
+  });
+  const title = h('input', { type: 'text', maxlength: '80', placeholder: T.titlePh, value: draft.title, oninput: field('title') });
+  const category = h('select', { onchange: field('category') }, CATEGORIES.map((c) => h('option', { value: c }, T.categories[c])));
+  category.value = draft.category;
+  const currency = h('select', {
+    disabled: !!editing,
+    onchange: (e) => {
+      draft.currency = e.target.value;
+      draft.rate = null;
+      if (draft.currency !== base) fetchRate(draft.currency); else render();
+    },
+  }, CURRENCIES.map((c) => h('option', { value: c }, c)));
+  currency.value = draft.currency;
+  const date = h('input', { type: 'date', value: draft.date, onchange: field('date') });
+  const payer = h('select', { disabled: !full, onchange: field('payerId') }, active.map((m) => h('option', { value: m.id }, m.name)));
+  payer.value = draft.payerId;
   const checks = active.map((m) => h('input', {
-    type: 'checkbox', value: m.id, 'aria-label': m.name, disabled: !full,
-    checked: editing ? (editing.splitValues[m.id] ?? 0) > 0 : m.active,
+    type: 'checkbox', value: m.id, 'aria-label': m.name, disabled: !full, checked: draft.ids.includes(m.id),
+    onchange: (e) => { draft.ids = e.target.checked ? [...draft.ids, m.id] : draft.ids.filter((id) => id !== m.id); },
   }));
-  category.value = editing?.category ?? 'OTHER';
-  if (editing) {
-    amount.value = amountText(editing.amountMinor, decimals);
-    title.value = editing.title;
-    payer.value = Object.keys(editing.payers)[0];
-  } else if (mine) {
-    payer.value = mine.id;
+
+  // Another currency: its rate (fetched, editable) and what it is in the group's.
+  const foreign = draft.currency !== base && !editing;
+  const equivalent = h('div', { class: 'sub' });
+  const rateInput = foreign && h('input', {
+    type: 'text', inputmode: 'decimal', value: draft.rate?.text ?? '', 'aria-label': T.rate(draft.currency, base),
+    oninput: (e) => { draft.rate = { ...(draft.rate ?? {}), text: e.target.value, day: '' }; showEquivalent(); },
+  });
+  function showEquivalent() {
+    if (!foreign) return;
+    const minor = parseAmount(draft.amount, decimals);
+    const scaled = parseRate(draft.rate?.text);
+    equivalent.textContent = minor && scaled ? `≈ ${money(convertMinor(minor, decimals, decimalsOf(base), scaled), base)}` : '';
   }
+  showEquivalent();
+
   const save = () => {
-    const amountMinor = full ? parseAmount(amount.value, decimals) : editing.amountMinor;
-    const ids = checks.filter((c) => c.checked).map((c) => c.value);
-    state.error = !amountMinor ? T.needAmount : !title.value.trim() ? T.needTitle : ids.length === 0 ? T.needPeople : null;
+    const amountMinor = full ? parseAmount(draft.amount, decimals) : editing.amountMinor;
+    const rate = foreign ? parseRate(draft.rate?.text) : 1_000_000_000;
+    state.error = !amountMinor ? T.needAmount : !draft.title.trim() ? T.needTitle
+      : draft.ids.length === 0 ? T.needPeople : !rate ? T.needRate : null;
     if (state.error) { render(); return; }
-    const values = { title: title.value, category: category.value, date: date.value || today(), amountMinor, payerId: payer.value, ids };
+    const values = { ...draft, title: draft.title, date: draft.date || today(), amountMinor, fxRateScaled: rate };
     if (editing) saveEdit(editing, values, full); else addExpense(values);
   };
   return h('div', { class: 'form' },
     h('h2', {}, editing ? T.editExpense : T.newExpense),
     editing && !full && h('p', { class: 'notice' }, T.inApp),
     h('label', {}, T.amount, amount),
+    h('label', {}, T.currency, currency),
+    foreign && h('label', {}, T.rate(draft.currency, base),
+      draft.rate?.loading ? h('span', { class: 'muted' }, T.loading) : rateInput,
+      draft.rate?.day && h('span', { class: 'sub' }, T.rateDay(draft.rate.day)),
+      equivalent),
     h('label', {}, T.title, title),
     h('label', {}, T.category, category),
     h('label', {}, T.date, date),
@@ -419,14 +493,14 @@ function addMe(name) {
   });
 }
 
-function addExpense({ title, category, date, amountMinor, payerId, ids }) {
+function addExpense({ title, category, date, amountMinor, payerId, ids, currency, fxRateScaled }) {
   return busy(async () => {
     const id = uuid();
     const now = Date.now();
     const split = defaultSplit(state.members, ids);
     const batch = writeBatch(db);
     batch.set(sub('expenses', id), newExpense(f, state.uid, {
-      title, category, date, currency: state.group.baseCurrency, amountMinor, payerId, ...split, now,
+      title, category, date, currency, amountMinor, payerId, ...split, now, fxRateScaled,
     }));
     batch.set(sub('changelog', uuid()), changelogEntry(f, state.uid, { entityType: 'EXPENSE', entityId: id, action: 'CREATED', now }));
     await batch.commit();
