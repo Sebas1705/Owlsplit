@@ -55,4 +55,7 @@
     <string name="repeat_month">Cada mes</string>
     <string name="repeat_year">Cada año</string>
     <string name="repeat_hint">Se añadirá solo en cada fecha, con el importe y el reparto del último. Para pararlo, elige «Nunca» en cualquiera de ellos.</string>
+    <string name="quick_label">O escríbelo</string>
+    <string name="quick_placeholder">Ana pagó 45 de cena con Luis</string>
+    <string name="quick_apply">Rellenar</string>
 </resources>

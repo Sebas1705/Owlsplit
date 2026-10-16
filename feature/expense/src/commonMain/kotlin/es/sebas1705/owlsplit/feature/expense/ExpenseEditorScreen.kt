@@ -1,5 +1,6 @@
 package es.sebas1705.owlsplit.feature.expense
 
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.ColumnScope
@@ -80,6 +81,9 @@ import es.sebas1705.owlsplit.data.models.SplitType
 import es.sebas1705.owlsplit.domain.ledger.SplitIssue
 import es.sebas1705.owlsplit.domain.usecases.expenses.DraftProblem
 import es.sebas1705.owlsplit.feature.expense.resources.Res
+import es.sebas1705.owlsplit.feature.expense.resources.quick_apply
+import es.sebas1705.owlsplit.feature.expense.resources.quick_label
+import es.sebas1705.owlsplit.feature.expense.resources.quick_placeholder
 import es.sebas1705.owlsplit.feature.expense.resources.amount_hint
 import es.sebas1705.owlsplit.feature.expense.resources.backspace
 import es.sebas1705.owlsplit.feature.expense.resources.cancel
@@ -201,6 +205,7 @@ private fun ColumnScope.EditorBody(
             Modifier.weight(1f).padding(horizontal = Spacing.l),
             verticalArrangement = Arrangement.spacedBy(Spacing.l),
         ) {
+            if (!state.editing) QuickEntry(state, onEvent)
             Amount(state, format, currency) { onEvent(ExpenseEditorIntent.KeypadOpen(false)) }
             CurrencyLine(state, format, onEvent)
             Spacer(Modifier.weight(1f))
@@ -215,10 +220,35 @@ private fun ColumnScope.EditorBody(
             Modifier.weight(1f).verticalScroll(scroll).padding(horizontal = Spacing.l),
             verticalArrangement = Arrangement.spacedBy(Spacing.l),
         ) {
+            if (!state.editing) QuickEntry(state, onEvent)
             Amount(state, format, currency) { onEvent(ExpenseEditorIntent.KeypadOpen(true)) }
             CurrencyLine(state, format, onEvent)
             Details(state, onEvent, format, currency, myMemberId)
         }
+    }
+}
+
+/**
+ * A new expense typed as a sentence: "Fill in" reads it into the form below, to check before saving.
+ * Typing here closes the amount keypad so the keyboard has room.
+ */
+@Composable
+private fun QuickEntry(state: ExpenseEditorState, onEvent: (ExpenseEditorIntent) -> Unit) {
+    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
+        OwlsplitTextField(
+            value = state.quickText,
+            onValueChange = { onEvent(ExpenseEditorIntent.QuickTextChanged(it)) },
+            label = stringResource(Res.string.quick_label),
+            placeholder = stringResource(Res.string.quick_placeholder),
+            modifier = Modifier
+                .weight(1f)
+                .onFocusChanged { if (it.isFocused && state.keypadOpen) onEvent(ExpenseEditorIntent.KeypadOpen(false)) },
+        )
+        TextActionButton(
+            stringResource(Res.string.quick_apply),
+            { onEvent(ExpenseEditorIntent.ApplyQuickText) },
+            enabled = state.quickText.isNotBlank(),
+        )
     }
 }
 
