@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_description">Tu saldo en todos tus grupos, y añadir un gasto con un toque</string>
+    <string name="widget_balance">Tu saldo</string>
+    <string name="widget_no_groups">Crea tu primer grupo</string>
+    <plurals name="widget_groups">
+        <item quantity="one">En %1$d grupo</item>
+        <item quantity="other">En %1$d grupos</item>
+    </plurals>
+    <string name="widget_add">Añadir gasto</string>
+    <string name="shortcut_add_expense">Añadir gasto</string>
+</resources>

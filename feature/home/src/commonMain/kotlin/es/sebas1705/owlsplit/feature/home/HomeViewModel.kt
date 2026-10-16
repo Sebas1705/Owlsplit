@@ -21,6 +21,8 @@ import es.sebas1705.owlsplit.domain.usecases.fx.ConvertTotal
 import es.sebas1705.owlsplit.domain.usecases.groups.HomeData
 import es.sebas1705.owlsplit.domain.usecases.groups.HomeGroup
 import es.sebas1705.owlsplit.domain.usecases.groups.ObserveHome
+import es.sebas1705.owlsplit.domain.usecases.groups.RejoinGroup
+import es.sebas1705.owlsplit.domain.usecases.groups.RejoinResult
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.combine
@@ -35,6 +37,12 @@ data class HomeState(
     val groups: List<HomeGroup> = emptyList(),
     /** Groups I archived: listed apart, collapsed. */
     val archived: List<Group> = emptyList(),
+    /** Groups I left that are still on this device: listed apart, to go back in. */
+    val left: List<Group> = emptyList(),
+    /** Going back into one of [left]: asking, then how it went. */
+    val rejoin: RejoinState? = null,
+    /** In again: Home opens it once. */
+    val rejoined: String? = null,
     val currency: String = "EUR",
     val total: Long = 0,
     /** Balances in currencies without a rate, kept apart. */
@@ -54,7 +62,14 @@ data class HomeState(
     val storeUpdate: StoreUpdate? = null,
 ) : MVIBaseState
 
+/** The group I asked to go back into, while it runs ([busy]) and if it could not ([result]). */
+data class RejoinState(val group: Group, val busy: Boolean = false, val result: RejoinResult? = null)
+
 sealed interface HomeIntent : MVIBaseIntent {
+    data class AskRejoin(val group: Group) : HomeIntent
+    data object ConfirmRejoin : HomeIntent
+    data object DismissRejoin : HomeIntent
+    data object RejoinedOpened : HomeIntent
     data class Pick(val action: QuickAction) : HomeIntent
     data object DismissPicker : HomeIntent
     data object DismissNudge : HomeIntent
@@ -64,10 +79,15 @@ sealed interface HomeIntent : MVIBaseIntent {
 }
 
 /**
- * Adds the repeating expenses that are due in every group, and shows my groups whether my account is
- * linked to Google.
+ * Work for my groups from Home: adding the repeating expenses that are due, showing my groups whether
+ * my account is linked to Google, and going back into a group I left. Each is null in tests that do
+ * not need it.
  */
-class HomeChores(val generateRecurring: GenerateRecurring, val syncMyLinked: SyncMyLinked)
+class HomeChores(
+    val generateRecurring: GenerateRecurring? = null,
+    val syncMyLinked: SyncMyLinked? = null,
+    val rejoin: RejoinGroup? = null,
+)
 
 /**
  * Finding a newer release and remembering which one the user put off. [check] covers APK installs (the
@@ -87,7 +107,7 @@ class HomeViewModel(
     private val convertTotal: ConvertTotal,
     private val nudge: LinkNudgeSettings,
     /** Work for every group when Inicio opens (null in tests that do not need it). */
-    chores: HomeChores? = null,
+    private val chores: HomeChores? = null,
     /** Looks for a newer release once per launch (null in tests that do not need it). */
     private val updates: UpdateOffer? = null,
 ) : MVIBaseViewModel<HomeState, HomeIntent>() {
@@ -96,8 +116,8 @@ class HomeViewModel(
 
     init {
         chores?.let {
-            execute { it.generateRecurring.all() }
-            execute { it.syncMyLinked() }
+            it.generateRecurring?.let { recurring -> execute { recurring.all() } }
+            it.syncMyLinked?.let { linked -> execute { linked() } }
         }
         updates?.let { offer ->
             viewModelScope.launch {
@@ -122,6 +142,7 @@ class HomeViewModel(
                     loaded = true,
                     groups = home.groups,
                     archived = home.archived,
+                    left = home.left,
                     currency = home.preferredCurrency,
                     total = home.total,
                     otherCurrencies = home.otherCurrencies,
@@ -138,7 +159,13 @@ class HomeViewModel(
                 )
             }.collect { fresh ->
                 updateState {
-                    fresh.copy(picking = it.picking, update = it.update, storeUpdate = it.storeUpdate)
+                    fresh.copy(
+                        picking = it.picking,
+                        update = it.update,
+                        storeUpdate = it.storeUpdate,
+                        rejoin = it.rejoin,
+                        rejoined = it.rejoined,
+                    )
                 }
             }
         }
@@ -155,6 +182,20 @@ class HomeViewModel(
             }
             HomeIntent.StartStoreUpdate -> updates?.store?.start()
             HomeIntent.CompleteStoreUpdate -> updates?.store?.complete()
+            is HomeIntent.AskRejoin -> updateState { it.copy(rejoin = RejoinState(intent.group)) }
+            HomeIntent.ConfirmRejoin -> rejoin()
+            HomeIntent.DismissRejoin -> updateState { it.copy(rejoin = null) }
+            HomeIntent.RejoinedOpened -> updateState { it.copy(rejoined = null) }
+        }
+    }
+
+    private suspend fun rejoin() {
+        val asked = currentState.rejoin ?: return
+        val run = chores?.rejoin ?: return
+        updateState { it.copy(rejoin = asked.copy(busy = true, result = null)) }
+        when (val result = run(asked.group.id)) {
+            RejoinResult.JOINED -> updateState { it.copy(rejoin = null, rejoined = asked.group.id) }
+            else -> updateState { it.copy(rejoin = asked.copy(busy = false, result = result)) }
         }
     }
 }

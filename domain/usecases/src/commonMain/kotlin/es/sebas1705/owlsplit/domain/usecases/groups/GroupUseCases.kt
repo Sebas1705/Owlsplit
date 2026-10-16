@@ -14,6 +14,7 @@ import es.sebas1705.owlsplit.data.repository.MemberRepository
 import es.sebas1705.owlsplit.data.repository.TransferRepository
 import es.sebas1705.owlsplit.data.repository.account.AccountService
 import es.sebas1705.owlsplit.data.repository.account.ProfileRepository
+import es.sebas1705.owlsplit.data.repository.invite.InviteService
 import es.sebas1705.owlsplit.data.repository.sync.SyncControl
 import es.sebas1705.owlsplit.domain.ledger.SuggestedPayment
 import es.sebas1705.owlsplit.domain.usecases.balances.GroupBalances
@@ -63,9 +64,17 @@ data class HomeData(
     val otherCurrencies: Map<String, Long>,
     /** Groups I archived, apart: they can be opened (and unarchived) from Inicio. */
     val archived: List<Group> = emptyList(),
+    /** Groups I left that are still on this device: I can go back in ([RejoinGroup]). */
+    val left: List<Group> = emptyList(),
 )
 
-private data class HomeQuery(val list: List<Group>, val archived: List<Group>, val uid: String?, val currency: String?)
+private data class HomeQuery(
+    val list: List<Group>,
+    val archived: List<Group>,
+    val uid: String?,
+    val currency: String?,
+    val left: List<Group>,
+)
 
 /** Inicio: my groups (not archived by me), most recent activity first, and my total balance. */
 class ObserveHome(
@@ -83,18 +92,21 @@ class ObserveHome(
             val uid = session?.uid
             val mine = all.filter { it.hasMember(uid) }
             val (archived, list) = mine.partition { uid != null && uid in it.archivedBy }
-            HomeQuery(list, archived, uid, profile?.currency)
+            val left = if (uid == null) emptyList() else all.filter { uid !in it.memberUids && !it.meta.deleted }
+            HomeQuery(list, archived, uid, profile?.currency, left)
         }.flatMapLatest { query ->
             val (list, archived, uid) = query
             val currency = query.currency
             val preferred = currency ?: DEFAULT_CURRENCY
-            if (list.isEmpty()) return@flatMapLatest flowOf(HomeData(emptyList(), preferred, 0, emptyMap(), archived))
+            if (list.isEmpty()) {
+                return@flatMapLatest flowOf(HomeData(emptyList(), preferred, 0, emptyMap(), archived, query.left))
+            }
             combine(list.map { homeGroup(it, uid) }) { items ->
                 val sorted = items.sortedByDescending { it.lastActivity }
                 val byCurrency = sorted.filter { it.myBalance != null }
                     .groupBy({ it.group.baseCurrency }, { it.myBalance!! })
                     .mapValues { (_, values) -> values.sum() }
-                HomeData(sorted, preferred, byCurrency[preferred] ?: 0, byCurrency - preferred, archived)
+                HomeData(sorted, preferred, byCurrency[preferred] ?: 0, byCurrency - preferred, archived, query.left)
             }
         }
 
@@ -166,6 +178,8 @@ class GroupActions(
     private val groups: GroupRepository,
     private val profiles: ProfileRepository,
     private val members: MemberRepository,
+    /** Null in tests that do not need it: then leaving does not publish the invite first. */
+    private val invites: InviteService? = null,
 ) {
     suspend fun create(input: GroupInput): String {
         val profile = profiles.profile.first()
@@ -178,7 +192,16 @@ class GroupActions(
 
     suspend fun setArchived(id: String, archived: Boolean) = groups.setArchived(id, archived)
 
-    suspend fun leave(id: String) = groups.leave(id)
+    /**
+     * Leaves, but first publishes the group's invite (best effort, while I can): the code stays on this
+     * device with the group, so I can go back in later without asking for a link ([RejoinGroup]).
+     */
+    suspend fun leave(id: String) {
+        groups.observeGroup(id).first()?.let { group ->
+            invites?.publish(group, members.observeMembers(id).first().count { it.active })
+        }
+        groups.leave(id)
+    }
 
     private fun GroupInput.normalised() = copy(name = name.trim().take(MAX_NAME))
 

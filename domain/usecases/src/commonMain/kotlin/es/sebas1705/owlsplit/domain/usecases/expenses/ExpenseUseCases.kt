@@ -69,13 +69,18 @@ object ExpenseDrafts {
     const val MAX_TITLE = 80
     const val MAX_NOTE = 500
 
-    /** A new expense in the group currency: paid by me (or the first active member), shared equally. */
+    /**
+     * A new expense in the group currency: paid by me (or the first active member), shared equally or,
+     * when the group gave its members different weights (a couple at 60/40, rooms in a flat), by them.
+     */
     fun new(members: List<Member>, myMemberId: String?, currency: String = "EUR"): ExpenseDraft {
         val active = members.filter { it.active }
         val payer = myMemberId?.takeIf { id -> active.any { it.id == id } } ?: active.firstOrNull()?.id
+        val type = if (active.map { it.defaultWeight }.distinct().size > 1) SplitType.WEIGHTS else SplitType.EQUAL
         return ExpenseDraft(
             payers = payer?.let { mapOf(it to 0L) }.orEmpty(),
-            values = defaults(SplitType.EQUAL, active, 0),
+            splitType = type,
+            values = defaults(type, active, 0),
             currency = currency,
         )
     }

@@ -28,6 +28,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,6 +62,20 @@ import es.sebas1705.owlsplit.core.ui.theme.Sizes
 import es.sebas1705.owlsplit.core.ui.theme.Spacing
 import es.sebas1705.owlsplit.domain.usecases.groups.HomeGroup
 import es.sebas1705.owlsplit.feature.home.resources.Res
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import es.sebas1705.owlsplit.domain.usecases.groups.RejoinResult
+import org.jetbrains.compose.resources.StringResource
+import es.sebas1705.owlsplit.feature.home.resources.left_show
+import es.sebas1705.owlsplit.feature.home.resources.left_hide
+import es.sebas1705.owlsplit.feature.home.resources.rejoin_title
+import es.sebas1705.owlsplit.feature.home.resources.rejoin_body
+import es.sebas1705.owlsplit.feature.home.resources.rejoin_needs_invite
+import es.sebas1705.owlsplit.feature.home.resources.rejoin_offline
+import es.sebas1705.owlsplit.feature.home.resources.rejoin_confirm
+import es.sebas1705.owlsplit.feature.home.resources.rejoin_busy
+import es.sebas1705.owlsplit.feature.home.resources.rejoin_cancel
 import es.sebas1705.owlsplit.feature.home.resources.action_expense
 import es.sebas1705.owlsplit.feature.home.resources.action_group
 import es.sebas1705.owlsplit.feature.home.resources.action_join
@@ -101,9 +116,21 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun HomeRoute(navigation: HomeNavigation, modifier: Modifier = Modifier) {
+fun HomeRoute(
+    navigation: HomeNavigation,
+    modifier: Modifier = Modifier,
+    /** A quick action asked from outside (the widget), run once the groups are loaded. */
+    startAction: QuickAction? = null,
+    onStartActionHandled: () -> Unit = {},
+) {
     val viewModel = koinViewModel<HomeViewModel>()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    LaunchedEffect(startAction, state.loaded) {
+        if (startAction == null || !state.loaded) return@LaunchedEffect
+        // Without groups there is nowhere to add it: Home already invites to create the first one.
+        if (state.groups.isNotEmpty()) quickAction(state, startAction, navigation, viewModel::onEvent)
+        onStartActionHandled()
+    }
     HomeScreen(state, viewModel::onEvent, navigation, modifier)
 }
 
@@ -115,10 +142,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     format: MoneyFormat = LocalMoneyFormat.current,
 ) {
-    val quick = { action: QuickAction ->
-        val single = state.groups.singleOrNull()?.group?.id
-        if (single != null) navigation.run(action, single) else onEvent(HomeIntent.Pick(action))
-    }
+    val quick = { action: QuickAction -> quickAction(state, action, navigation, onEvent) }
     Column(
         modifier
             .fillMaxSize()
@@ -158,13 +182,32 @@ fun HomeScreen(
             state.groups.forEach { item -> Group(item, format) { navigation.openGroup(item.group.id) } }
         }
         Archived(state.archived, navigation.openGroup)
+        Left(state.left) { onEvent(HomeIntent.AskRejoin(it)) }
     }
+    LaunchedEffect(state.rejoined) {
+        state.rejoined?.let {
+            navigation.openGroup(it)
+            onEvent(HomeIntent.RejoinedOpened)
+        }
+    }
+    state.rejoin?.let { RejoinDialog(it, onEvent) }
     state.picking?.let { action ->
         GroupPicker(state.groups, onDismiss = { onEvent(HomeIntent.DismissPicker) }) { groupId ->
             onEvent(HomeIntent.DismissPicker)
             navigation.run(action, groupId)
         }
     }
+}
+
+/** With one group it goes straight there; with several, the user picks which. */
+private fun quickAction(
+    state: HomeState,
+    action: QuickAction,
+    navigation: HomeNavigation,
+    onEvent: (HomeIntent) -> Unit
+) {
+    val single = state.groups.singleOrNull()?.group?.id
+    if (single != null) navigation.run(action, single) else onEvent(HomeIntent.Pick(action))
 }
 
 private fun HomeNavigation.run(action: QuickAction, groupId: String) = when (action) {
@@ -257,11 +300,70 @@ private fun ColumnScope.NoGroups(state: HomeState, navigation: HomeNavigation) {
 /** Archived groups, collapsed: open one to unarchive it from its menu. */
 @Composable
 private fun Archived(groups: List<Group>, onOpen: (String) -> Unit) {
+    CollapsedGroups(groups, Res.string.archived_show, Res.string.archived_hide) { onOpen(it.id) }
+}
+
+/** Groups I left, collapsed: tapping one offers to go back in. */
+@Composable
+private fun Left(groups: List<Group>, onRejoin: (Group) -> Unit) {
+    CollapsedGroups(groups, Res.string.left_show, Res.string.left_hide, onRejoin)
+}
+
+/** Asking to go back into a group I left; if the code it kept no longer works, it says so. */
+@Composable
+private fun RejoinDialog(rejoin: RejoinState, onEvent: (HomeIntent) -> Unit) {
+    val failed = rejoin.result
+    AlertDialog(
+        onDismissRequest = { if (!rejoin.busy) onEvent(HomeIntent.DismissRejoin) },
+        containerColor = Owlsplit.colors.surface,
+        title = {
+            Text(
+                stringResource(Res.string.rejoin_title, rejoin.group.name),
+                style = Owlsplit.type.title,
+                color = Owlsplit.colors.textPrimary,
+            )
+        },
+        text = {
+            Text(
+                stringResource(
+                    when (failed) {
+                        RejoinResult.NEEDS_INVITE -> Res.string.rejoin_needs_invite
+                        RejoinResult.OFFLINE -> Res.string.rejoin_offline
+                        RejoinResult.JOINED, null -> Res.string.rejoin_body
+                    },
+                ),
+                style = Owlsplit.type.body,
+                color = if (failed == null) Owlsplit.colors.textSecondary else Owlsplit.colors.error,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            )
+        },
+        confirmButton = {
+            if (failed != RejoinResult.NEEDS_INVITE) {
+                TextActionButton(
+                    stringResource(if (rejoin.busy) Res.string.rejoin_busy else Res.string.rejoin_confirm),
+                    { if (!rejoin.busy) onEvent(HomeIntent.ConfirmRejoin) },
+                )
+            }
+        },
+        dismissButton = {
+            TextActionButton(stringResource(Res.string.rejoin_cancel), { onEvent(HomeIntent.DismissRejoin) })
+        },
+    )
+}
+
+/** A collapsed list of groups behind a "Show (n)" / "Hide (n)" button; [onTap] for each row. */
+@Composable
+private fun CollapsedGroups(
+    groups: List<Group>,
+    show: StringResource,
+    hide: StringResource,
+    onTap: (Group) -> Unit,
+) {
     if (groups.isEmpty()) return
-    var open by rememberSaveable { mutableStateOf(false) }
+    var open by rememberSaveable(show) { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
         TextActionButton(
-            stringResource(if (open) Res.string.archived_hide else Res.string.archived_show, groups.size),
+            stringResource(if (open) hide else show, groups.size),
             { open = !open },
             Modifier.offset(x = -Spacing.m),
         )
@@ -273,7 +375,7 @@ private fun Archived(groups: List<Group>, onOpen: (String) -> Unit) {
                         Modifier
                             .fillMaxWidth()
                             .heightIn(min = Sizes.rowMinHeight)
-                            .clickable(role = Role.Button) { onOpen(group.id) }
+                            .clickable(role = Role.Button) { onTap(group) }
                             .padding(horizontal = Spacing.m, vertical = Spacing.s),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(Spacing.m),
