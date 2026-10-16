@@ -29,6 +29,8 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import compose.icons.TablerIcons
 import compose.icons.tablericons.BuildingBank
 import compose.icons.tablericons.Qrcode
@@ -65,6 +67,7 @@ import es.sebas1705.owlsplit.feature.groups.resources.pay_with
 import es.sebas1705.owlsplit.feature.groups.resources.remind_action
 import es.sebas1705.owlsplit.feature.groups.resources.settle_body
 import es.sebas1705.owlsplit.feature.groups.resources.settle_confirm
+import es.sebas1705.owlsplit.feature.groups.resources.settle_did_you_pay
 import es.sebas1705.owlsplit.feature.groups.resources.settle_title
 import org.jetbrains.compose.resources.stringResource
 
@@ -72,7 +75,8 @@ import org.jetbrains.compose.resources.stringResource
  * Settling one suggested payment. When I am the one paying and the other person published how to be
  * paid, their services are a tap away (the payment is still recorded here by hand: the app never
  * sees money move). When I am the one being paid, I can send them a reminder with my details or, with
- * an IBAN and in euros, show a QR their banking app scans to fill in the transfer.
+ * an IBAN and in euros, show a QR their banking app scans to fill in the transfer. Coming back from
+ * the payment app, it asks whether the payment went through, so it gets recorded.
  */
 @Suppress("LongParameterList") // What the dialog shows, the reminder and its two outcomes.
 @Composable
@@ -88,6 +92,12 @@ internal fun SettleDialog(
 ) {
     val payee = detail.members.firstOrNull { it.id == payment.toMemberId }
     val payeeMethods = payee?.payMethods
+    // Off to Bizum, PayPal, Revolut or the bank, and back: the payment is probably done.
+    var paying by remember { mutableStateOf(false) }
+    var left by remember { mutableStateOf(false) }
+    var back by remember { mutableStateOf(false) }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { if (paying) left = true }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { if (left) back = true }
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Owlsplit.colors.surface,
@@ -106,8 +116,10 @@ internal fun SettleDialog(
                     color = Owlsplit.colors.textSecondary,
                 )
                 when {
+                    payment.fromMemberId == detail.myMemberId && payeeMethods != null && back ->
+                        DidYouPay(payee.name, format.format(payment.amountMinor, currency))
                     payment.fromMemberId == detail.myMemberId && payeeMethods != null ->
-                        PayOptions(payee.name, payeeMethods, payment.amountMinor, currency, format)
+                        PayOptions(payee.name, payeeMethods, payment.amountMinor, currency, format) { paying = true }
                     payment.toMemberId == detail.myMemberId ->
                         RequestPayment(detail, payment.amountMinor, currency, onRemind)
                 }
@@ -118,8 +130,28 @@ internal fun SettleDialog(
     )
 }
 
+/** Back from paying: Record is the next step. */
 @Composable
-private fun PayOptions(name: String, methods: PayMethods, amountMinor: Long, currency: Currency, format: MoneyFormat) {
+private fun DidYouPay(name: String, amount: String) {
+    Text(
+        stringResource(Res.string.settle_did_you_pay, amount, name),
+        style = Owlsplit.type.bodyStrong,
+        color = Owlsplit.colors.positive,
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+    )
+}
+
+/** [onLeave]: a way to pay was chosen, which takes the user out to another app. */
+@Suppress("LongParameterList") // Who, how, how much, and leaving.
+@Composable
+private fun PayOptions(
+    name: String,
+    methods: PayMethods,
+    amountMinor: Long,
+    currency: Currency,
+    format: MoneyFormat,
+    onLeave: () -> Unit,
+) {
     val uri = LocalUriHandler.current
     val clipboard = LocalClipboardManager.current
     var copied by remember { mutableStateOf<PayMethod?>(null) }
@@ -129,17 +161,21 @@ private fun PayOptions(name: String, methods: PayMethods, amountMinor: Long, cur
                 // Bizum has no public link: the phone goes to the clipboard for the bank app.
                 clipboard.setText(AnnotatedString(methods.bizum.orEmpty()))
                 copied = PayMethod.BIZUM
+                onLeave()
             }
             PayMethod.PAYPAL -> OptionRow(TablerIcons.BrandPaypal, stringResource(Res.string.pay_with, "PayPal")) {
+                onLeave()
                 uri.openUri(PayLinks.paypalUrl(methods.paypal.orEmpty(), amountMinor, currency))
             }
             PayMethod.REVOLUT -> OptionRow(TablerIcons.CreditCard, stringResource(Res.string.pay_with, "Revolut")) {
+                onLeave()
                 uri.openUri(PayLinks.revolutUrl(methods.revolut.orEmpty()))
             }
             // The IBAN goes to the clipboard, ready to paste as the payee in the banking app.
             PayMethod.IBAN -> OptionRow(TablerIcons.BuildingBank, stringResource(Res.string.pay_by_transfer)) {
                 clipboard.setText(AnnotatedString(methods.iban.orEmpty()))
                 copied = PayMethod.IBAN
+                onLeave()
             }
         }
     }

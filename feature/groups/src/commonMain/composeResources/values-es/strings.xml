@@ -67,6 +67,7 @@
     <string name="settle_title">¿Registrar el pago?</string>
     <string name="settle_body">%1$s. Se apuntará como transferencia de hoy.</string>
     <string name="settle_confirm">Registrar</string>
+    <string name="settle_did_you_pay">¿Ya le has pagado %1$s a %2$s? Pulsa Registrar para que el saldo cuadre.</string>
     <string name="transfers">Pagos registrados</string>
     <string name="transfer_title">%1$s → %2$s</string>
     <string name="you">Tú</string>
