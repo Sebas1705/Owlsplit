@@ -3,7 +3,7 @@
 // expenses and balances, adds expenses and records payments. Writes are the app's documents with their
 // history entry (payloads.js); balances are the app's arithmetic (money.js).
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
-import { ReCaptchaV3Provider, initializeAppCheck } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app-check.js';
+import { ReCaptchaEnterpriseProvider, initializeAppCheck } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app-check.js';
 import {
   GoogleAuthProvider, getAuth, linkWithPopup, onAuthStateChanged, signInAnonymously, signInWithCredential,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
@@ -23,8 +23,8 @@ const CATEGORIES = ['FOOD', 'GROCERIES', 'TRANSPORT', 'ACCOMMODATION', 'LEISURE'
 const ALPHABET = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}$/;
 const LANG_KEY = 'owlsplit.lang';
 /**
- * App Check for "Owlsplit web" (docs/FIREBASE.md): the reCAPTCHA v3 site key (public; its secret lives in
- * the Firebase console). Empty while it is not set up: the web goes without, which is fine as long as
+ * App Check for "Owlsplit web" (docs/FIREBASE.md): the reCAPTCHA Enterprise site key (public; Firebase
+ * checks it in the project's reCAPTCHA, no secret here). Firebase no longer takes plain v3 keys. Empty while it is not set up: the web goes without, which is fine as long as
  * App Check is not enforced.
  */
 const RECAPTCHA_SITE_KEY = '6LcWG_ItAAAAAMCfoXeiwO0E-fGzjChJ0iLWuKUl';
@@ -715,7 +715,7 @@ async function start() {
   if (RECAPTCHA_SITE_KEY) {
     // Local tests: a debug token, printed in the console, to register under the web app in App Check.
     if (['localhost', '127.0.0.1'].includes(location.hostname)) self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-    initializeAppCheck(app, { provider: new ReCaptchaV3Provider(RECAPTCHA_SITE_KEY), isTokenAutoRefreshEnabled: true });
+    initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(RECAPTCHA_SITE_KEY), isTokenAutoRefreshEnabled: true });
   }
   db = getFirestore(app);
   auth = getAuth(app);
