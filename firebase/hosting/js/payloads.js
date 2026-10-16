@@ -189,3 +189,40 @@ export function convertMinor(amountMinor, fromDecimals, toDecimals, fxRateScaled
     / (1_000_000_000n * 10n ** BigInt(fromDecimals));
   return Number(value);
 }
+
+// ── Saving the guest with Google ───────────────────────────────────────────────────────────────────
+
+/** Giving my member back (it stays, without account, with its expenses), before another account takes it. */
+export function releaseMember(f, uid, member) {
+  return {
+    userUid: null,
+    payMethods: null,
+    linked: false,
+    pastUids: [...(member.pastUids ?? []), uid],
+    version: member.version + 1,
+    updatedAt: f.serverTimestamp(),
+    updatedBy: uid,
+  };
+}
+
+/** Leaving the group: only my uid goes, and the stamp. */
+export function leaveGroup(f, uid) {
+  return { memberUids: f.arrayRemove(uid), version: f.increment(1), updatedAt: f.serverTimestamp(), updatedBy: uid };
+}
+
+/** "Linked to Google" on my member, as the app shows it (no history entry, like publishMyLinked). */
+export function markLinked(f, uid, member) {
+  return { linked: true, version: member.version + 1, updatedAt: f.serverTimestamp(), updatedBy: uid };
+}
+
+/** users/{uid}: what the app restores when signing in with this Google account (UserDto). */
+export function profileDoc(f, { name, currency }) {
+  return {
+    displayName: name,
+    avatar: 'accent:BLUE',
+    preferredCurrency: currency,
+    linkedProviders: ['google.com'],
+    updatedAt: f.serverTimestamp(),
+    payMethods: {},
+  };
+}

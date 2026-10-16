@@ -3,17 +3,21 @@
 // expenses and balances, adds expenses and records payments. Writes are the app's documents with their
 // history entry (payloads.js); balances are the app's arithmetic (money.js).
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
-import { getAuth, onAuthStateChanged, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 import {
-  arrayUnion, collection, doc, getDoc, getFirestore, increment, onSnapshot, serverTimestamp, updateDoc, writeBatch,
+  GoogleAuthProvider, getAuth, linkWithPopup, onAuthStateChanged, signInAnonymously, signInWithCredential,
+} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
+import {
+  arrayRemove, arrayUnion, collection, doc, getDoc, getDocs, getFirestore, increment, onSnapshot, serverTimestamp, setDoc,
+  updateDoc, writeBatch,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { CURRENCIES, decimalsOf, groupBalances, myShare } from './money.js';
 import {
   changelogEntry, claimMember, convertMinor, defaultSplit, expenseDiff, expenseUpdate, fullyEditable, joinGroup,
-  markDeleted, newExpense, newMember, newTransfer, parseAmount, parseRate, rateFromFrankfurter,
+  leaveGroup, markDeleted, markLinked, newExpense, newMember, newTransfer, parseAmount, parseRate, profileDoc,
+  rateFromFrankfurter, releaseMember,
 } from './payloads.js';
 
-const f = { serverTimestamp, arrayUnion, increment };
+const f = { serverTimestamp, arrayUnion, arrayRemove, increment };
 const CATEGORIES = ['FOOD', 'GROCERIES', 'TRANSPORT', 'ACCOMMODATION', 'LEISURE', 'SHOPPING', 'HOME', 'UTILITIES', 'HEALTH', 'GIFTS', 'OTHER'];
 const ALPHABET = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}$/;
 const LANG_KEY = 'owlsplit.lang';
@@ -49,6 +53,10 @@ const TEXT = {
     otherCurrency: 'Los gastos en otras divisas se cuentan a su cambio guardado.',
     currency: 'Divisa', rate: (from, to) => `Cambio: ${to} por 1 ${from}`, rateDay: (d) => `BCE, ${d}`,
     needRate: 'Escribe el tipo de cambio.',
+    saveTitle: 'Guarda tu cuenta', saveLead: 'Entra con Google: si instalas la app y eliges «Ya tengo cuenta», tendrás este grupo con tus gastos. Y no lo pierdes si borras los datos del navegador.',
+    saveGoogle: 'Guardar con Google', savedAs: (e) => `Cuenta guardada con Google (${e}). En la app, entra con «Ya tengo cuenta».`,
+    googleFailed: 'No se pudo usar Google. Inténtalo otra vez.',
+    popupBlocked: 'El navegador ha bloqueado la ventana de Google: permite las ventanas emergentes para esta página y vuelve a pulsar.',
     categories: { FOOD: 'Comida', GROCERIES: 'Súper', TRANSPORT: 'Transporte', ACCOMMODATION: 'Alojamiento', LEISURE: 'Ocio', SHOPPING: 'Compras', HOME: 'Casa', UTILITIES: 'Suministros', HEALTH: 'Salud', GIFTS: 'Regalos', OTHER: 'Otros' },
   },
   en: {
@@ -79,6 +87,10 @@ const TEXT = {
     otherCurrency: 'Expenses in other currencies count at their saved rate.',
     currency: 'Currency', rate: (from, to) => `Rate: ${to} per 1 ${from}`, rateDay: (d) => `ECB, ${d}`,
     needRate: 'Enter the exchange rate.',
+    saveTitle: 'Keep your account', saveLead: 'Sign in with Google: if you install the app and choose “I already have an account”, this group and your expenses are there. And clearing the browser does not lose it.',
+    saveGoogle: 'Save with Google', savedAs: (e) => `Account saved with Google (${e}). In the app, choose “I already have an account”.`,
+    googleFailed: 'Could not use Google. Try again.',
+    popupBlocked: 'The browser blocked the Google window: allow pop-ups for this page and tap again.',
     categories: { FOOD: 'Food', GROCERIES: 'Groceries', TRANSPORT: 'Transport', ACCOMMODATION: 'Accommodation', LEISURE: 'Leisure', SHOPPING: 'Shopping', HOME: 'Home', UTILITIES: 'Utilities', HEALTH: 'Health', GIFTS: 'Gifts', OTHER: 'Other' },
   },
 };
@@ -101,6 +113,7 @@ const state = {
   busy: false, error: null, notice: null,
 };
 let db;
+let auth;
 let unsubscribers = [];
 
 // ── Small DOM helpers: text only, never HTML from the data ─────────────────────────────────────────
@@ -203,8 +216,25 @@ function groupScreen() {
     state.notice && h('p', { class: 'notice', role: 'status' }, state.notice),
     h('div', { class: 'tabs', role: 'group' }, tab('expenses', T.tabExpenses), tab('balances', T.tabBalances), tab('settle', T.tabSettle)),
     ...(state.tab === 'expenses' ? expensesTab(base) : state.tab === 'balances' ? balancesTab(result, base) : settleTab(result, base)),
+    accountCard(),
+    !state.adding && state.error && h('p', { class: 'error', role: 'alert' }, state.error),
     h('p', { class: 'muted' }, T.getApp, ' ', h('a', { href: '/' }, T.download)),
   ];
+}
+
+/** Anonymous: offer Google, so the account survives the browser and goes on in the app. */
+function accountCard() {
+  const T = t();
+  const user = auth?.currentUser;
+  if (!user) return null;
+  if (!user.isAnonymous) {
+    const email = user.providerData.find((p) => p.providerId === 'google.com')?.email ?? '';
+    return h('p', { class: 'muted' }, T.savedAs(email));
+  }
+  return h('div', { class: 'form' },
+    h('h2', {}, T.saveTitle),
+    h('p', { class: 'muted' }, T.saveLead),
+    h('button', { class: 'button', type: 'button', disabled: state.busy, onclick: saveWithGoogle }, T.saveGoogle));
 }
 
 function expensesTab(base) {
@@ -456,7 +486,7 @@ async function busy(work) {
     await work();
   } catch (e) {
     console.error(e);
-    state.error = e?.code === 'permission-denied' ? t().conflict : t().saveFailed;
+    state.error = e?.code === 'auth/popup-blocked' ? t().popupBlocked : e?.google ? t().googleFailed : e?.code === 'permission-denied' ? t().conflict : t().saveFailed;
   } finally {
     state.busy = false;
     render();
@@ -561,6 +591,72 @@ function undoPayment(old) {
   });
 }
 
+/**
+ * Google on the anonymous account keeps the uid (the same groups, now recoverable). If that Google
+ * account already exists (the app was used with it), it signs in to it instead, taking this group along
+ * like the app does when it switches accounts: release my member, leave, then join with the code and
+ * take the member back (SwitchToGoogle).
+ */
+function saveWithGoogle() {
+  return busy(async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      const { user } = await linkWithPopup(auth.currentUser, provider);
+      await afterGoogle(user);
+    } catch (e) {
+      if (e?.code === 'auth/popup-closed-by-user' || e?.code === 'auth/cancelled-popup-request') return;
+      if (e?.code !== 'auth/credential-already-in-use') throw Object.assign(e, { google: true });
+      await switchToGoogle(GoogleAuthProvider.credentialFromError(e));
+    }
+  });
+}
+
+/** Linked: my member says so, and users/{uid} gets a profile for the app to restore (unless it has one). */
+async function afterGoogle(user) {
+  const mine = me();
+  if (mine && !mine.linked) await updateDoc(sub('members', mine.id), markLinked(f, user.uid, mine));
+  const profile = doc(db, 'users', user.uid);
+  const existing = await getDoc(profile).catch(() => null);
+  if (!existing?.exists()) {
+    await setDoc(profile, profileDoc(f, { name: mine?.name ?? user.displayName ?? 'Yo', currency: state.group.baseCurrency }));
+  }
+}
+
+async function switchToGoogle(credential) {
+  const mine = me();
+  const oldUid = state.uid;
+  // While still in the group: give my member back, then leave.
+  if (mine) {
+    const release = writeBatch(db);
+    release.update(sub('members', mine.id), releaseMember(f, oldUid, mine));
+    release.set(sub('changelog', uuid()), changelogEntry(f, oldUid, {
+      entityType: 'MEMBER', entityId: mine.id, action: 'UPDATED', diff: [{ field: 'userUid', before: oldUid, after: null }], now: Date.now(),
+    }));
+    await release.commit();
+  }
+  await updateDoc(groupRef(), leaveGroup(f, oldUid));
+  unsubscribers.forEach((u) => u());
+  unsubscribers = [];
+  const { user } = await signInWithCredential(auth, credential);
+  state.uid = user.uid;
+  // That account may already be in the group (it used the app): otherwise it joins with the code.
+  const inGroup = await getDoc(groupRef()).then((g) => (g.data()?.memberUids ?? []).includes(user.uid)).catch(() => false);
+  if (!inGroup) await updateDoc(groupRef(), joinGroup(f, user.uid, code));
+  const members = (await getDocs(collection(db, 'groups', state.groupId, 'members'))).docs.map((d) => ({ id: d.id, ...d.data() }));
+  const already = members.find((m) => m.userUid === user.uid && !m.deleted);
+  if (!already && mine) {
+    const released = members.find((m) => m.id === mine.id);
+    const claim = writeBatch(db);
+    claim.update(sub('members', mine.id), claimMember(f, user.uid, released));
+    claim.set(sub('changelog', uuid()), changelogEntry(f, user.uid, {
+      entityType: 'MEMBER', entityId: mine.id, action: 'JOINED', diff: [{ field: 'userUid', before: null, after: user.uid }], now: Date.now(),
+    }));
+    await claim.commit();
+    await updateDoc(sub('members', mine.id), markLinked(f, user.uid, { version: released.version + 1 }));
+  }
+  await openGroup();
+}
+
 function askRecord(payment) {
   state.confirming = payKey(payment);
   render();
@@ -610,7 +706,7 @@ async function start() {
   const config = await fetch('/__/firebase/init.json').then((r) => r.json());
   const app = initializeApp(config);
   db = getFirestore(app);
-  const auth = getAuth(app);
+  auth = getAuth(app);
   // The browser keeps the anonymous account: coming back later is the same guest.
   const user = await new Promise((resolve) => { const off = onAuthStateChanged(auth, (u) => { off(); resolve(u); }); });
   state.uid = (user ?? (await signInAnonymously(auth)).user).uid;
