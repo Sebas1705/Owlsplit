@@ -1,5 +1,12 @@
 package es.sebas1705.owlsplit.feature.home
 
+import es.sebas1705.owlsplit.core.testing.ledger.FakeInvites
+import es.sebas1705.owlsplit.domain.usecases.groups.GroupActions
+import es.sebas1705.owlsplit.domain.usecases.groups.RejoinGroup
+import es.sebas1705.owlsplit.domain.usecases.invite.ClaimMember
+import es.sebas1705.owlsplit.domain.usecases.invite.JoinGroup
+import es.sebas1705.owlsplit.domain.usecases.invite.PreviewInvite
+import kotlin.time.Duration.Companion.seconds
 import es.sebas1705.owlsplit.core.datastore.LinkNudgeSettings
 import es.sebas1705.owlsplit.core.datastore.UpdateSettings
 import es.sebas1705.owlsplit.data.models.LatestRelease
@@ -93,6 +100,7 @@ class HomeViewModelTest {
         checkForUpdate: CheckForUpdate? = null,
         updates: UpdateSettings? = null,
         store: StoreUpdates = NoStoreUpdates,
+        rejoin: RejoinGroup? = null,
     ) = HomeViewModel(
         ObserveHome(
             ledger.groups,
@@ -112,6 +120,7 @@ class HomeViewModelTest {
         ),
         nudge,
         updates = if (checkForUpdate != null && updates != null) UpdateOffer(checkForUpdate, updates, store) else null,
+        rejoinGroup = rejoin,
     )
 
     @Test
@@ -129,6 +138,31 @@ class HomeViewModelTest {
 
         vm.onEvent(HomeIntent.DismissNudge)
         assertFalse(vm.uiState.value.suggestLinking)
+    }
+
+    @Test
+    fun aGroupILeftIsListedApartAndGoingBackInOpensIt() = runTest {
+        val invites = FakeInvites(ledger)
+        val actions = GroupActions(ledger.groups, profiles, ledger.members, invites)
+        val g = actions.create(GroupInput("Piso", "home", "GREEN", "EUR"))
+        actions.leave(g)
+        val rejoin = RejoinGroup(
+            ledger.groups,
+            PreviewInvite(invites),
+            JoinGroup(invites, ledger.groups, accounts, arrival = 1.seconds),
+            ClaimMember(ledger.members, profiles, accounts),
+        )
+        val vm = viewModel(rejoin = rejoin)
+        assertEquals(listOf(g), vm.uiState.value.left.map { it.id })
+        assertTrue(vm.uiState.value.groups.isEmpty())
+
+        vm.onEvent(HomeIntent.AskRejoin(vm.uiState.value.left.single()))
+        vm.onEvent(HomeIntent.ConfirmRejoin)
+
+        assertEquals(g, vm.uiState.value.rejoined)
+        assertEquals(null, vm.uiState.value.rejoin)
+        assertEquals(listOf(g), vm.uiState.value.groups.map { it.group.id })
+        assertTrue(vm.uiState.value.left.isEmpty())
     }
 
     @Test
