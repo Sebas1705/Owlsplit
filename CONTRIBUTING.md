@@ -26,6 +26,11 @@ Use the PR template — all boxes must be checked before merge.
 Enforced automatically by Detekt. Run `./gradlew detekt` before pushing.
 Max line length: 140. No wildcard imports in non-Compose files.
 
+## Coverage
+
+Kover merges the debug unit tests of every library module (`./gradlew koverHtmlReportUnitTests`). CI fails when line
+coverage drops below the `minBound` in the root `build.gradle.kts`; raise it when coverage grows, never lower it.
+
 ## Adding a module
 
 Follow MODULE_MAP.md#adding-a-new-feature-module.

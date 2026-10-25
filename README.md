@@ -49,7 +49,10 @@ export ANDROID_HOME="/c/Users/sebss/Android/sdk"
 scripts/doppler-sync-local.sh                   # Firebase configuration (Doppler)
 ./gradlew :composeApp:installDebug         # debug app (es.sebas1705.owlsplit.debug)
 ./gradlew build                            # tests, detekt, lint and builds
+./gradlew koverHtmlReportUnitTests         # coverage report: build/reports/kover/htmlUnitTests/index.html
 ```
+
+Unit-test line coverage is 79.6 % (Kover, all library modules, measured 2026-10-25). CI publishes the report on every run and fails if it drops below 75 % (`koverVerifyUnitTests`).
 
 Module structure in [MODULE_MAP.md](MODULE_MAP.md); implementation plans in [docs/plans](docs/plans/README.md); Firebase in [docs/FIREBASE.md](docs/FIREBASE.md); tester distribution (Firebase App Distribution) and versioning in [docs/RELEASE.md](docs/RELEASE.md); MVP acceptance criteria in [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md).
 
