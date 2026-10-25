@@ -18,6 +18,7 @@ dependencies {
     compileOnly(libs.plugins.android.library.toDep())
     compileOnly(libs.plugins.sqldelight.toDep())
     compileOnly(libs.plugins.detekt.toDep())
+    compileOnly(libs.plugins.kover.toDep())
 }
 
 fun Provider<PluginDependency>.toDep() = map {
