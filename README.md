@@ -1,10 +1,23 @@
 # Owlsplit
 
+[![CI](https://github.com/Sebas1705/Owlsplit/actions/workflows/ci.yml/badge.svg)](https://github.com/Sebas1705/Owlsplit/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/Sebas1705/Owlsplit?include_prereleases)](https://github.com/Sebas1705/Owlsplit/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Android and iOS app for tracking shared group expenses (trips, flats, dinners, gifts): who paid what, how much each person owes, and how to settle up with the fewest payments. It works offline and syncs across all members.
+
+**Download:** [owlsplit.web.app](https://owlsplit.web.app) (Android APK) · [GitHub Releases](https://github.com/Sebas1705/Owlsplit/releases/latest) · Google Play closed testing.
+
+<p align="center">
+  <img src="docs/screenshots/1.png" width="200" alt="Owlsplit screenshot 1">
+  <img src="docs/screenshots/2.png" width="200" alt="Owlsplit screenshot 2">
+  <img src="docs/screenshots/3.png" width="200" alt="Owlsplit screenshot 3">
+  <img src="docs/screenshots/4.png" width="200" alt="Owlsplit screenshot 4">
+</p>
 
 Inspired by Settle Up, with a polished design (clean fintech style) and more features ahead: one-tap settle-up, recurring expenses, budgets and statistics, and receipt scanning.
 
-> **Status:** public beta (P1–P15 done). Android APK at [owlsplit.web.app](https://owlsplit.web.app); Google Play closed testing. See the [plans](docs/plans/README.md).
+> **Status:** public beta (P1–P15 done). See the [plans](docs/plans/README.md).
 
 Code and docs are in English; the app UI is in Spanish and English.
 
@@ -22,7 +35,7 @@ Code and docs are in English; the app UI is in Spanish and English.
 | [Decisions (ADR)](docs/adr/README.md) | Why each piece was chosen and what was ruled out |
 | [Approved mockup](docs/mockups/owlsplit-fintech-v3.html) | Home, group and expense editor |
 
-## Planned stack
+## Stack
 
 Kotlin Multiplatform · Compose Multiplatform · SQLDelight · Koin · Ktor · Firebase (Auth, Firestore) via GitLive, on top of the Templetry `kmp/modular-features` template.
 
