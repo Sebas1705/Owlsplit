@@ -1,0 +1,11 @@
+{
+  "accent": "#3B4BF5",
+  "icon_alt": {
+    "en": "Owlsplit app icon: two white owl-eye rings and a gold beak on a blue rounded square",
+    "es": "Icono de la app Owlsplit: dos anillos blancos como ojos de búho y un pico dorado sobre un cuadrado redondeado azul"
+  },
+  "banner_alt": {
+    "en": "Owlsplit banner: the app icon, the tagline \"Shared expenses for Android and iOS\" and the stack (KMP, Compose MP, SQLDelight, Koin), next to a screenshot of the app",
+    "es": "Banner de Owlsplit: el icono de la app, el lema \"Gastos compartidos para Android e iOS\" y el stack (KMP, Compose MP, SQLDelight, Koin), junto a una captura de la app"
+  }
+}
