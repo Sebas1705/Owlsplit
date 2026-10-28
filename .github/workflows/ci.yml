@@ -109,3 +109,6 @@ jobs:
       # Icons, web colours and favicon are generated from brand/tokens.json (docs/BRAND.md).
       - name: Brand files up to date
         run: node scripts/brand.mjs --check
+      # Hand-written release notes (fastlane/release-notes) and the store listing within Play's limits.
+      - name: Release notes and Play listing within limits
+        run: node scripts/release-notes.mjs --check

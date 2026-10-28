@@ -1,0 +1,8 @@
+Llega Owlsplit 1.0, la primera versión estable.
+• Grupos y gastos en varias monedas, también los recurrentes.
+• Salda con Bizum, PayPal, Revolut o un QR SEPA.
+• Funciona sin conexión y se sincroniza para todo el grupo.
+• Los invitados pueden abrir el grupo en el navegador, sin instalar la app.
+• Estadísticas, widget en la pantalla de inicio, exportar a CSV/PDF e importar de Splitwise.
+• Vincula Google para conservar tus grupos al cambiar de móvil.
+¡Gracias a todos los que probasteis las betas!
