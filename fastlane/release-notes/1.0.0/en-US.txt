@@ -1,0 +1,9 @@
+Owlsplit 1.0 is here: the first stable version.
+• Groups and expenses in several currencies, recurring ones too.
+• Settle up with Bizum, PayPal, Revolut or a SEPA QR.
+• Works offline and syncs for the whole group.
+• Guests can join from the browser, no app needed.
+• New: "Where does this come from?" explains each balance step by step.
+• Stats, a widget, CSV/PDF export and Splitwise import.
+• Link Google to keep your groups when you change phones.
+Thanks to everyone who tested the betas!

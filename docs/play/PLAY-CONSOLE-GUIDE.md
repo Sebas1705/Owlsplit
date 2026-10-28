@@ -265,7 +265,7 @@ Suggested answers (adjust them to what actually happened):
   - How you decided it's ready: "Sin fallos abiertos en Crashlytics en la última semana, flujos principales probados por los testers, versión X.Y.Z estable."
 - Review: usually **7 days or less**. They may ask you to continue testing longer.
 
-Once you're granted production access, publishing means running the **Play promote** workflow (*Actions → Play promote → Run workflow*): `from` = your testing track, `to` = `production`, `rollout` = `0.1` for 10% of users (or `1` for everyone). To increase the percentage, run it again with `from` = `to` = `production` and another `rollout`. First give the service account the **Release to production (Publicar en producción)** permission.
+Once you're granted production access, publishing means running the **Play promote** workflow (*Actions → Play promote → Run workflow*): `from` = your testing track, `to` = `production`, `rollout` = `0.2` for 20% of users (or `1` for everyone; the steps for 1.0.0 are in [RELEASE-1.0.0.md](../RELEASE-1.0.0.md)). To increase the percentage, run it again with `from` = `to` = `production` and another `rollout`. First give the service account the **Release to production (Publicar en producción)** permission.
 
 **Tell Claude:** production access granted.
 

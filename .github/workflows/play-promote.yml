@@ -44,11 +44,21 @@ jobs:
         run: |
           [[ "$FROM" =~ ^[a-z0-9:_.-]+$ && "$TO" =~ ^[a-z0-9:_.-]+$ ]] || { echo "::error::Invalid track name"; exit 1; }
           [[ "$ROLLOUT" =~ ^(1|1\.0+|0\.[0-9]+)$ ]] || { echo "::error::Rollout must be between 0.01 and 1"; exit 1; }
-          # A rollout below 1 is a staged release; 1 completes it.
-          if [ "$ROLLOUT" = "1" ] || [[ "$ROLLOUT" =~ ^1\.0+$ ]]; then STAGE="--release_status completed"
-          else STAGE="--release_status inProgress --rollout $ROLLOUT"; fi
-          ARGS="--track $FROM $STAGE --skip_upload_apk true --skip_upload_aab true --skip_upload_metadata true --skip_upload_changelogs true --skip_upload_images true --skip_upload_screenshots true"
-          [ "$FROM" = "$TO" ] || ARGS="$ARGS --track_promote_to $TO"
+          # fastlane supply (2.241.0) reads these differently per mode, so the --rollout is always passed:
+          # - promote (from != to): --release_status picks the release of `from` by its status, and the
+          #   tracks of release.yml hold `completed` ones (its default); --rollout below 1 makes it a
+          #   staged release in `to`, 1 a completed one.
+          # - rollout only (from = to): only runs with a --rollout; it changes the in-progress release of
+          #   the track to that share, and 1 (with completed) finishes it.
+          SKIP="--skip_upload_apk true --skip_upload_aab true --skip_upload_metadata true --skip_upload_changelogs true --skip_upload_images true --skip_upload_screenshots true"
+          if [ "$FROM" != "$TO" ]; then
+            ARGS="--track $FROM --track_promote_to $TO --rollout $ROLLOUT"
+          elif [ "$ROLLOUT" = "1" ] || [[ "$ROLLOUT" =~ ^1\.0+$ ]]; then
+            ARGS="--track $FROM --release_status completed --rollout 1"
+          else
+            ARGS="--track $FROM --release_status inProgress --rollout $ROLLOUT"
+          fi
+          ARGS="$ARGS $SKIP"
           echo "args=$ARGS" >> "$GITHUB_OUTPUT"
       - uses: ./.github/actions/play
         with:
