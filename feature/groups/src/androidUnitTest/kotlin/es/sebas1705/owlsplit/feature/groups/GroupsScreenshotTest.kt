@@ -9,6 +9,7 @@ import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
 import es.sebas1705.owlsplit.domain.usecases.balances.balanceExplanationOf
 import es.sebas1705.owlsplit.feature.groups.detail.BalanceExplanationContent
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -215,6 +216,19 @@ class GroupsScreenshotTest {
     @Test
     @Config(qualifiers = "en-w411dp-h891dp-xxhdpi")
     fun explanationEnglishDark() = explanation("en_dark", dark = true, format = MoneyFormat.English)
+
+    /** Screen readers hear each card as one sentence; mine in the second person, the others in the third. */
+    @Test
+    @Config(qualifiers = "en-w411dp-h891dp-xxhdpi")
+    fun explanationCardsAreSpokenAsSentences() {
+        explanation("en", format = MoneyFormat.English)
+        compose.onNodeWithContentDescription(
+            "You: you paid €93.60, minus your share, €201.67, minus payments you received, €10.00. Balance: −€118.07.",
+        ).assertExists()
+        compose.onNodeWithContentDescription(
+            "Luis: paid €91.41, minus their share, €201.68, plus payments sent, €10.00. Balance: −€100.27.",
+        ).assertExists()
+    }
 
     @Test
     fun explanationLargeText() = largeText { explanation("large_text") }

@@ -60,6 +60,15 @@ import es.sebas1705.owlsplit.feature.groups.resources.explain_spoken_paid
 import es.sebas1705.owlsplit.feature.groups.resources.explain_spoken_received
 import es.sebas1705.owlsplit.feature.groups.resources.explain_spoken_sent
 import es.sebas1705.owlsplit.feature.groups.resources.explain_spoken_share
+import es.sebas1705.owlsplit.feature.groups.resources.explain_paid_you
+import es.sebas1705.owlsplit.feature.groups.resources.explain_share_you
+import es.sebas1705.owlsplit.feature.groups.resources.explain_sent_you
+import es.sebas1705.owlsplit.feature.groups.resources.explain_received_you
+import es.sebas1705.owlsplit.feature.groups.resources.explain_spoken_paid_you
+import es.sebas1705.owlsplit.feature.groups.resources.explain_spoken_share_you
+import es.sebas1705.owlsplit.feature.groups.resources.explain_spoken_sent_you
+import es.sebas1705.owlsplit.feature.groups.resources.explain_spoken_received_you
+import es.sebas1705.owlsplit.feature.groups.resources.explain_spoken_nothing_you
 import es.sebas1705.owlsplit.feature.groups.resources.explain_title
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
@@ -122,9 +131,10 @@ fun BalanceExplanationContent(
         }
         item(key = "balances") { SectionTitle(stringResource(Res.string.explain_balances)) }
         explanation.members.forEach { row ->
-            item(
-                key = "member-${row.memberId}"
-            ) { BreakdownCard(row, memberLabel(row.memberId, detail), currency, format) }
+            item(key = "member-${row.memberId}") {
+                val mine = row.memberId == detail.myMemberId
+                BreakdownCard(row, memberLabel(row.memberId, detail), mine, currency, format)
+            }
         }
         item(key = "settle") { SectionTitle(stringResource(Res.string.explain_settle_title)) }
         item(key = "why") {
@@ -159,18 +169,32 @@ private fun SectionTitle(text: String) {
 /** One line of a member's arithmetic: [sign] is how it enters the balance ("" for the first one, paid). */
 private class Line(val label: StringResource, val spoken: StringResource, val sign: String, val amountMinor: Long)
 
-@Composable
-private fun BreakdownCard(row: MemberBreakdown, name: String, currency: Currency, format: MoneyFormat) {
-    val lines = listOf(
+/** The non-zero lines of [row]; [mine] words them in the second person ("You paid", "Your share"). */
+private fun linesOf(row: MemberBreakdown, mine: Boolean): List<Line> = if (mine) {
+    listOf(
+        Line(Res.string.explain_paid_you, Res.string.explain_spoken_paid_you, "", row.paidMinor),
+        Line(Res.string.explain_share_you, Res.string.explain_spoken_share_you, MINUS, row.shareMinor),
+        Line(Res.string.explain_sent_you, Res.string.explain_spoken_sent_you, "+", row.sentMinor),
+        Line(Res.string.explain_received_you, Res.string.explain_spoken_received_you, MINUS, row.receivedMinor),
+    )
+} else {
+    listOf(
         Line(Res.string.explain_paid, Res.string.explain_spoken_paid, "", row.paidMinor),
         Line(Res.string.explain_share, Res.string.explain_spoken_share, MINUS, row.shareMinor),
         Line(Res.string.explain_sent, Res.string.explain_spoken_sent, "+", row.sentMinor),
         Line(Res.string.explain_received, Res.string.explain_spoken_received, MINUS, row.receivedMinor),
-    ).filter { it.amountMinor != 0L }
+    )
+}.filter { it.amountMinor != 0L }
+
+/** [mine]: the card of the person using the app, worded in the second person. */
+@Composable
+private fun BreakdownCard(row: MemberBreakdown, name: String, mine: Boolean, currency: Currency, format: MoneyFormat) {
+    val lines = linesOf(row, mine)
     val balance = format.format(row.balanceMinor, currency, showPlus = true)
     val spokenLines = lines.map { stringResource(it.spoken, format.format(it.amountMinor, currency)) }
+    val nothing = if (mine) Res.string.explain_spoken_nothing_you else Res.string.explain_spoken_nothing
     val spoken = if (lines.isEmpty()) {
-        stringResource(Res.string.explain_spoken_nothing, name, balance)
+        stringResource(nothing, name, balance)
     } else {
         stringResource(Res.string.explain_spoken_card, name, spokenLines.joinToString(", "), balance)
     }

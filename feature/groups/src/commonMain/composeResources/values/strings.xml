@@ -207,6 +207,15 @@
     <string name="explain_spoken_received">minus payments received, %1$s</string>
     <string name="explain_spoken_card">%1$s: %2$s. Balance: %3$s.</string>
     <string name="explain_spoken_nothing">%1$s: nothing paid or owed. Balance: %2$s.</string>
+    <string name="explain_paid_you">You paid</string>
+    <string name="explain_share_you">Your share of expenses</string>
+    <string name="explain_sent_you">Payments you sent</string>
+    <string name="explain_received_you">Payments you received</string>
+    <string name="explain_spoken_paid_you">you paid %1$s</string>
+    <string name="explain_spoken_share_you">minus your share, %1$s</string>
+    <string name="explain_spoken_sent_you">plus payments you sent, %1$s</string>
+    <string name="explain_spoken_received_you">minus payments you received, %1$s</string>
+    <string name="explain_spoken_nothing_you">%1$s: you have paid nothing and owe nothing. Balance: %2$s.</string>
     <string name="explain_settle_title">How to settle with the fewest payments</string>
     <string name="explain_settle_body">Whoever owes pays whoever is owed directly, with no go-betweens, so the group settles up with as few payments as possible.</string>
     <string name="explain_fewer">%1$s instead of %2$d</string>
