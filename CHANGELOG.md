@@ -30,6 +30,7 @@ The first stable version, after fifteen pre-releases (`1.0.0-beta.1` to `1.0.0-b
 
 ### Settle up
 
+- "Where does this come from?": a sheet on Balances and Settle up that shows how each balance adds up (paid, share, payments sent and received) and why settling needs so few payments (#90).
 - Settle up in one tap with Bizum, PayPal or Revolut (#29).
 - Pay by IBAN with a SEPA QR to scan from the banking app (#63).
 - Open your bank for Bizum after copying the phone number (#79).
