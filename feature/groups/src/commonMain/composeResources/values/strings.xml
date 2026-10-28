@@ -191,4 +191,29 @@
     <string name="pay_open_bank">Open %1$s</string>
     <string name="pay_other_bank">Another bank</string>
     <string name="pay_choose_bank">Which bank do you send Bizum with?</string>
+    <!-- Where does this come from? (balance explanation) -->
+    <string name="explain_open">Where does this come from?</string>
+    <string name="explain_title">Where does this come from?</string>
+    <string name="explain_balances">Each balance, step by step</string>
+    <string name="explain_paid">Paid</string>
+    <string name="explain_share">Their share of expenses</string>
+    <string name="explain_sent">Payments sent</string>
+    <string name="explain_received">Payments received</string>
+    <string name="explain_balance">Balance</string>
+    <string name="explain_adds_up">Adds up</string>
+    <string name="explain_spoken_paid">paid %1$s</string>
+    <string name="explain_spoken_share">minus their share, %1$s</string>
+    <string name="explain_spoken_sent">plus payments sent, %1$s</string>
+    <string name="explain_spoken_received">minus payments received, %1$s</string>
+    <string name="explain_spoken_card">%1$s: %2$s. Balance: %3$s.</string>
+    <string name="explain_spoken_nothing">%1$s: nothing paid or owed. Balance: %2$s.</string>
+    <string name="explain_settle_title">How to settle with the fewest payments</string>
+    <string name="explain_settle_body">Whoever owes pays whoever is owed directly, with no go-betweens, so the group settles up with as few payments as possible.</string>
+    <string name="explain_fewer">%1$s instead of %2$d</string>
+    <string name="explain_fewer_detail">Without simplifying, every pair of people who owe each other something would need a payment of their own: %1$d in this group.</string>
+    <string name="explain_conversion">Expenses and payments in other currencies count in %1$s at the exchange rate (ECB) stored with each one.</string>
+    <plurals name="explain_payments">
+        <item quantity="one">%1$d payment</item>
+        <item quantity="other">%1$d payments</item>
+    </plurals>
 </resources>

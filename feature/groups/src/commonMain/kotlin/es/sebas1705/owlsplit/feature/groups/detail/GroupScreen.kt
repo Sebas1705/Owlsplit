@@ -89,6 +89,7 @@ import es.sebas1705.owlsplit.feature.groups.resources.balance_owed
 import es.sebas1705.owlsplit.feature.groups.resources.balance_owes
 import es.sebas1705.owlsplit.feature.groups.resources.cancel
 import es.sebas1705.owlsplit.feature.groups.resources.edit_group
+import es.sebas1705.owlsplit.feature.groups.resources.explain_open
 import es.sebas1705.owlsplit.feature.groups.resources.leave
 import es.sebas1705.owlsplit.feature.groups.resources.leave_body
 import es.sebas1705.owlsplit.feature.groups.resources.leave_confirm
@@ -170,7 +171,10 @@ fun GroupScreen(
             }
             when (state.tab) {
                 GroupTab.EXPENSES -> expenses(state, detail, format, today, onEvent, navigation.openExpense)
-                GroupTab.BALANCES -> item { Balances(detail, currency, format) }
+                GroupTab.BALANCES -> {
+                    item { Balances(detail, currency, format) }
+                    item { ExplainButton(onEvent) }
+                }
                 GroupTab.SETTLE -> settle(detail, currency, format, today, onEvent, navigation.recordPayment)
             }
         }
@@ -370,6 +374,7 @@ private fun LazyListScope.settle(
             }
         }
     }
+    item { ExplainButton(onEvent) }
     // Pulled back by the button padding: the label lines up with the cards.
     item {
         TextActionButton(
@@ -428,11 +433,11 @@ private fun remindAction(
 }
 
 @Composable
-private fun memberLabel(id: String, detail: GroupDetail): String =
+internal fun memberLabel(id: String, detail: GroupDetail): String =
     if (id == detail.myMemberId) stringResource(Res.string.you) else detail.members.nameOf(id)
 
 @Composable
-private fun paymentText(
+internal fun paymentText(
     payment: SuggestedPayment,
     detail: GroupDetail,
     currency: Currency,
@@ -484,6 +489,7 @@ private fun Dialogs(
     }
     LeaveDialogs(state, detail, currency, format, onEvent)
     TransferDialog(state, detail, format, onEvent)
+    state.explanation?.let { BalanceExplanationSheet(it, detail, currency, format, dismiss) }
 }
 
 /** Leaving: first what happens to my balance, then a last "are you sure". */
@@ -596,5 +602,15 @@ internal fun ConfirmDialog(
             )
         },
         dismissButton = { TextActionButton(stringResource(Res.string.cancel), onDismiss) },
+    )
+}
+
+/** Opens "Where does this come from?". Pulled back by the button padding: the label lines up with the cards. */
+@Composable
+private fun ExplainButton(onEvent: (GroupIntent) -> Unit) {
+    TextActionButton(
+        stringResource(Res.string.explain_open),
+        { onEvent(GroupIntent.ShowExplanation) },
+        Modifier.offset(x = -Spacing.m),
     )
 }

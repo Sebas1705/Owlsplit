@@ -16,5 +16,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.turbine)
         }
+        // Reads the shared ledger fixtures (firebase/rules-test/fixtures/ledger.json).
+        androidUnitTest.dependencies { implementation(libs.kotlinx.serialization.json) }
     }
 }

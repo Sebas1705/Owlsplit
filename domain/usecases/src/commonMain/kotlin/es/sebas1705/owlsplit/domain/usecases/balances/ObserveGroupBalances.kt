@@ -59,6 +59,26 @@ fun groupBalancesOf(
     expenseList: List<Expense>,
     transferList: List<Transfer>,
 ): GroupBalances {
+    val ledger = ledgerOf(baseCurrency, memberList, expenseList, transferList)
+    val balances = BalanceCalculator.balances(ledger.members, ledger.expenses, ledger.transfers, ledger.base)
+    return GroupBalances(baseCurrency, balances, DebtSimplifier.simplify(balances, ledger.members), ledger.invalidIds)
+}
+
+/** A group's valid entries as the ledger sees them, and the ids of the inconsistent ones left out. */
+internal class GroupLedger(
+    val base: Currency,
+    val members: List<LedgerMember>,
+    val expenses: List<ExpenseEntry>,
+    val transfers: List<TransferEntry>,
+    val invalidIds: List<String>,
+)
+
+internal fun ledgerOf(
+    baseCurrency: String,
+    memberList: List<Member>,
+    expenseList: List<Expense>,
+    transferList: List<Transfer>,
+): GroupLedger {
     val base = Currency.of(baseCurrency)
     val ledgerMembers = memberList.map { LedgerMember(it.id, it.sortKey) }
     val invalid = mutableListOf<String>()
@@ -68,8 +88,7 @@ fun groupBalancesOf(
     val validTransfers = transferList.map { it.toEntry() }.filter { entry ->
         isValid(invalid) { NetCalculator.transferNet(entry, ledgerMembers, base) }
     }
-    val balances = BalanceCalculator.balances(ledgerMembers, validExpenses, validTransfers, base)
-    return GroupBalances(baseCurrency, balances, DebtSimplifier.simplify(balances, ledgerMembers), invalid)
+    return GroupLedger(base, ledgerMembers, validExpenses, validTransfers, invalid)
 }
 
 private inline fun isValid(invalid: MutableList<String>, check: () -> Unit): Boolean =

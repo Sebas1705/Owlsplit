@@ -9,6 +9,8 @@ import es.sebas1705.owlsplit.core.common.mvi.MVIBaseViewModel
 import es.sebas1705.owlsplit.data.models.Expense
 import es.sebas1705.owlsplit.data.models.ExpenseCategory
 import es.sebas1705.owlsplit.domain.ledger.SuggestedPayment
+import es.sebas1705.owlsplit.domain.usecases.balances.BalanceExplanation
+import es.sebas1705.owlsplit.domain.usecases.balances.balanceExplanationOf
 import es.sebas1705.owlsplit.domain.usecases.history.ExpenseFilter
 import es.sebas1705.owlsplit.domain.usecases.expenses.ExpenseDrafts
 import es.sebas1705.owlsplit.domain.usecases.expenses.GenerateRecurring
@@ -39,6 +41,8 @@ data class GroupState(
     val confirmDeleteTransfer: Boolean = false,
     /** A payment owed to me whose reminder is waiting for the share sheet (the screen sends it once). */
     val reminder: SuggestedPayment? = null,
+    /** "Where does this come from?" while open; it follows the data like the rest of the screen. */
+    val explanation: BalanceExplanation? = null,
     /** The group is no longer here (left, or gone): the screen closes. */
     val closed: Boolean = false,
 ) : MVIBaseState {
@@ -68,6 +72,9 @@ sealed interface GroupIntent : MVIBaseIntent {
     data object AskLeave : GroupIntent
     data object ConfirmLeave : GroupIntent
     data object FinalLeave : GroupIntent
+
+    /** Open "Where does this come from?" (DismissDialog closes it). */
+    data object ShowExplanation : GroupIntent
     data object DismissDialog : GroupIntent
 }
 
@@ -101,6 +108,7 @@ class GroupViewModel(
                         loaded = true,
                         detail = detail,
                         myShares = shares,
+                        explanation = it.explanation?.let { detail?.let(::explain) },
                         // Leaving removes my uid: the group is no longer mine even if it is still stored.
                         closed = detail == null || (detail.myUid != null && detail.myUid !in detail.group.memberUids),
                     )
@@ -139,6 +147,7 @@ class GroupViewModel(
                 updateState { it.copy(openTransfer = null, confirmDeleteTransfer = false) }
                 transfer?.let { deleteTransfer?.invoke(it.id) }
             }
+            GroupIntent.ShowExplanation -> updateState { it.copy(explanation = it.detail?.let(::explain)) }
             GroupIntent.ToggleArchive -> currentState.detail?.let { actions.setArchived(groupId, !it.archivedByMe) }
             GroupIntent.AskLeave -> updateState { it.copy(confirmLeave = true) }
             GroupIntent.ConfirmLeave -> updateState { it.copy(confirmLeave = false, finalLeave = true) }
@@ -154,6 +163,7 @@ class GroupViewModel(
                     finalLeave = false,
                     openTransfer = null,
                     confirmDeleteTransfer = false,
+                    explanation = null,
                 )
             }
         }
@@ -168,3 +178,6 @@ class GroupViewModel(
 }
 
 private const val MAX_QUERY = 80
+
+private fun explain(detail: GroupDetail): BalanceExplanation =
+    balanceExplanationOf(detail.group.baseCurrency, detail.members, detail.expenses, detail.transfers)
