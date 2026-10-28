@@ -1,7 +1,15 @@
 package es.sebas1705.owlsplit.feature.groups
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import es.sebas1705.owlsplit.core.money.Currency
+import es.sebas1705.owlsplit.core.ui.theme.Owlsplit
+import es.sebas1705.owlsplit.domain.usecases.balances.balanceExplanationOf
+import es.sebas1705.owlsplit.feature.groups.detail.BalanceExplanationContent
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -167,6 +175,69 @@ class GroupsScreenshotTest {
 
     @Test
     fun settle() = group("settle", GroupTab.SETTLE)
+
+    /** The real group's data with a dinner in dollars and a payment, explained by the domain itself. */
+    private val explained = detail.copy(
+        expenses = detail.expenses + Expense(
+            "e4", "g1", "Cena en Nueva York", ExpenseCategory.FOOD, null, today, "USD", 6_000, 923_456_789,
+            mapOf("luis" to 6_000L), SplitType.EQUAL, mapOf("ana" to 1L, "luis" to 1L, "marta" to 1L), null, null,
+            "uid-ana", 0, meta,
+        ),
+    )
+
+    private fun explanation(
+        name: String,
+        dark: Boolean = false,
+        format: MoneyFormat = MoneyFormat.Spanish,
+        shown: GroupDetail = explained,
+    ) {
+        val explanation = balanceExplanationOf("EUR", shown.members, shown.expenses, shown.transfers)
+        compose.setContent {
+            OwlsplitTheme(darkTheme = dark) {
+                Box(Modifier.background(Owlsplit.colors.background)) {
+                    BalanceExplanationContent(explanation, shown, Currency.of("EUR"), format, onClose = {})
+                }
+            }
+        }
+        compose.assertAccessible()
+        compose.onRoot().captureRoboImage("screenshots/group_explanation_$name.png")
+    }
+
+    @Test
+    fun explanation() = explanation("light")
+
+    @Test
+    fun explanationDark() = explanation("dark", dark = true)
+
+    @Test
+    @Config(qualifiers = "en-w411dp-h891dp-xxhdpi")
+    fun explanationEnglish() = explanation("en", format = MoneyFormat.English)
+
+    @Test
+    @Config(qualifiers = "en-w411dp-h891dp-xxhdpi")
+    fun explanationEnglishDark() = explanation("en_dark", dark = true, format = MoneyFormat.English)
+
+    /** Screen readers hear each card as one sentence; mine in the second person, the others in the third. */
+    @Test
+    @Config(qualifiers = "en-w411dp-h891dp-xxhdpi")
+    fun explanationCardsAreSpokenAsSentences() {
+        explanation("en", format = MoneyFormat.English)
+        compose.onNodeWithContentDescription(
+            "You: you paid €93.60, minus your share, €201.67, minus payments you received, €10.00. Balance: −€118.07.",
+        ).assertExists()
+        compose.onNodeWithContentDescription(
+            "Luis: paid €91.41, minus their share, €201.68, plus payments sent, €10.00. Balance: −€100.27.",
+        ).assertExists()
+    }
+
+    @Test
+    fun explanationLargeText() = largeText { explanation("large_text") }
+
+    @Test
+    fun explanationSettled() = explanation(
+        "settled",
+        shown = detail.copy(expenses = emptyList(), transfers = emptyList())
+    )
 
     // English versions for the Google Play listing (scripts/play-screenshots.mjs).
     @Test

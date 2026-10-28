@@ -191,4 +191,38 @@
     <string name="pay_open_bank">Abrir %1$s</string>
     <string name="pay_other_bank">Otro banco</string>
     <string name="pay_choose_bank">¿Con qué banco haces Bizum?</string>
+    <!-- ¿De dónde sale esto? (explicación de saldos) -->
+    <string name="explain_open">¿De dónde sale esto?</string>
+    <string name="explain_title">¿De dónde sale esto?</string>
+    <string name="explain_balances">Cada saldo, paso a paso</string>
+    <string name="explain_paid">Ha pagado</string>
+    <string name="explain_share">Su parte de gastos</string>
+    <string name="explain_sent">Pagos enviados</string>
+    <string name="explain_received">Pagos recibidos</string>
+    <string name="explain_balance">Saldo</string>
+    <string name="explain_adds_up">Cuadra</string>
+    <string name="explain_spoken_paid">ha pagado %1$s</string>
+    <string name="explain_spoken_share">menos su parte, %1$s</string>
+    <string name="explain_spoken_sent">más pagos enviados, %1$s</string>
+    <string name="explain_spoken_received">menos pagos recibidos, %1$s</string>
+    <string name="explain_spoken_card">%1$s: %2$s. Saldo: %3$s.</string>
+    <string name="explain_spoken_nothing">%1$s: no ha pagado ni debe nada. Saldo: %2$s.</string>
+    <string name="explain_paid_you">Has pagado</string>
+    <string name="explain_share_you">Tu parte de gastos</string>
+    <string name="explain_sent_you">Pagos que has enviado</string>
+    <string name="explain_received_you">Pagos que has recibido</string>
+    <string name="explain_spoken_paid_you">has pagado %1$s</string>
+    <string name="explain_spoken_share_you">menos tu parte, %1$s</string>
+    <string name="explain_spoken_sent_you">más pagos que has enviado, %1$s</string>
+    <string name="explain_spoken_received_you">menos pagos que has recibido, %1$s</string>
+    <string name="explain_spoken_nothing_you">%1$s: no has pagado ni debes nada. Saldo: %2$s.</string>
+    <string name="explain_settle_title">Cómo saldar con el mínimo de pagos</string>
+    <string name="explain_settle_body">Quien debe paga directamente a quien le deben, sin intermediarios, así el grupo queda en paz con los menos pagos posibles.</string>
+    <string name="explain_fewer">%1$s en vez de %2$d</string>
+    <string name="explain_fewer_detail">Sin simplificar, cada pareja que se debe algo necesitaría su propio pago: %1$d en este grupo.</string>
+    <string name="explain_conversion">Los gastos y pagos en otras monedas cuentan en %1$s al tipo de cambio (BCE) guardado con cada uno.</string>
+    <plurals name="explain_payments">
+        <item quantity="one">%1$d pago</item>
+        <item quantity="other">%1$d pagos</item>
+    </plurals>
 </resources>

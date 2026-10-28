@@ -112,6 +112,34 @@ class GroupsViewModelsTest {
     }
 
     @Test
+    fun theExplanationOpensWithTheBreakdownAndFollowsNewPayments() = runTest {
+        val g = dinnerGroup()
+        val vm = GroupViewModel(g, GroupTab.BALANCES, detail, SettleUp(ledger.transfers), actions)
+        assertNull(vm.uiState.value.explanation)
+
+        vm.onEvent(GroupIntent.ShowExplanation)
+        val explanation = assertNotNull(vm.uiState.value.explanation)
+        val ana = vm.uiState.value.detail!!.myMemberId
+        val mine = explanation.members.first { it.memberId == ana }
+        assertEquals(3_000L, mine.paidMinor)
+        assertEquals(1_500L, mine.shareMinor)
+        assertEquals(1_500L, mine.balanceMinor)
+        assertEquals(vm.uiState.value.detail!!.balances!!.suggestedPayments, explanation.suggestedPayments)
+
+        // Settling while it is open: the explanation follows the data.
+        val payment = explanation.suggestedPayments.single()
+        vm.onEvent(GroupIntent.AskSettle(payment))
+        vm.onEvent(GroupIntent.ConfirmSettle)
+        vm.onEvent(GroupIntent.FinalSettle)
+        val after = assertNotNull(vm.uiState.value.explanation)
+        assertTrue(after.settled)
+        assertEquals(1_500L, after.members.first { it.memberId == ana }.receivedMinor)
+
+        vm.onEvent(GroupIntent.DismissDialog)
+        assertNull(vm.uiState.value.explanation)
+    }
+
+    @Test
     fun onlySomeoneWhoOwesMeCanBeRemindedOnce() = runTest {
         val g = dinnerGroup()
         val vm = GroupViewModel(g, GroupTab.SETTLE, detail, SettleUp(ledger.transfers), actions)

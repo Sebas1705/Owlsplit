@@ -75,6 +75,16 @@ Guaranteed (and tested) properties: preserves net balances exactly; at most `n �
 
 MVP option: if the user turns it off for the group, "Cómo saldar" ("How to settle") shows the debts unsimplified (each debtor pays whoever covered for them).
 
+## Balance explanation
+
+"¿De dónde sale esto?" ("Where does this come from?") on the balances and settle-up tabs explains the numbers. It is built from the same ledger code path as the balances (`BalanceExplainer` on top of `NetCalculator`, wrapped by `balanceExplanationOf`), never from a parallel calculation:
+
+- **Per member**, in base-currency minor units: paid − share + payments sent − payments received = balance. Each row sums the member's part of every valid entry; only non-zero rows are shown. The balance is the one `BalanceCalculator` gives, and the rows add up to it exactly (checked at runtime and against every case of the shared ledger fixtures).
+- **Rounding**: an entry's per-member nets are the ledger's own (largest remainder included). In the base currency, paid and share are the stored amounts. For a converted expense, the total is rounded once and shared among the payers by largest remainder; each share is then paid − net, so the rounding cents land exactly where the ledger put them. If a tiny converted share would round below zero, that member's row shows only what they paid (their net).
+- **Members**: in the balances screen order; active members always, members who left only when something is non-zero. Inconsistent entries are left out, as in the balances.
+- **Fewest payments**: the suggested payments are `DebtSimplifier`'s, unchanged. The "without simplifying" count is the number of member pairs with a non-zero net debt when every entry is settled directly: within each entry, every member who is short owes every member who is ahead, in proportion to how far ahead they are (a payment is an entry like any other); debts between the same pair in both directions cancel out. The comparison ("2 payments instead of 5") is shown only when that count is larger than the number of suggested payments.
+- A footnote says when amounts were converted at their stored (ECB) rate. When everyone is settled and nothing has been recorded, the sheet shows the settled empty state.
+
 ## Validation invariants (client and rules)
 
 - `title`: 1–80 characters; `note`: ≤ 500.
