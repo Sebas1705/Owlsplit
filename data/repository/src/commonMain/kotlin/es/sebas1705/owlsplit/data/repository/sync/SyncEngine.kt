@@ -8,6 +8,7 @@ import es.sebas1705.owlsplit.data.repository.Writer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.channels.BufferOverflow
@@ -83,7 +84,11 @@ class SyncEngine(
         pendingCount.collectLatest { pending ->
             if (pending == 0L) return@collectLatest
             while (true) {
-                pushNow()
+                // Each upload deletes its outbox row, which changes the count and makes collectLatest
+                // cancel this block while the next upload awaits its ack. The server has already
+                // accepted that write, but the row stays and would be pushed again (a create-only
+                // history entry is then refused). So a pass always finishes; only the wait is cancelled.
+                withContext(NonCancellable) { pushNow() }
                 val next = local.nextWakeAt()
                 if (next < 0) break
                 val wait = next - local.now()
