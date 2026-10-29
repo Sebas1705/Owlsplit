@@ -23,6 +23,7 @@ The first stable version, after fifteen pre-releases (`1.0.0-beta.1` to `1.0.0-b
 
 ### Sync & offline
 
+- A change is uploaded once even when the sync loop restarts mid-upload; before, some history entries were sent twice and rejected by the server (#91).
 - Local-first: everything is saved on the phone (#9) and synced through Firestore (#12, #13).
 - A write that times out but reaches the server is no longer reported as a conflict (#47).
 - The UI updates after linking or unlinking an account, with nothing left to sync (#52).

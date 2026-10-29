@@ -37,6 +37,13 @@ describe('changelog', () => {
   test('history cannot be written in someone else\'s name', async () => {
     await assertFails(setDoc(doc(as(env, 'luis'), `groups/${GROUP}/changelog/c2`), entry('ana')));
   });
+  test('the same entry set twice is an update and is refused (the app must push it once)', async () => {
+    // What the app's outbox sends (FirestoreRemoteStore: set without merge): a repeated upload of an
+    // entry the server already has is refused, which is why SyncEngine never re-pushes one.
+    const ref = doc(as(env, 'luis'), `groups/${GROUP}/changelog/c4`);
+    await assertSucceeds(setDoc(ref, entry('luis')));
+    await assertFails(setDoc(ref, entry('luis')));
+  });
 });
 
 describe('invites', () => {
