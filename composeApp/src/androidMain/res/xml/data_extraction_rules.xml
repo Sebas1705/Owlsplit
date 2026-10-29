@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ (docs/FIREBASE.md, "Backup and device transfer"). Nothing is backed up or copied to a new phone:
+     the Firebase Auth session (shared_prefs, encrypted with a Keystore key), the EncryptedSharedPreferences whose
+     key lives in this device's Keystore, the DataStore profile and the SQLDelight database with its outbox all
+     belong to one installation. Groups come back from Firestore after signing in with Google.
+     allowBackup="false" already turns off cloud backup; device transfer ignores it, so these rules matter.
+     Every domain is listed: excluding "root" does not cover files/, databases/ or shared_prefs/, which the
+     backup agent walks as domains of their own. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+        <exclude domain="device_root" path="." />
+        <exclude domain="device_file" path="." />
+        <exclude domain="device_database" path="." />
+        <exclude domain="device_sharedpref" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+        <exclude domain="device_root" path="." />
+        <exclude domain="device_file" path="." />
+        <exclude domain="device_database" path="." />
+        <exclude domain="device_sharedpref" path="." />
+    </device-transfer>
+</data-extraction-rules>

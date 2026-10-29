@@ -93,6 +93,9 @@ kotlin {
             implementation(libs.compose.icons.tabler)
             implementation(libs.gitlive.firebase.crashlytics)
         }
+        androidUnitTest.dependencies {
+            implementation(kotlin("test"))
+        }
         androidMain.dependencies {
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.koin.android)

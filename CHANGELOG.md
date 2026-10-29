@@ -59,6 +59,7 @@ The first stable version, after fifteen pre-releases (`1.0.0-beta.1` to `1.0.0-b
 - Linking a Google account that already exists signs into it and brings its groups (#48).
 - One Google account at a time, with Unlink, and claim any member that has no account (#49).
 - When linking Google, the cloud profile wins (#50); relinking takes a single Google sign-in and keeps the cloud profile (#61).
+- Android backups and phone-to-phone transfers no longer copy the session, encrypted settings or local database, which another phone cannot decrypt or would restore stale; sign in with Google to get your groups back. The error screen's Retry button is translated.
 
 ### Also in 1.0.0
 

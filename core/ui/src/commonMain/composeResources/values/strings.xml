@@ -38,4 +38,5 @@
     <string name="group_icon_ball">Sport</string>
     <string name="group_icon_briefcase">Work</string>
     <string name="group_icon_heart">Couple</string>
+    <string name="retry">Retry</string>
 </resources>
