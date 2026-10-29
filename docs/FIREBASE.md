@@ -114,6 +114,17 @@ cd firebase && npx firebase-tools emulators:exec --only firestore --project demo
 
 - Pending (P11c): `apple-app-site-association` for Universal Links (needs the Apple Team ID).
 
+## Backup and device transfer
+
+Nothing from the app's storage is backed up to the cloud or copied to a new phone: `android:allowBackup="false"`, and `composeApp/src/androidMain/res/xml/data_extraction_rules.xml` (Android 12+, where device transfer ignores `allowBackup`) and `backup_rules.xml` (Android 11 and older) exclude every domain.
+
+- The Firebase Auth session (`com.google.firebase.auth.api.Store.*` in `shared_prefs`) belongs to this installation.
+- `SecureStorage` uses EncryptedSharedPreferences, whose key is in this device's Android Keystore: a restored copy cannot be decrypted on another phone and fails when read.
+- The DataStore profile marks onboarding as done; restored without the session, the app would skip onboarding with no account.
+- The SQLDelight database is a cache of Firestore plus the outbox; a restored copy could upload stale entries under a new anonymous uid, which the rules reject.
+
+A new phone starts from onboarding: "Ya tengo cuenta" ("I already have an account") signs into the linked Google account and the profile and groups come back from Firestore. An anonymous account lives only in its installation, which is why the app nudges users to link one. `BackupRulesTest` (composeApp) checks the manifest and both files.
+
 ## Account deletion
 
 Without Cloud Functions, the client does it in this order (retryable):

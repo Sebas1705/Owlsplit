@@ -8,6 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import es.sebas1705.owlsplit.core.ui.resources.Res
+import es.sebas1705.owlsplit.core.ui.resources.retry
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun ErrorScreen(
@@ -30,7 +33,7 @@ fun ErrorScreen(
         Text(message, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
         if (onRetry != null) {
             Spacer(Modifier.height(16.dp))
-            Button(onClick = onRetry) { Text("Reintentar") }
+            Button(onClick = onRetry) { Text(stringResource(Res.string.retry)) }
         }
     }
 }
