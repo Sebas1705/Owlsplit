@@ -11,7 +11,7 @@ import {
   arrayRemove, arrayUnion, collection, doc, getDoc, getDocs, getFirestore, increment, onSnapshot, serverTimestamp, setDoc,
   updateDoc, writeBatch,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
-import { CURRENCIES, decimalsOf, groupBalances, myShare } from './money.js';
+import { CURRENCIES, decimalsOf, groupBalances, groupExplanation, myShare } from './money.js';
 import {
   changelogEntry, claimMember, convertMinor, defaultSplit, expenseDiff, expenseUpdate, fullyEditable, joinGroup,
   leaveGroup, markDeleted, markLinked, newExpense, newMember, newTransfer, parseAmount, parseRate, profileDoc,
@@ -64,6 +64,28 @@ const TEXT = {
     saveGoogle: 'Guardar con Google', savedAs: (e) => `Cuenta guardada con Google (${e}). En la app, entra con «Ya tengo cuenta».`,
     googleFailed: 'No se pudo usar Google. Inténtalo otra vez.',
     popupBlocked: 'El navegador ha bloqueado la ventana de Google: permite las ventanas emergentes para esta página y vuelve a pulsar.',
+    // "¿De dónde sale esto?": the app's wording (feature/groups strings.xml, explain_*). Rows: paid, share, sent, received.
+    explainTitle: '¿De dónde sale esto?', explainBalances: 'Cada saldo, paso a paso', explainBalance: 'Saldo', explainAddsUp: 'Cuadra',
+    explainLabels: {
+      them: ['Ha pagado', 'Su parte de gastos', 'Pagos enviados', 'Pagos recibidos'],
+      you: ['Has pagado', 'Tu parte de gastos', 'Pagos que has enviado', 'Pagos que has recibido'],
+    },
+    explainSpoken: {
+      them: [(a) => `ha pagado ${a}`, (a) => `menos su parte, ${a}`, (a) => `más pagos enviados, ${a}`, (a) => `menos pagos recibidos, ${a}`],
+      you: [(a) => `has pagado ${a}`, (a) => `menos tu parte, ${a}`, (a) => `más pagos que has enviado, ${a}`, (a) => `menos pagos que has recibido, ${a}`],
+    },
+    explainCard: (name, lines, balance) => `${name}: ${lines}. Saldo: ${balance}.`,
+    explainNothing: {
+      them: (name, balance) => `${name}: no ha pagado ni debe nada. Saldo: ${balance}.`,
+      you: (name, balance) => `${name}: no has pagado ni debes nada. Saldo: ${balance}.`,
+    },
+    explainSettleTitle: 'Cómo saldar con el mínimo de pagos',
+    explainSettleBody: 'Quien debe paga directamente a quien le deben, sin intermediarios, así el grupo queda en paz con los menos pagos posibles.',
+    explainPayments: (n) => `${n} ${n === 1 ? 'pago' : 'pagos'}`, explainFewer: (count, n) => `${count} en vez de ${n}`,
+    explainFewerDetail: (n) => `Sin simplificar, cada pareja que se debe algo necesitaría su propio pago: ${n} en este grupo.`,
+    explainConversion: (c) => `Los gastos y pagos en otras monedas cuentan en ${c} al tipo de cambio (BCE) guardado con cada uno.`,
+    explainSettledTitle: 'Todo saldado', explainSettledBody: 'Nadie debe nada a nadie en este grupo.', close: 'Cerrar',
+    suggestionPays: (from, a, to) => `${from} paga ${a} a ${to}`, suggestionYouPay: (a, to) => `Pagas ${a} a ${to}`, suggestionPaysYou: (from, a) => `${from} te paga ${a}`,
     categories: { FOOD: 'Comida', GROCERIES: 'Súper', TRANSPORT: 'Transporte', ACCOMMODATION: 'Alojamiento', LEISURE: 'Ocio', SHOPPING: 'Compras', HOME: 'Casa', UTILITIES: 'Suministros', HEALTH: 'Salud', GIFTS: 'Regalos', OTHER: 'Otros' },
   },
   en: {
@@ -98,6 +120,28 @@ const TEXT = {
     saveGoogle: 'Save with Google', savedAs: (e) => `Account saved with Google (${e}). In the app, choose “I already have an account”.`,
     googleFailed: 'Could not use Google. Try again.',
     popupBlocked: 'The browser blocked the Google window: allow pop-ups for this page and tap again.',
+    // "Where does this come from?": the app's wording (feature/groups strings.xml, explain_*). Rows: paid, share, sent, received.
+    explainTitle: 'Where does this come from?', explainBalances: 'Each balance, step by step', explainBalance: 'Balance', explainAddsUp: 'Adds up',
+    explainLabels: {
+      them: ['Paid', 'Their share of expenses', 'Payments sent', 'Payments received'],
+      you: ['You paid', 'Your share of expenses', 'Payments you sent', 'Payments you received'],
+    },
+    explainSpoken: {
+      them: [(a) => `paid ${a}`, (a) => `minus their share, ${a}`, (a) => `plus payments sent, ${a}`, (a) => `minus payments received, ${a}`],
+      you: [(a) => `you paid ${a}`, (a) => `minus your share, ${a}`, (a) => `plus payments you sent, ${a}`, (a) => `minus payments you received, ${a}`],
+    },
+    explainCard: (name, lines, balance) => `${name}: ${lines}. Balance: ${balance}.`,
+    explainNothing: {
+      them: (name, balance) => `${name}: nothing paid or owed. Balance: ${balance}.`,
+      you: (name, balance) => `${name}: you have paid nothing and owe nothing. Balance: ${balance}.`,
+    },
+    explainSettleTitle: 'How to settle with the fewest payments',
+    explainSettleBody: 'Whoever owes pays whoever is owed directly, with no go-betweens, so the group settles up with as few payments as possible.',
+    explainPayments: (n) => `${n} ${n === 1 ? 'payment' : 'payments'}`, explainFewer: (count, n) => `${count} instead of ${n}`,
+    explainFewerDetail: (n) => `Without simplifying, every pair of people who owe each other something would need a payment of their own: ${n} in this group.`,
+    explainConversion: (c) => `Expenses and payments in other currencies count in ${c} at the exchange rate (ECB) stored with each one.`,
+    explainSettledTitle: 'All settled up', explainSettledBody: 'Nobody owes anybody anything in this group.', close: 'Close',
+    suggestionPays: (from, a, to) => `${from} pays ${to} ${a}`, suggestionYouPay: (a, to) => `You pay ${to} ${a}`, suggestionPaysYou: (from, a) => `${from} pays you ${a}`,
     categories: { FOOD: 'Food', GROCERIES: 'Groceries', TRANSPORT: 'Transport', ACCOMMODATION: 'Accommodation', LEISURE: 'Leisure', SHOPPING: 'Shopping', HOME: 'Home', UTILITIES: 'Utilities', HEALTH: 'Health', GIFTS: 'Gifts', OTHER: 'Other' },
   },
 };
@@ -117,7 +161,7 @@ const code = decodeURIComponent(location.pathname.split('/g/')[1] || '').toUpper
 const state = {
   screen: 'loading', uid: null, invite: null, groupId: null, group: null,
   members: [], expenses: [], transfers: [], tab: 'expenses', adding: false, confirming: null, confirmingDelete: false, undoing: null,
-  busy: false, error: null, notice: null,
+  explaining: false, busy: false, error: null, notice: null,
 };
 let db;
 let auth;
@@ -143,6 +187,9 @@ function money(minor, currency) {
     .format(minor / 10 ** decimals);
 }
 
+/** A balance as the balances list shows it: "+" when owed, "−" when owing. */
+const signed = (minor, currency) => `${minor > 0 ? '+' : minor < 0 ? '−' : ''}${money(Math.abs(minor), currency)}`;
+
 const today = () => new Date().toISOString().slice(0, 10);
 const nameOf = (id) => state.members.find((m) => m.id === id)?.name ?? '?';
 const me = () => state.members.find((m) => m.userUid === state.uid && !m.deleted);
@@ -162,6 +209,7 @@ function render() {
   for (const b of document.querySelectorAll('#lang button')) b.setAttribute('aria-pressed', String(b.dataset.lang === lang));
   const app = document.getElementById('app');
   app.replaceChildren(...screen().flat().filter((c) => c !== null && c !== undefined && c !== false));
+  renderExplanation();
 }
 
 function screen() {
@@ -274,12 +322,99 @@ function balancesTab(result, base) {
     const v = result.balances[m.id] ?? 0;
     return h('div', { class: 'row' },
       h('div', { class: 'main title' }, m.id === mine?.id ? `${m.name} (${t().you})` : m.name),
-      h('div', { class: `end ${v > 0 ? 'positive' : ''}` }, `${v > 0 ? '+' : v < 0 ? '−' : ''}${money(Math.abs(v), base)}`));
-  }))];
+      h('div', { class: `end ${v > 0 ? 'positive' : ''}` }, signed(v, base)));
+  })), explainButton()];
 }
 
 function settleTab(result, base) {
-  return [...suggestionsList(result, base), ...paymentsList()];
+  return [...suggestionsList(result, base), explainButton(), ...paymentsList()];
+}
+
+function explainButton() {
+  return h('button', { class: 'explain-open', type: 'button', onclick: () => { state.explaining = true; render(); } }, t().explainTitle);
+}
+
+// ── "Where does this come from?" (docs/DOMAIN.md#balance-explanation) ──────────────────────────────
+const sheet = document.getElementById('explain');
+const sheetBody = document.getElementById('explain-body');
+const sheetClose = document.getElementById('explain-close');
+
+/** Kept up to date while open: only its contents change, so the Close button keeps the focus. */
+function renderExplanation() {
+  if (!state.explaining || state.screen !== 'group') {
+    if (sheet.open) sheet.close();
+    return;
+  }
+  const T = t();
+  document.getElementById('explain-title').textContent = T.explainTitle;
+  sheetClose.textContent = T.close;
+  sheetBody.replaceChildren(...explanationView());
+  if (!sheet.open) sheet.showModal();
+}
+
+/** Each balance as arithmetic, and why the suggested payments are so few. Same data as the tabs behind it. */
+function explanationView() {
+  const T = t();
+  const base = state.group.baseCurrency;
+  const explanation = groupExplanation(base, state.members, state.expenses, state.transfers);
+  const allSettled = () => h('div', { class: 'list why' }, h('div', { class: 'title' }, T.explainSettledTitle), h('p', {}, T.explainSettledBody));
+  if (explanation.settled && explanation.members.every((row) => row.isEmpty)) return [allSettled()];
+  return [
+    h('h3', { class: 'sheet-section' }, T.explainBalances),
+    ...explanation.members.map((row) => breakdownCard(row, base)),
+    h('h3', { class: 'sheet-section' }, T.explainSettleTitle),
+    explanation.settled ? allSettled() : whyCard(explanation, base),
+    explanation.usesConversion && h('p', { class: 'sheet-note' }, T.explainConversion(base)),
+  ].filter(Boolean);
+}
+
+/** One member's arithmetic, only the rows that are not zero. Screen readers hear it as one sentence. */
+function breakdownCard(row, base) {
+  const T = t();
+  const mine = row.memberId === me()?.id;
+  const who = mine ? 'you' : 'them';
+  const name = mine ? T.you : nameOf(row.memberId);
+  const lines = [[row.paidMinor, ''], [row.shareMinor, '−'], [row.sentMinor, '+'], [row.receivedMinor, '−']]
+    .map(([minor, sign], i) => ({ minor, sign, label: T.explainLabels[who][i], spoken: T.explainSpoken[who][i](money(minor, base)) }))
+    .filter((line) => line.minor !== 0);
+  const balance = signed(row.balanceMinor, base);
+  return h('div', { class: 'list breakdown' },
+    h('p', { class: 'sr-only' }, lines.length === 0
+      ? T.explainNothing[who](name, balance)
+      : T.explainCard(name, lines.map((line) => line.spoken).join(', '), balance)),
+    h('div', { 'aria-hidden': 'true' },
+      h('div', { class: 'breakdown-name' }, name),
+      // The first line needs no sign unless it takes away from something before it.
+      lines.map((line, i) => h('div', { class: 'line' },
+        h('span', { class: 'label' }, line.label),
+        h('span', { class: 'value' }, `${i === 0 && line.sign === '+' ? '' : line.sign}${money(line.minor, base)}`))),
+      h('div', { class: 'line total' },
+        h('span', { class: 'label' }, T.explainBalance),
+        row.addsUp && h('span', { class: 'adds-up', title: T.explainAddsUp }, '✓'),
+        h('span', { class: `value ${row.balanceMinor > 0 ? 'positive' : ''}` }, balance))));
+}
+
+/** The suggested payments (the settle tab's) and, when it helps, how many debts they replace. */
+function whyCard(explanation, base) {
+  const T = t();
+  const payments = explanation.suggestions;
+  return h('div', { class: 'list' },
+    h('div', { class: 'why' },
+      h('p', {}, T.explainSettleBody),
+      explanation.simplifies && h('p', { class: 'fewer' }, T.explainFewer(T.explainPayments(payments.length), explanation.pairwiseDebts)),
+      explanation.simplifies && h('p', { class: 'detail' }, T.explainFewerDetail(explanation.pairwiseDebts))),
+    payments.map((p) => h('div', { class: 'suggestion' },
+      h('span', { class: 'suggestion-arrow', 'aria-hidden': 'true' }, '→'),
+      h('span', {}, suggestionText(p, base)))));
+}
+
+function suggestionText(payment, base) {
+  const T = t();
+  const amount = money(payment.amountMinor, base);
+  const mine = me()?.id;
+  if (payment.fromMemberId === mine) return T.suggestionYouPay(amount, nameOf(payment.toMemberId));
+  if (payment.toMemberId === mine) return T.suggestionPaysYou(nameOf(payment.fromMemberId), amount);
+  return T.suggestionPays(nameOf(payment.fromMemberId), amount, nameOf(payment.toMemberId));
 }
 
 /** The latest payments, so a mistaken one can be undone (it is kept, marked as deleted). */
@@ -742,5 +877,13 @@ for (const b of document.querySelectorAll('#lang button')) {
     render();
   });
 }
+// The close event comes later (a frame, at best): the state changes now, or a redraw would reopen the sheet.
+const closeSheet = () => { state.explaining = false; sheet.close(); };
+sheetClose.addEventListener('click', closeSheet);
+// A click on the backdrop lands on the dialog itself: its contents cover the rest.
+sheet.addEventListener('click', (e) => { if (e.target === sheet) closeSheet(); });
+sheet.addEventListener('cancel', () => { state.explaining = false; }); // Escape, or the back gesture.
+// The button that opened it may have been redrawn since.
+sheet.addEventListener('close', () => { if (!sheet.open) document.querySelector('.explain-open')?.focus(); });
 render();
 start().catch((e) => { console.error(e); state.screen = 'offline'; render(); });
