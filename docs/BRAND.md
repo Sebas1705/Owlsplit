@@ -59,3 +59,7 @@ On the web, `brand.css` defines these colors as CSS variables, for example `--os
 3. If you changed app colors, update `Tokens.kt`; `BrandTokensTest` will tell you which ones are missing. If you changed the logo geometry, update `OwlsplitLogo`.
 
 CI runs `node scripts/brand.mjs --check` and fails if any generated file is out of date.
+
+## Share image
+
+`firebase/hosting/og-image.png` (1200x630, under 300 KB) is the Open Graph / Twitter card image of every hosting page. It is `.github/portfolio/banner.png` cropped 30 px from each side and scaled to 1200x630, so refresh it from the banner whenever the banner changes.
