@@ -14,6 +14,7 @@ import es.sebas1705.owlsplit.data.repository.RepositoryContext
 import es.sebas1705.owlsplit.data.repository.account.ProfileRepository
 import es.sebas1705.owlsplit.data.repository.sync.RemoteStore
 import es.sebas1705.owlsplit.data.repository.sync.SyncEngine
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -72,6 +73,8 @@ class SyncStarter(
         while (true) {
             // Offline on first launch: keep trying; the next auth state restarts the engine.
             val failure = runCatching { auth.value.signInAnonymously() }.exceptionOrNull() ?: return
+            // The new auth state restarts collectLatest and cancels this call: that is success, not an error.
+            if (failure is CancellationException) throw failure
             // Anything but the network (Authentication off, a broken config) is a bug to see, once.
             if (failure !is FirebaseNetworkException && !reported) {
                 reported = true

@@ -4,6 +4,10 @@ What changes for Owlsplit users in each version. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Fixed
+
+- New users no longer see "Something went wrong" on the first screen: finishing the anonymous sign-in was reported as an error.
+
 ## [1.0.0] - Unreleased
 
 The first stable version, after fifteen pre-releases (`1.0.0-beta.1` to `1.0.0-beta.15`, 8–16 October 2026) tested through Firebase App Distribution and Google Play closed testing. Android and iOS, in Spanish and English.
