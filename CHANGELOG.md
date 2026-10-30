@@ -6,7 +6,7 @@ What changes for Owlsplit users in each version. The format follows [Keep a Chan
 
 ### Settle up
 
-- "Where does this come from?" is now on the web for guests too: a sheet on Balances and Settle up that shows how each balance adds up and why settling needs so few payments, as in the app.
+- "Where does this come from?" is now on the web for guests too: a sheet on Balances and Settle up that shows how each balance adds up and why settling needs so few payments, as in the app (#96).
 
 ## [1.0.0] - Unreleased
 
