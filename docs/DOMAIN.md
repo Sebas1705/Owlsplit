@@ -84,6 +84,7 @@ MVP option: if the user turns it off for the group, "Cómo saldar" ("How to sett
 - **Members**: in the balances screen order; active members always, members who left only when something is non-zero. Inconsistent entries are left out, as in the balances.
 - **Fewest payments**: the suggested payments are `DebtSimplifier`'s, unchanged. The "without simplifying" count is the number of member pairs with a non-zero net debt when every entry is settled directly: within each entry, every member who is short owes every member who is ahead, in proportion to how far ahead they are (a payment is an entry like any other); debts between the same pair in both directions cancel out. The comparison ("2 payments instead of 5") is shown only when that count is larger than the number of suggested payments.
 - A footnote says when amounts were converted at their stored (ECB) rate. When everyone is settled and nothing has been recorded, the sheet shows the settled empty state.
+- **Web for guests**: `/g/{code}` shows the same explanation, with the same wording, from `groupExplanation` in `firebase/hosting/js/money.js`, a port built on the same valid entries and nets as that file's `groupBalances`, so the sheet always agrees with the page. `LedgerFixturesTest` writes the app's breakdowns and pairwise count to the shared ledger fixtures, and `money.test.mjs` checks the port against them.
 
 ## Validation invariants (client and rules)
 

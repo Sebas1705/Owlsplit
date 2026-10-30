@@ -168,29 +168,144 @@ export function simplify(balances, members) {
 }
 
 /**
- * A group's balances and suggested payments, like ObserveGroupBalances: members not deleted (inactive
- * ones too), expenses and transfers not deleted; an inconsistent entry is left out and reported.
- * Amounts come back as Numbers (safe: they stay far below 2^53).
+ * A group's entries as the ledger sees them (ledgerOf): members not deleted (inactive ones too), and the
+ * expenses and transfers not deleted, each with its net; an inconsistent entry is left out and reported.
  */
-export function groupBalances(baseCurrency, members, expenses, transfers) {
+function ledgerOf(baseCurrency, members, expenses, transfers) {
   const visible = members.filter((m) => !m.deleted).map((m) => ({ id: m.id, sortKey: m.sortKey }));
-  const totals = new Map([...visible].sort(memberOrder).map((m) => [m.id, 0n]));
   const invalidEntryIds = [];
-  const add = (entry, net) => {
+  const netted = (entry, net) => {
     try {
-      for (const [id, v] of net(entry)) totals.set(id, totals.get(id) + v);
+      return [{ entry, net: net(entry) }];
     } catch (e) {
       if (!(e instanceof InvalidEntry)) throw e;
       invalidEntryIds.push(entry.id);
+      return [];
     }
   };
-  for (const e of expenses.filter((x) => !x.deleted)) add(e, (x) => expenseNet(x, visible, baseCurrency));
-  for (const t of transfers.filter((x) => !x.deleted)) add(t, (x) => transferNet(x, visible, baseCurrency));
-  const suggestions = simplify(totals, visible).map((p) => ({ ...p, amountMinor: Number(p.amountMinor) }));
+  return {
+    base: baseCurrency,
+    visible,
+    expenses: expenses.filter((x) => !x.deleted).flatMap((e) => netted(e, (x) => expenseNet(x, visible, baseCurrency))),
+    transfers: transfers.filter((x) => !x.deleted).flatMap((t) => netted(t, (x) => transferNet(x, visible, baseCurrency))),
+    invalidEntryIds,
+  };
+}
+
+/** The ledger's balances and suggested payments, as Numbers (safe: they stay far below 2^53). */
+function balancesOf(ledger) {
+  const totals = new Map([...ledger.visible].sort(memberOrder).map((m) => [m.id, 0n]));
+  for (const { net } of [...ledger.expenses, ...ledger.transfers]) {
+    for (const [id, v] of net) totals.set(id, totals.get(id) + v);
+  }
+  const suggestions = simplify(totals, ledger.visible).map((p) => ({ ...p, amountMinor: Number(p.amountMinor) }));
   return {
     balances: Object.fromEntries([...totals].map(([id, v]) => [id, Number(v)])),
     suggestions,
+    invalidEntryIds: ledger.invalidEntryIds,
+  };
+}
+
+/** A group's balances and suggested payments, like ObserveGroupBalances. */
+export function groupBalances(baseCurrency, members, expenses, transfers) {
+  return balancesOf(ledgerOf(baseCurrency, members, expenses, transfers));
+}
+
+/** An amount in the base currency, rounded half up (BalanceExplainer.rounded). */
+function roundedToBase(amountMinor, from, base, fxRateScaled) {
+  const denominator = RATE_SCALE * pow10(decimalsOf(from));
+  const { quotient, remainder } = mulDivRem(big(amountMinor), big(fxRateScaled) * pow10(decimalsOf(base)), denominator);
+  return quotient + (remainder * 2n >= denominator ? 1n : 0n);
+}
+
+/**
+ * Splits one expense's base-currency net into paid and share (BalanceExplainer.expenseBreakdown). In the
+ * base currency both are the stored amounts. Converted, the total is rounded once and shared among the
+ * payers; each share is then paid − net, so the rows add up to the ledger's own net exactly.
+ */
+function paidAndShares(expense, net, ledger) {
+  const ids = [...ledger.visible].sort(memberOrder).map((m) => m.id);
+  const payers = ids.filter((id) => big(expense.payers[id] ?? 0) > 0n);
+  const amounts = expense.currency === ledger.base
+    ? payers.map((id) => big(expense.payers[id]))
+    : byWeights(roundedToBase(expense.amountMinor, expense.currency, ledger.base, expense.fxRateScaled), payers.map((id) => expense.payers[id]));
+  const paid = new Map(payers.map((id, i) => [id, amounts[i]]));
+  const rows = new Map();
+  for (const id of new Set([...net.keys(), ...paid.keys()])) {
+    const memberPaid = paid.get(id) ?? 0n;
+    const memberNet = net.get(id) ?? 0n;
+    const share = memberPaid - memberNet;
+    // A tiny converted share can round below zero: then the member simply paid their net.
+    rows.set(id, share < 0n ? { paid: memberNet, share: 0n } : { paid: memberPaid, share });
+  }
+  return rows;
+}
+
+/**
+ * Who would owe whom if this entry were settled on its own (BalanceExplainer.addDirectDebts): each member
+ * who is short pays every member who is ahead, in proportion. One signed amount per pair, so debts in both
+ * directions cancel out.
+ */
+function addDirectDebts(net, ledger, pairs) {
+  const ordered = [...ledger.visible].sort(memberOrder).map((m) => m.id).filter((id) => (net.get(id) ?? 0n) !== 0n);
+  const creditors = ordered.filter((id) => net.get(id) > 0n);
+  if (creditors.length === 0) return;
+  for (const debtor of ordered.filter((id) => net.get(id) < 0n)) {
+    const parts = byWeights(-net.get(debtor), creditors.map((id) => net.get(id)));
+    creditors.forEach((creditor, i) => {
+      // Keyed in a fixed order; positive = the first member owes the second.
+      const key = JSON.stringify(debtor < creditor ? [debtor, creditor] : [creditor, debtor]);
+      pairs.set(key, (pairs.get(key) ?? 0n) + (debtor < creditor ? parts[i] : -parts[i]));
+    });
+  }
+}
+
+/**
+ * "Where does this come from?" (balanceExplanationOf): each balance as paid − share + sent − received, and
+ * how many pairs would owe each other without simplifying. It works from the ledger groupBalances uses (same
+ * valid entries, same nets), so its balances and suggested payments are exactly those. Members who left are
+ * listed only with something to show. See docs/DOMAIN.md#balance-explanation.
+ */
+export function groupExplanation(baseCurrency, members, expenses, transfers) {
+  const ledger = ledgerOf(baseCurrency, members, expenses, transfers);
+  const { balances, suggestions, invalidEntryIds } = balancesOf(ledger);
+  const totals = new Map([...ledger.visible].sort(memberOrder).map((m) => [m.id, { paid: 0n, share: 0n, sent: 0n, received: 0n }]));
+  const pairs = new Map();
+  for (const { entry, net } of ledger.expenses) {
+    for (const [id, { paid, share }] of paidAndShares(entry, net, ledger)) {
+      const row = totals.get(id);
+      row.paid += paid;
+      row.share += share;
+    }
+    addDirectDebts(net, ledger, pairs);
+  }
+  for (const { net } of ledger.transfers) {
+    for (const [id, value] of net) {
+      const row = totals.get(id);
+      if (value > 0n) row.sent += value; else row.received -= value;
+    }
+    addDirectDebts(net, ledger, pairs);
+  }
+  const left = new Set(members.filter((m) => m.active === false).map((m) => m.id));
+  const rows = [...totals].map(([memberId, row]) => {
+    const [paidMinor, shareMinor, sentMinor, receivedMinor] = [row.paid, row.share, row.sent, row.received].map(Number);
+    const balanceMinor = balances[memberId];
+    return {
+      memberId, paidMinor, shareMinor, sentMinor, receivedMinor, balanceMinor,
+      addsUp: paidMinor - shareMinor + sentMinor - receivedMinor === balanceMinor,
+      isEmpty: paidMinor === 0 && shareMinor === 0 && sentMinor === 0 && receivedMinor === 0,
+    };
+  }).filter((row) => !left.has(row.memberId) || !row.isEmpty || row.balanceMinor !== 0);
+  const pairwiseDebts = [...pairs.values()].filter((v) => v !== 0n).length;
+  return {
+    baseCurrency,
+    members: rows,
+    suggestions,
+    pairwiseDebts,
+    usesConversion: [...ledger.expenses, ...ledger.transfers].some(({ entry }) => entry.currency !== baseCurrency),
     invalidEntryIds,
+    settled: suggestions.length === 0,
+    simplifies: pairwiseDebts > suggestions.length,
   };
 }
 

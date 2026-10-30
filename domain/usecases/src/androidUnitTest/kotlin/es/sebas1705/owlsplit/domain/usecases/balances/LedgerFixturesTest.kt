@@ -15,7 +15,7 @@ import kotlin.test.assertEquals
 
 /**
  * The web for guests computes balances in JavaScript (firebase/hosting/js/money.js). This writes, from
- * the app's own [groupBalancesOf], the expected results of many random groups to
+ * the app's own [groupBalancesOf] and [balanceExplanationOf], the expected results of many random groups to
  * firebase/rules-test/fixtures/ledger.json, which the web's test checks too: both must agree.
  *
  * It fails when the file is out of date; regenerate it with `-Dowlsplit.writeFixtures=true` (or by
@@ -79,6 +79,7 @@ class LedgerFixturesTest {
             )
         }
         val result = groupBalancesOf(base, members, expenses, transfers)
+        val explanation = balanceExplanationOf(base, members, expenses, transfers)
         return buildString {
             append("    {\"baseCurrency\": \"$base\", \"members\": [")
             append(members.joinToString { "{\"id\": \"${it.id}\", \"sortKey\": ${it.sortKey}}" })
@@ -105,8 +106,18 @@ class LedgerFixturesTest {
                         "\"amountMinor\": ${it.amountMinor}}"
                 },
             )
-            append("], \"invalidEntryIds\": [${result.invalidEntryIds.joinToString { "\"$it\"" }}]}}")
+            append("], \"invalidEntryIds\": [${result.invalidEntryIds.joinToString { "\"$it\"" }}],\n")
+            append("       \"explanation\": ${explanationJson(explanation)}}}")
         }
+    }
+
+    private fun explanationJson(explanation: BalanceExplanation): String {
+        val breakdowns = explanation.members.joinToString(prefix = "{", postfix = "}") {
+            "\"${it.memberId}\": {\"paidMinor\": ${it.paidMinor}, \"shareMinor\": ${it.shareMinor}, " +
+                "\"sentMinor\": ${it.sentMinor}, \"receivedMinor\": ${it.receivedMinor}}"
+        }
+        return "{\"breakdowns\": $breakdowns, \"pairwiseDebts\": ${explanation.pairwiseDebts}, " +
+            "\"usesConversion\": ${explanation.usesConversion}}"
     }
 
     /** [total] in [parts] positive pieces (or fewer when it is too small). */

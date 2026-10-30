@@ -26,6 +26,14 @@
   </div>
   <div id="app" aria-live="polite"><p class="muted">Cargando…</p></div>
   <noscript><p>Necesitas JavaScript para usar Owlsplit en el navegador. / You need JavaScript to use Owlsplit in the browser.</p></noscript>
+  <!-- "Where does this come from?": outside #app, so a redraw of the group keeps it open and in place. -->
+  <dialog class="sheet" id="explain" aria-labelledby="explain-title">
+    <div class="sheet-head">
+      <h2 id="explain-title"></h2>
+      <button type="button" id="explain-close"></button>
+    </div>
+    <div class="sheet-body" id="explain-body" tabindex="0" role="group" aria-labelledby="explain-title"></div>
+  </dialog>
 </main>
 <script type="module" src="/js/guest.js"></script>
 </body>

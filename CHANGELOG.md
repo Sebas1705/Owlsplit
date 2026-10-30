@@ -4,6 +4,10 @@ What changes for Owlsplit users in each version. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Settle up
+
+- "Where does this come from?" is now on the web for guests too: a sheet on Balances and Settle up that shows how each balance adds up and why settling needs so few payments, as in the app.
+
 ## [1.0.0] - Unreleased
 
 The first stable version, after fifteen pre-releases (`1.0.0-beta.1` to `1.0.0-beta.15`, 8–16 October 2026) tested through Firebase App Distribution and Google Play closed testing. Android and iOS, in Spanish and English.
