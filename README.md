@@ -15,6 +15,8 @@ Android and iOS app for tracking shared group expenses (trips, flats, dinners, g
   <img src="docs/screenshots/4.png" width="200" alt="Owlsplit screenshot 4">
 </p>
 
+**Demo:** [35-second walkthrough](docs/demo/owlsplit-demo.mp4), recorded on an emulator in airplane mode: adding an expense, how every balance is explained step by step, and settling up with the fewest payments.
+
 Inspired by Settle Up, with a polished design (clean fintech style) and more features ahead: one-tap settle-up, recurring expenses, budgets and statistics, and receipt scanning.
 
 > **Status:** public beta (P1–P15 done). See the [plans](docs/plans/README.md).
