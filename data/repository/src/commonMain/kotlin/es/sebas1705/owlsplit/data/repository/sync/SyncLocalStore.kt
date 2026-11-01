@@ -4,10 +4,14 @@ import es.sebas1705.owlsplit.data.local.db.AppDatabase
 import es.sebas1705.owlsplit.data.local.db.Outbox
 import es.sebas1705.owlsplit.data.models.OutboxType
 import es.sebas1705.owlsplit.data.repository.Writer
+import es.sebas1705.owlsplit.data.repository.json
 import es.sebas1705.owlsplit.data.repository.toModel
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 
 /** Outbox bookkeeping, pull cursors and access flags. Every operation is atomic. */
 internal class SyncLocalStore(private val db: AppDatabase, private val writer: Writer) {
+    val sent = SentWrites(db)
 
     fun now(): Long = writer.now()
 
@@ -58,12 +62,22 @@ internal class SyncLocalStore(private val db: AppDatabase, private val writer: W
                 ?.takeIf { it.base_version + 1 == doc.version && doc.sameContentAs(it.payload) }
         }
 
+    /** A write of ours other than the pending payload landed as [version]: the pending edit chains on top of it. Returns the entry. */
+    fun onEarlierWriteLanded(entry: Outbox, version: Long): Outbox? = db.transactionWithResult {
+        val current = db.outboxQueries.selectById(entry.id).executeAsOneOrNull() ?: return@transactionWithResult null
+        db.outboxQueries.advanceBase(version, current.id)
+        setServerVersion(OutboxType.valueOf(current.entity_type), current.entity_id, version)
+        sent.clear(current)
+        db.outboxQueries.selectById(current.id).executeAsOneOrNull()
+    }
+
     fun onPushed(entry: Outbox, version: Long) = db.transaction {
         val current = db.outboxQueries.selectById(entry.id).executeAsOneOrNull() ?: return@transaction
         val type = OutboxType.valueOf(entry.entity_type)
         if (current.payload == entry.payload) {
             db.outboxQueries.deleteById(entry.id)
             markSynced(type, entry.entity_id, version)
+            sent.clear(entry)
         } else {
             // Edited again while uploading: the next upload chains on what was just written.
             db.outboxQueries.advanceBase(version, entry.id)
@@ -107,4 +121,39 @@ internal class PullMarks(private val db: AppDatabase) {
     fun isChangeLogKnown(id: String): Boolean = db.changeLogQueries.selectById(id).executeAsOneOrNull() != null
 
     private fun bootstrappedKey(groupId: String) = "pulled:$groupId"
+}
+
+/**
+ * What an upload that gave up handed to Firestore: the SDK keeps such a write queued and may send it later,
+ * even after the document was edited again (docs/SYNC.md, "Writes that outlive their upload").
+ */
+internal class SentWrites(private val db: AppDatabase) {
+    fun remember(entry: Outbox, payload: String = entry.payload) {
+        val payloads = payloads(entry)
+        if (payload !in payloads) put(entry, payloads + payload)
+    }
+
+    fun clear(entry: Outbox) {
+        if (payloads(entry).isNotEmpty()) put(entry, emptyList())
+    }
+
+    fun contains(entry: Outbox, doc: RemoteDoc): Boolean = payloads(entry).any { doc.sameContentAs(it) }
+
+    /** The pending entry [doc] is the server copy of an earlier payload of: ours landing late, not a conflict. */
+    fun earlierOwnWrite(doc: RemoteDoc): Outbox? =
+        if (doc is RemoteDoc.ChangeLogDoc) {
+            null
+        } else {
+            db.outboxQueries.selectByEntity(doc.type.name, doc.id).executeAsOneOrNull()
+                ?.takeIf { it.base_version + 1 == doc.version && contains(it, doc) }
+        }
+
+    private fun payloads(entry: Outbox): List<String> =
+        db.metaQueries.get(key(entry)).executeAsOneOrNull()
+            ?.let { json.decodeFromString(ListSerializer(String.serializer()), it) }.orEmpty()
+
+    private fun put(entry: Outbox, payloads: List<String>) =
+        db.metaQueries.put(key(entry), json.encodeToString(ListSerializer(String.serializer()), payloads))
+
+    private fun key(entry: Outbox) = "sent:${entry.entity_type}:${entry.entity_id}"
 }

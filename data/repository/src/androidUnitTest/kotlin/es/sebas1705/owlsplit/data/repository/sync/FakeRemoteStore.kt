@@ -78,14 +78,22 @@ class FakeRemoteStore(private val now: () -> Long) : RemoteStore {
             type == OutboxType.GROUP && current == null -> version == 1L
             else -> isMember(groupId) && version == (current?.version ?: 0L) + 1
         }
-        if (!allowed) return PushResult.Rejected
-        serverWrite(decodeRemoteDoc(type, payload, version, now(), callerUid))
+        val next = decodeRemoteDoc(type, payload, version, now(), callerUid)
+        if (!allowed || breaksLeaveRule(current, next)) return PushResult.Rejected
+        serverWrite(next)
         if (lostAcks > 0) {
             lostAcks--
             return PushResult.Transient
         }
         beforeAck()
         return PushResult.Ok
+    }
+
+    /** The rules' `leave()`: whoever drops a member from a group may change nothing else in the same write. */
+    private fun breaksLeaveRule(current: RemoteDoc?, next: RemoteDoc): Boolean {
+        val before = (current as? RemoteDoc.GroupDoc)?.group ?: return false
+        val after = (next as? RemoteDoc.GroupDoc)?.group ?: return false
+        return after.memberUids != before.memberUids && after.copy(memberUids = before.memberUids, meta = before.meta) != before
     }
 
     override suspend fun fetch(type: OutboxType, groupId: String, entityId: String): FetchResult {

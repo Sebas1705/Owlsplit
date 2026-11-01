@@ -102,4 +102,10 @@ describe('join and leave', () => {
   test('a member leaves by removing only themselves', async () => {
     await assertSucceeds(updateDoc(doc(as(env, 'luis'), `groups/${GROUP}`), { memberUids: arrayRemove('luis'), ...bump('luis') }));
   });
+  test('leaving cannot carry other edits: the client uploads them first, as a separate version', async () => {
+    // The outbox compacts an offline rename and a later leave into one write; the app splits it again.
+    await assertFails(updateDoc(doc(as(env, 'luis'), `groups/${GROUP}`), { name: 'Mío', memberUids: arrayRemove('luis'), ...bump('luis') }));
+    await assertSucceeds(updateDoc(doc(as(env, 'luis'), `groups/${GROUP}`), { name: 'Mío', ...bump('luis') }));
+    await assertSucceeds(updateDoc(doc(as(env, 'luis'), `groups/${GROUP}`), { memberUids: arrayRemove('luis'), ...bump('luis') }));
+  });
 });

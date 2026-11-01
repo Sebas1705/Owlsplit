@@ -82,6 +82,45 @@ class OutboxProcessorTest {
     }
 
     @Test
+    fun `an edit made after a timed-out upload does not clash with the first, still queued, write`() = runTest {
+        // Offline, Firestore keeps the first write queued while push gives up (Transient). The user edits
+        // again; back online the queued first write lands and the retry of the second one is rejected.
+        val h = Harness(this)
+        val g = h.env.groups.create(trip, "Ana")
+        h.push()
+        h.env.groups.update(g, trip.copy(name = "First"))
+        h.remote.lostAcks = 1
+        h.push() // times out, but "First" reached the server (v2)
+        h.env.groups.update(g, trip.copy(name = "Second"))
+        h.env.nowMillis = h.env.outbox().first { it.entity_type == "GROUP" }.next_attempt_at
+        h.push()
+
+        assertEquals(0L, h.env.db.conflictQueries.countAll().executeAsOne())
+        assertEquals("Second", h.remoteGroup(g).group.name)
+        assertEquals(3L, h.remoteGroup(g).version)
+        assertEquals("Second", h.group(g).name)
+        assertEquals(SyncState.SYNCED, h.group(g).meta.syncState)
+        assertTrue(h.env.outbox().isEmpty())
+    }
+
+    @Test
+    fun `renaming or archiving a group offline and then leaving it still uploads`() = runTest {
+        val h = Harness(this)
+        val g = h.env.groups.create(trip, "Ana")
+        h.push()
+        h.env.groups.update(g, trip.copy(name = "Renamed"))
+        h.env.groups.setArchived(g, archived = true)
+        h.env.groups.leave(g)
+        h.push()
+
+        assertTrue(h.env.outbox().isEmpty(), "the outbox stays blocked: ${h.env.outbox().map { it.last_error }}")
+        assertEquals(emptyList(), h.remoteGroup(g).group.memberUids)
+        assertEquals("Renamed", h.remoteGroup(g).group.name)
+        assertEquals(3L, h.remoteGroup(g).version)
+        assertEquals(SyncState.SYNCED, h.group(g).meta.syncState)
+    }
+
+    @Test
     fun `an edit made during the upload advances the base instead of being lost`() = runTest {
         val h = Harness(this)
         val g = h.env.groups.create(trip, "Ana")

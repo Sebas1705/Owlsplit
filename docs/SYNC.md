@@ -174,3 +174,10 @@ Conflicts are detected exactly as before: a fetched document goes through the sa
 E.g. 10 groups, 3 archived: an idle start goes from about 50 reads to about 17. `SyncEngineTest` checks the listeners, the queries and the billed reads with `FakeRemoteStore`, which counts reads as Firestore does.
 
 **Assumptions.** A client that writes a member, expense or transfer without its history entry would only be seen at the next bootstrap or members query: every write path in `data:repository` logs (or is one of the personal fields above), and older app versions write the same entries in the same order. A history entry whose `get` finds nothing (the write was rejected) or an unreadable document (from a newer app version) is stored without applying anything.
+
+## Writes that outlive their upload
+
+Two consequences of the SDK keeping a write queued after `push` gave up (and of compaction) that used to end in a false conflict or a blocked outbox:
+
+- **An edit made after a timed-out upload.** `push` gives up after 20 s, but Firestore still sends that first write when the network is back; the retry of the newer edit (same version number) is then rejected. Every payload handed over by an upload that gave up is remembered (meta key `sent:<type>:<id>`). If the server copy matches one of them, it is our own earlier write, not someone else's: the pending edit chains on top of it (base advances to the landed version) instead of going to `conflict`. It applies to the rejection after an upload and to the listener echo. The list is cleared when the document is acknowledged.
+- **Editing a group offline and then leaving it.** Compaction folds both into one write, but the rules accept a leave only if it changes nothing but `memberUids`. When such a write is rejected, the processor uploads the edits first (the group without the leave) and the leave on top, as two versions; the leave also moves to the end of the queue so it follows the writes made as a member (releasing my member). Entries already stuck as `rejected` recover on their next hourly retry.

@@ -40,13 +40,24 @@ internal class Writer(private val db: AppDatabase, private val ctx: RepositoryCo
         syncState = SyncState.PENDING,
     )
 
-    /** Queues [payload] for upload, compacting with a pending entry of the same document. */
-    fun enqueue(groupId: String, type: OutboxType, entityId: String, baseVersion: Long, payload: String) {
+    /**
+     * Queues [payload] for upload, compacting with a pending entry of the same document. With [last], a
+     * compacted entry also moves to the end of the queue (leaving a group must follow the writes made as a member).
+     */
+    fun enqueue(
+        groupId: String,
+        type: OutboxType,
+        entityId: String,
+        baseVersion: Long,
+        payload: String,
+        last: Boolean = false,
+    ) {
         val pending = db.outboxQueries.selectByEntity(type.name, entityId).executeAsOneOrNull()
         if (pending == null) {
             db.outboxQueries.insert(groupId, type.name, entityId, baseVersion, payload, now())
         } else {
             db.outboxQueries.replacePayload(payload, pending.id)
+            if (last) db.outboxQueries.moveToEnd(pending.id)
         }
     }
 

@@ -150,7 +150,12 @@ class SyncEngine(
      */
     private fun receive(doc: RemoteDoc) {
         val echoed = inFlight.echoed(doc) ?: local.ownPendingWrite(doc)?.let { it to doc.version }
-        if (echoed != null) local.onPushed(echoed.first, echoed.second) else applier.apply(doc)
+        val earlier = if (echoed == null) local.sent.earlierOwnWrite(doc) else null
+        when {
+            echoed != null -> local.onPushed(echoed.first, echoed.second)
+            earlier != null -> local.onEarlierWriteLanded(earlier, doc.version)
+            else -> applier.apply(doc)
+        }
     }
 
     private companion object {

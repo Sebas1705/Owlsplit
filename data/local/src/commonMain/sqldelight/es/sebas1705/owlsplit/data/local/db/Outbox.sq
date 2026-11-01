@@ -22,6 +22,10 @@ SELECT * FROM outbox WHERE entity_type = ? AND entity_id = ?;
 replacePayload:
 UPDATE outbox SET payload = ?, attempts = 0, next_attempt_at = 0, last_error = NULL WHERE id = ?;
 
+-- Behind everything else: the write has to wait for the ones that depend on it being the last.
+moveToEnd:
+UPDATE outbox SET created_at = (SELECT max(created_at) FROM outbox) + 1 WHERE id = ?;
+
 selectAll:
 SELECT * FROM outbox ORDER BY created_at, id;
 
