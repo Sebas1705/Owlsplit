@@ -142,6 +142,7 @@ Doppler `owlsplit/prd` stores everything: `GOOGLE_SERVICES_JSON` (both Android a
 - `scripts/doppler-sync-local.sh`: writes `google-services.json` and `GoogleService-Info.plist` into `composeApp/` and `iosApp/` (git-ignored).
 - `scripts/setup-firebase-env.sh`: downloads the apps' configuration and stores it in Doppler. Run it again after enabling Google or registering fingerprints: it changes `google-services.json`.
 - `scripts/setup-release-keystore.sh`: creates the release key (once only; already done), stores it in Doppler and registers its fingerprints. The `.jks` copy lives in `Documents/owlsplit-release.jks` (outside the repo).
+- `node scripts/audit-expense-payers.mjs`: read-only report of the expenses whose payers do not add up to their amount, left by builds that deep-merged them ([SYNC](SYNC.md#expenses-corrupted-by-earlier-builds)). It needs `firebase-admin` and read access to Firestore: see its header.
 - `node scripts/setup-ci-access.mjs [tester emails]`: service account `owlsplit-ci@owlsplit` with minimal permissions (App Distribution, rules, Hosting, indexes), its key in Doppler, `DOPPLER_TOKEN` in GitHub and the `testers` group. Running it again rotates the key and adds testers.
 
 Distribution to testers: [RELEASE.md](RELEASE.md).

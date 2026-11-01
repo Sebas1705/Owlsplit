@@ -93,7 +93,7 @@ Engine in `data:repository`, package `sync`: `RemoteStore` (port to the server; 
 
 `FirestoreRemoteStore` (`data:remote`, GitLive) implements `RemoteStore`; the app starts it in `composeApp/.../sync/SyncModule.kt`.
 
-- **Format**: one DTO per type with exactly the keys in the rules (see [FIREBASE](FIREBASE.md#document-format)). Written with `set(merge = true)` so as not to erase `lastJoinCode`, which the client does not know.
+- **Format**: one DTO per type with exactly the keys in the rules (see [FIREBASE](FIREBASE.md#document-format)). Members, expenses and transfers are written as a **full replace**; only the group uses `set(merge = true)`, so as not to erase `lastJoinCode`, which the client does not know (see [Full replace](#full-replace)).
 - **In-memory Firestore cache**: the local copy is SQLDelight. Without network, `set` does not complete (the SDK queues it): after 20 s it is treated as transient and the outbox retries it; if the queued write lands first, the retry is rejected, the remote is read and recognized as our own.
 - **Errors**: `PERMISSION_DENIED` → rejection (on upload) or no access (on read); everything else → transient. To resolve a rejection, the read goes to the **server** (the cache might hold our unconfirmed write).
 - **Listeners**: only confirmed documents (no `hasPendingWrites`) and only each snapshot's changes. *My groups* is delivered complete and only when it neither comes from cache nor has pending writes, because the engine infers access loss from what is missing. Transient errors → retry with increasing backoff; `PERMISSION_DENIED` ends the listener without breaking the engine.
@@ -102,7 +102,40 @@ Engine in `data:repository`, package `sync`: `RemoteStore` (port to the server; 
 - **Conflict seen twice**: if the listener already recorded the conflict while the upload was in flight, the later rejection does not record it again.
 - **Startup**: without `google-services.json` nothing starts. With it, anonymous session (retries with backoff if there is no network; the real onboarding is P8) and `SyncEngine.start` with the uid of each session state. On Android, WorkManager (`SyncWorker`, with network, unique work `KEEP`) uploads pending changes even if the app is closed. On iOS the background trigger arrives in P11.
 - **Resolved in P8**: onboarding does not finish without a session, so nothing is created without `createdBy`. Each user's engine lives in its own scope: switching sessions cancels the previous one.
-- **Tests**: `FirestoreSyncEmulatorTest` (two devices with the Firestore and Auth emulators and the real rules: join with code, changes in both directions, concurrent edit → a single conflict). Run with `scripts/run-sync-emulator-test.sh` with an Android emulator connected; not in CI.
+- **Tests**: `FirestoreSyncEmulatorTest` (two devices with the Firestore and Auth emulators and the real rules: join with code, changes in both directions, concurrent edit → a single conflict, keys removed from an expense's maps, repairing a document a merging build left behind, groups keeping `lastJoinCode`). Run with `scripts/run-sync-emulator-test.sh` with an Android emulator connected; not in CI. The rules side of a full replace is in `firebase/rules-test`, which is.
+
+## Full replace
+
+`set(merge = true)` is a deep merge: nested maps are merged key by key, so a key missing from the new document stays on the server. Every expense edit used to be written like that, so changing the payer from A to B stored `{A: 100, B: 100}`, and a member taken out of a split stayed in `splitValues`. That also broke principle 2 above: a document wins or loses as a whole.
+
+| Document | Write | Why |
+|---|---|---|
+| Expense | Full replace | `payers` and `splitValues` are maps whose keys come and go |
+| Member, transfer | Full replace | The DTO carries every key the rules allow; nothing to preserve. Merging was harmless (the keys of `payMethods` are always written, as `null` when empty) but pointless |
+| Group | `merge = true` | `lastJoinCode` is written by whoever joins and is not in `GroupDto`; without it the rules reject the edit. `GroupDto` has no maps, so the merge cannot leave anything behind |
+| History | Create-only | Never edited |
+
+The guest web was not affected: it edits with `update`, which replaces each named field whole. `createdBy` and `createdAt` are part of the DTO and travel unchanged, so the rule that forbids changing them passes as it did. The rules did not change.
+
+A full replace has one cost: a key added to a document by a newer app version is erased when an older version edits that document. A new key must therefore be optional and tolerate going missing.
+
+### Expenses corrupted by earlier builds
+
+Documents stored before this change stay as they are until someone edits them. Nothing rejects them on the way in: `RemoteApplier` stores what the server has and rewrites `expense_payer` and `expense_split` whole, so a repaired version replaces a bad one everywhere.
+
+| Who | What they see |
+|---|---|
+| The device that made the edit | The right expense and balances: its upload ended in success and it never reads its own document back, until a reinstall or a new device downloads the bad one |
+| Other devices and the web, payers no longer adding up | The expense is listed, with both payers on the web, and silently left out of balances, settle-up and stats (`invalidEntryIds`, not shown anywhere). So balances differ between devices |
+| Other devices and the web, a member removed from an EQUAL or WEIGHTS split | Nothing looks wrong: the document is consistent, and that member keeps being charged. Nothing can detect this one from the document |
+
+**Repairing** takes one edit that uploads the right content, whoever makes it:
+
+- From the device that made the bad edit, on a fixed build, any edit repairs it, even of the title: the whole document goes up.
+- From a device holding the bad copy, the editor shows the wrong payers and refuses to save until they add up, so fixing them repairs the document. A member left in a split stays unless they are unticked. On such a device, writes that do not go through the editor (delete, restore, stopping a series, generating the next recurring expense) upload what it has: a recurring expense copies the payers of the bad one.
+- On the web, an expense with two payers can only have its words and date edited, which does not repair it.
+
+Until everyone updates, a build that still merges can leave keys behind again on any edit that removes one. `scripts/audit-expense-payers.mjs` lists, read-only, the expenses whose payers do not add up.
 
 ## Conflicts in the UI (P9c)
 

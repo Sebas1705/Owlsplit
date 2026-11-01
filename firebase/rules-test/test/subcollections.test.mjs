@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, test } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest';
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { deleteDoc, doc, getDoc, increment, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import { GROUP, as, createEnv, expenseData, groupData, memberData, seed, transferData } from './helpers.mjs';
@@ -19,6 +19,8 @@ beforeEach(async () => {
 const fresh = (by) => ({ version: 1, updatedAt: serverTimestamp(), updatedBy: by });
 const bump = (by) => ({ version: increment(1), updatedAt: serverTimestamp(), updatedBy: by });
 const path = (p) => `groups/${GROUP}/${p}`;
+// What the app's outbox uploads as an edit (FirestoreRemoteStore): the whole document, without merge.
+const replaced = (by) => ({ version: 2, updatedAt: serverTimestamp(), updatedBy: by });
 
 describe('members', () => {
   test('a member adds a ghost member', async () => {
@@ -81,6 +83,10 @@ describe('members', () => {
     await assertFails(updateDoc(doc(as(env, 'luis'), path('members/ghost')), { linked: true, ...bump('luis') }));
     await assertSucceeds(updateDoc(doc(as(env, 'ana'), path('members/m1')), { userUid: null, linked: false, pastUids: ['ana'], ...bump('ana') }));
   });
+  test('a member is uploaded whole: the keys older documents lack are written, and the rules accept it', async () => {
+    await assertSucceeds(setDoc(doc(as(env, 'ana'), path('members/m1')),
+      memberData({ name: 'Ana G', payMethods: null, pastUids: [], linked: false, ...replaced('ana') })));
+  });
   test('weights stay within 1..100', async () => {
     await assertFails(updateDoc(doc(as(env, 'ana'), path('members/m1')), { defaultWeight: 0, ...bump('ana') }));
   });
@@ -107,6 +113,26 @@ describe('expenses', () => {
     await assertSucceeds(updateDoc(doc(as(env, 'luis'), path('expenses/e1')), { title: 'Cena larga', ...bump('luis') }));
     await assertFails(updateDoc(doc(as(env, 'luis'), path('expenses/e1')), { createdBy: 'luis', ...bump('luis') }));
   });
+  test('a full replace by another member removes payers and participants, and keeps the author', async () => {
+    const ref = doc(as(env, 'luis'), path('expenses/e1'));
+    await assertSucceeds(setDoc(ref, expenseData({ payers: { m2: 4860 }, splitValues: { m2: 1 }, ...replaced('luis') })));
+    const stored = (await getDoc(ref)).data();
+    expect(stored.payers).toEqual({ m2: 4860 });
+    expect(stored.splitValues).toEqual({ m2: 1 });
+    expect(stored.createdBy).toBe('ana');
+  });
+  test('a full replace cannot change the author', async () => {
+    const ref = doc(as(env, 'luis'), path('expenses/e1'));
+    await assertFails(setDoc(ref, expenseData({ createdBy: 'luis', ...replaced('luis') })));
+    await assertFails(setDoc(ref, expenseData({ createdAt: 2_000, ...replaced('luis') })));
+  });
+  test('a full replace repairs a document whose maps an older build deep-merged', async () => {
+    const ref = doc(as(env, 'ana'), path('expenses/e1'));
+    await assertSucceeds(setDoc(ref, { payers: { m2: 4860 }, ...replaced('ana') }, { merge: true }));
+    expect((await getDoc(ref)).data().payers).toEqual({ m1: 4860, m2: 4860 });
+    await assertSucceeds(setDoc(ref, expenseData({ payers: { m2: 4860 }, version: 3, updatedAt: serverTimestamp(), updatedBy: 'ana' })));
+    expect((await getDoc(ref)).data().payers).toEqual({ m2: 4860 });
+  });
   test('soft delete is an update; hard delete is forbidden', async () => {
     await assertSucceeds(updateDoc(doc(as(env, 'ana'), path('expenses/e1')), { deleted: true, ...bump('ana') }));
     await assertFails(deleteDoc(doc(as(env, 'ana'), path('expenses/e1'))));
@@ -117,5 +143,13 @@ describe('transfers', () => {
   test('a member records a transfer between two different members', async () => {
     await assertSucceeds(setDoc(doc(as(env, 'ana'), path('transfers/t1')), transferData(fresh('ana'))));
     await assertFails(setDoc(doc(as(env, 'ana'), path('transfers/t2')), transferData({ toMemberId: 'm2', ...fresh('ana') })));
+  });
+  test('a full replace by another member keeps the author and the amount', async () => {
+    await seed(env, { [path('transfers/t1')]: transferData() });
+    const ref = doc(as(env, 'luis'), path('transfers/t1'));
+    await assertSucceeds(setDoc(ref, transferData({ deleted: true, ...replaced('luis') })));
+    await seed(env, { [path('transfers/t2')]: transferData() });
+    await assertFails(setDoc(doc(as(env, 'luis'), path('transfers/t2')), transferData({ createdBy: 'luis', ...replaced('luis') })));
+    await assertFails(setDoc(doc(as(env, 'luis'), path('transfers/t2')), transferData({ amountMinor: 1, ...replaced('luis') })));
   });
 });

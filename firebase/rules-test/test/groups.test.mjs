@@ -48,6 +48,15 @@ describe('read', () => {
 });
 
 describe('edit', () => {
+  test('the app has to merge group edits: lastJoinCode is not in its document', async () => {
+    await seed(env, { [`groups/${GROUP}`]: groupData({ memberUids: ['ana', 'luis'], lastJoinCode: CODE }) });
+    const { lastJoinCode, ...withoutCode } = groupData({
+      name: 'Ibiza', memberUids: ['ana', 'luis'], version: 2, updatedAt: serverTimestamp(), updatedBy: 'luis',
+    });
+    const ref = doc(as(env, 'luis'), `groups/${GROUP}`);
+    await assertFails(setDoc(ref, withoutCode));
+    await assertSucceeds(setDoc(ref, withoutCode, { merge: true }));
+  });
   test('a member renames with a chained version', async () => {
     await assertSucceeds(updateDoc(doc(as(env, 'luis'), `groups/${GROUP}`), { name: 'Ibiza', ...bump('luis') }));
   });
