@@ -108,7 +108,7 @@ class GroupRepositoryImpl(
             if (me in old.memberUids) {
                 val new = old.copy(memberUids = old.memberUids - me, meta = writer.editedMeta(old.meta))
                 db.groupEntityQueries.upsert(new.toRow())
-                writer.enqueue(new.id, OutboxType.GROUP, new.id, old.meta.serverVersion, payload(new))
+                writer.enqueue(new.id, OutboxType.GROUP, new.id, old.meta.serverVersion, payload(new), last = true)
             }
         }
     }

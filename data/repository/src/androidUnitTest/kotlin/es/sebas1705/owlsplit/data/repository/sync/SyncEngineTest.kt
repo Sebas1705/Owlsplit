@@ -410,6 +410,30 @@ class SyncEngineTest {
     }
 
     @Test
+    fun `the echo of an earlier queued write does not turn a later offline edit into a conflict`() = runTest {
+        val h = Harness(this)
+        val g = h.env.groups.create(trip, "Ana")
+        val ana = h.env.members.observeMembersOnce(g).single().id
+        val e = h.env.expenses.create(g, dinner(ana))
+        h.engine.pushNow()
+        h.remote.lostAcks = 1
+        h.env.expenses.update(e, dinner(ana).copy(title = "First"))
+        h.engine.pushNow() // times out; the SDK keeps "First" queued and it lands (v2)
+        h.env.expenses.delete(e)
+        h.env.nowMillis = h.env.outbox().first { it.entity_type == "EXPENSE" }.next_attempt_at
+
+        val job = h.engine.start(this, "uid-ana")
+        h.settle()
+
+        assertEquals(0L, h.env.db.conflictQueries.countAll().executeAsOne())
+        assertTrue(h.env.expenses.get(e)!!.meta.deleted)
+        assertTrue(h.expenseOnServer(e).meta.deleted)
+        assertEquals(3L, h.remote.doc(OutboxType.EXPENSE, e)!!.version)
+        assertTrue(h.env.outbox().none { it.entity_type == "EXPENSE" })
+        job.cancel()
+    }
+
+    @Test
     fun `flush uploads everything now and reports what could not be uploaded`() = runTest {
         val h = Harness(this)
         val g = h.env.groups.create(trip, "Ana")
