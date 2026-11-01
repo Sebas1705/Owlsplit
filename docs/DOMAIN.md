@@ -53,7 +53,7 @@ Input: the expense `amountMinor`, the list of beneficiaries ordered by `sortKey`
   1. Compute the **net per member in the expense currency**: `paid_i − share_i` (integers; they sum to 0).
   2. Convert each net: `net_i × rate × 10^(dec_base − dec_expense) / 10⁹`, rounded toward zero.
   3. The resulting imbalance (sum ≠ 0) is distributed unit by unit by largest remainders, with the same deterministic tie-break. Result: base-currency nets that sum to exactly 0.
-- With `Long` arithmetic and bounded values there is no overflow; if an intermediate product could overflow, emulated 128-bit multiplication (`multiplyHigh`) is used, covered by tests.
+- Every `a × b / c` in this section goes through `mulDivRem` (`core/money/LongMath.kt`): it builds the 128-bit product from 32-bit limbs and divides it bit by bit, so the intermediate product cannot overflow, and the remainder carries the sign of the product. It throws `ArithmeticException` if the quotient itself does not fit in a `Long`. Covered by tests (`LongMathTest`).
 
 ## Balances
 
@@ -94,3 +94,4 @@ MVP option: if the user turns it off for the group, "Cómo saldar" ("How to sett
 - An expense must have at least one beneficiary with a share > 0.
 - `fromMemberId ≠ toMemberId` in transfers.
 - `defaultWeight` between 1 and 100.
+- The apps and the web also leave an entry out of balances (it goes to `invalidEntryIds`) when its currency is not in the table, its `fxRateToBase` is outside `1..9·10¹⁴`, or converting its amount into the base currency does not fit in a `Long`. The rules only require a currency to be three capital letters and bound the rate (`1..9·10¹⁴`) and the amount (`≤ 10¹²`), so an unknown code, or a large amount at a high rate whose conversion overflows, is accepted by the server and skipped the same way by every client.
