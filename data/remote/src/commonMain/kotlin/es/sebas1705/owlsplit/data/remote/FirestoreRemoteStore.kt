@@ -57,12 +57,13 @@ class FirestoreRemoteStore(
         val stamp = Stamp(version, uid)
         val ref = ref(type, groupId, entityId)
         return firestoreCall(onDenied = PushResult.Rejected, onError = PushResult.Transient) {
-            // merge: keys the client does not own (lastJoinCode) must survive the write.
+            // Full replace: a merge is deep, it would never remove a key from `payers` or `splitValues`.
+            // Only the group merges, for the one key its DTO does not carry (lastJoinCode).
             when (doc) {
                 is RemoteDoc.GroupDoc -> ref.set(GroupDto.serializer(), doc.group.toDto(stamp), merge = true)
-                is RemoteDoc.MemberDoc -> ref.set(MemberDto.serializer(), doc.member.toDto(stamp), merge = true)
-                is RemoteDoc.ExpenseDoc -> ref.set(ExpenseDto.serializer(), doc.expense.toDto(stamp), merge = true)
-                is RemoteDoc.TransferDoc -> ref.set(TransferDto.serializer(), doc.transfer.toDto(stamp), merge = true)
+                is RemoteDoc.MemberDoc -> ref.set(MemberDto.serializer(), doc.member.toDto(stamp))
+                is RemoteDoc.ExpenseDoc -> ref.set(ExpenseDto.serializer(), doc.expense.toDto(stamp))
+                is RemoteDoc.TransferDoc -> ref.set(TransferDto.serializer(), doc.transfer.toDto(stamp))
                 is RemoteDoc.ChangeLogDoc -> ref.set(ChangeLogDto.serializer(), doc.entry.toDto())
             }
             PushResult.Ok
