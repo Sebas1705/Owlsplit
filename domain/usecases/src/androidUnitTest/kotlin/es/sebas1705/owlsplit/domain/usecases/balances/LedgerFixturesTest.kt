@@ -37,7 +37,7 @@ class LedgerFixturesTest {
 
     private fun fixtures(): String {
         val random = Random(SEED)
-        val cases = (0 until CASES).map { case(random, it) }
+        val cases = (0 until CASES).map { case(random, it) } + oddCase()
         return "{\n  \"cases\": [\n" + cases.joinToString(",\n") + "\n  ]\n}\n"
     }
 
@@ -78,6 +78,36 @@ class LedgerFixturesTest {
                 LocalDate(2026, 10, 2), null, "u", 1, meta,
             )
         }
+        return render(base, members, expenses, transfers)
+    }
+
+    /** One group with the entries the app must leave out: unknown currency, rate out of range, overflowing conversion. */
+    private fun oddCase(): String {
+        val members = listOf(
+            Member("ana", "g", "Ana", null, 1, null, true, 0, meta),
+            Member("luis", "g", "Luis", null, 1, null, true, 1, meta),
+        )
+        fun expense(id: String, amount: Long, currency: String, rate: Long) = Expense(
+            id, "g", id, ExpenseCategory.OTHER, null, LocalDate(2026, 10, 1), currency, amount, rate,
+            mapOf("ana" to amount), SplitType.EQUAL, mapOf("ana" to 1L, "luis" to 1L), null, null, "u", 1, meta,
+        )
+        val expenses = listOf(
+            expense("odd-ok", 1_000, "EUR", SCALE),
+            expense("odd-unknown-currency", 1_000, "XYZ", SCALE),
+            expense("odd-zero-rate", 1_000, "USD", 0),
+            expense("odd-huge-rate", 1_000, "USD", MAX_RATE + 1),
+            expense("odd-overflow", MAX_EXPENSE, "JPY", MAX_RATE),
+            expense("odd-big-but-fits", MAX_EXPENSE, "USD", MAX_RATE / 1000),
+        )
+        val day = LocalDate(2026, 10, 2)
+        val transfers = listOf(
+            Transfer("odd-t-overflow", "g", "ana", "luis", MAX_EXPENSE, "JPY", MAX_RATE, day, null, "u", 1, meta),
+            Transfer("odd-t-unknown", "g", "luis", "ana", 500, "ABC", SCALE, day, null, "u", 1, meta),
+        )
+        return render("EUR", members, expenses, transfers)
+    }
+
+    private fun render(base: String, members: List<Member>, expenses: List<Expense>, transfers: List<Transfer>): String {
         val result = groupBalancesOf(base, members, expenses, transfers)
         val explanation = balanceExplanationOf(base, members, expenses, transfers)
         return buildString {
@@ -136,6 +166,8 @@ class LedgerFixturesTest {
         const val CASES = 60
         const val SCALE = 1_000_000_000L
         const val FULL_PERCENT = 10_000L
+        const val MAX_EXPENSE = 1_000_000_000_000L
+        const val MAX_RATE = 900_000L * SCALE
         val BASES = listOf("EUR", "EUR", "USD", "JPY", "KWD")
         val FOREIGN = listOf("USD", "GBP", "JPY", "KWD", "MXN", "CHF")
     }

@@ -49,6 +49,11 @@ sealed interface SplitIssue {
     data class ExactSumMismatch(val missingMinor: Long) : SplitIssue
     data class PercentSumMismatch(val missingHundredths: Long) : SplitIssue
     data class PayersSumMismatch(val missingMinor: Long) : SplitIssue
+    data class UnknownCurrency(val code: String) : SplitIssue
+    data object RateOutOfRange : SplitIssue
+
+    /** The amount converted into the base currency does not fit in a Long. */
+    data object ConversionOverflow : SplitIssue
 }
 
 sealed interface SplitResult {

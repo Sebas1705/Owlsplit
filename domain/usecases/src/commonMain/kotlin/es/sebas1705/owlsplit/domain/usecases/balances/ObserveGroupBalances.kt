@@ -16,6 +16,7 @@ import es.sebas1705.owlsplit.domain.ledger.InvalidEntryException
 import es.sebas1705.owlsplit.domain.ledger.LedgerMember
 import es.sebas1705.owlsplit.domain.ledger.NetCalculator
 import es.sebas1705.owlsplit.domain.ledger.SplitSpec
+import es.sebas1705.owlsplit.domain.ledger.SplitIssue
 import es.sebas1705.owlsplit.domain.ledger.SplitType
 import es.sebas1705.owlsplit.domain.ledger.SuggestedPayment
 import es.sebas1705.owlsplit.domain.ledger.TransferEntry
@@ -82,29 +83,39 @@ internal fun ledgerOf(
     val base = Currency.of(baseCurrency)
     val ledgerMembers = memberList.map { LedgerMember(it.id, it.sortKey) }
     val invalid = mutableListOf<String>()
-    val validExpenses = expenseList.map { it.toEntry() }.filter { entry ->
-        isValid(invalid) { NetCalculator.expenseNet(entry, ledgerMembers, base) }
+    val validExpenses = expenseList.mapNotNull { expense ->
+        isValid(invalid) { expense.toEntry().also { NetCalculator.expenseNet(it, ledgerMembers, base) } }
     }
-    val validTransfers = transferList.map { it.toEntry() }.filter { entry ->
-        isValid(invalid) { NetCalculator.transferNet(entry, ledgerMembers, base) }
+    val validTransfers = transferList.mapNotNull { transfer ->
+        isValid(invalid) { transfer.toEntry().also { NetCalculator.transferNet(it, ledgerMembers, base) } }
     }
     return GroupLedger(base, ledgerMembers, validExpenses, validTransfers, invalid)
 }
 
-private inline fun isValid(invalid: MutableList<String>, check: () -> Unit): Boolean =
+/** What [check] returns, or null (the entry is reported in [invalid]) when it finds the entry inconsistent. */
+private inline fun <T> isValid(invalid: MutableList<String>, check: () -> T): T? =
     try {
         check()
-        true
     } catch (e: InvalidEntryException) {
         invalid += e.entryId
-        false
+        null
     }
+
+private fun currencyOf(entryId: String, code: String): Currency {
+    if (!Currency.isKnown(code)) throw InvalidEntryException(entryId, SplitIssue.UnknownCurrency(code))
+    return Currency.of(code)
+}
+
+private fun rateOf(entryId: String, scaled: Long): FxRate {
+    if (scaled !in 1..FxRate.MAX_SCALED) throw InvalidEntryException(entryId, SplitIssue.RateOutOfRange)
+    return FxRate(scaled)
+}
 
 private fun Expense.toEntry() = ExpenseEntry(
     id = id,
     amountMinor = amountMinor,
-    currency = Currency.of(currency),
-    fxRateToBase = FxRate(fxRateScaled),
+    currency = currencyOf(id, currency),
+    fxRateToBase = rateOf(id, fxRateScaled),
     payers = payers,
     split = SplitSpec(SplitType.valueOf(splitType.name), splitValues),
 )
@@ -114,6 +125,6 @@ private fun Transfer.toEntry() = TransferEntry(
     fromMemberId = fromMemberId,
     toMemberId = toMemberId,
     amountMinor = amountMinor,
-    currency = Currency.of(currency),
-    fxRateToBase = FxRate(fxRateScaled),
+    currency = currencyOf(id, currency),
+    fxRateToBase = rateOf(id, fxRateScaled),
 )
