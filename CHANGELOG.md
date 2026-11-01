@@ -12,6 +12,7 @@ What changes for Owlsplit users in each version. The format follows [Keep a Chan
 
 - New users no longer see "Something went wrong" on the first screen: finishing the anonymous sign-in was reported as an error.
 - Editing an expense now really removes the people you take out of it. Changing who paid kept the old payer as well, so the amounts stopped adding up and other devices and the web left the expense out of the balances; someone removed from a split stayed charged. Expenses already affected are fixed the next time they are edited (#97).
+- One expense with a currency the app does not know, a rate out of range or an amount too large to convert no longer breaks the balances of the whole group: it is left out and reported like any other inconsistent entry, and the web for guests does the same instead of counting it.
 
 ## [1.0.0] - Unreleased
 

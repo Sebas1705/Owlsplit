@@ -6,6 +6,8 @@
 export const RATE_SCALE = 1_000_000_000n;
 export const FULL_PERCENT = 10_000n;
 export const MAX_EXPENSE_MINOR = 1_000_000_000_000n;
+export const MAX_RATE_SCALED = 900_000n * RATE_SCALE;
+const LONG_MAX = 9_223_372_036_854_775_807n;
 
 /** The currencies the apps offer (core/money CurrencyTable). */
 export const CURRENCIES = ['AED', 'ARS', 'AUD', 'BGN', 'BHD', 'BRL', 'CAD', 'CHF', 'CLP', 'CNY', 'COP', 'CZK', 'DKK', 'EGP', 'EUR', 'GBP', 'HKD', 'HUF', 'IDR', 'ILS', 'INR', 'ISK', 'JOD', 'JPY', 'KRW', 'KWD', 'MAD', 'MXN', 'MYR', 'NOK', 'NZD', 'OMR', 'PEN', 'PHP', 'PLN', 'QAR', 'RON', 'RSD', 'SAR', 'SEK', 'SGD', 'THB', 'TND', 'TRY', 'TWD', 'UAH', 'USD', 'UYU', 'VND', 'ZAR'];
@@ -54,6 +56,20 @@ export function byWeights(total, weights) {
 }
 
 class InvalidEntry extends Error {}
+
+/**
+ * An entry the apps leave out: a currency they do not know, a rate out of range, or an amount whose
+ * conversion into the base does not fit in a Long (the amount is the largest figure converted for an entry).
+ */
+function checkConversion(amountMinor, from, base, fxRateScaled) {
+  if (!CURRENCIES.includes(from)) throw new InvalidEntry("currency");
+  const rate = big(fxRateScaled);
+  if (rate < 1n || rate > MAX_RATE_SCALED) throw new InvalidEntry("rate");
+  if (from === base) return;
+  const factor = rate * pow10(decimalsOf(base));
+  const denominator = RATE_SCALE * pow10(decimalsOf(from));
+  if (big(amountMinor) * factor / denominator > LONG_MAX) throw new InvalidEntry("conversion overflow");
+}
 
 /** Each member's part of an expense in its currency (ShareCalculator), as BigInt by member id. */
 export function shares(amountMinor, splitType, splitValues, members) {
@@ -124,6 +140,7 @@ export function expenseNet(expense, members, base) {
   if (payers.some(([id]) => !known.has(id))) throw new InvalidEntry("unknown payer");
   if (payers.some(([, v]) => big(v) < 0n)) throw new InvalidEntry("negative payer");
   if (payers.reduce((s, [, v]) => s + big(v), 0n) !== big(expense.amountMinor)) throw new InvalidEntry("payers sum");
+  checkConversion(expense.amountMinor, expense.currency, base, expense.fxRateScaled);
   const net = new Map();
   for (const [id, paid] of payers) net.set(id, (net.get(id) ?? 0n) + big(paid));
   for (const [id, share] of parts) net.set(id, (net.get(id) ?? 0n) - share);
@@ -137,6 +154,7 @@ export function transferNet(transfer, members, base) {
   if (amount < 1n || amount > MAX_EXPENSE_MINOR) throw new InvalidEntry("amount");
   if (transfer.fromMemberId === transfer.toMemberId) throw new InvalidEntry("same member");
   if (!known.has(transfer.fromMemberId) || !known.has(transfer.toMemberId)) throw new InvalidEntry("unknown member");
+  checkConversion(transfer.amountMinor, transfer.currency, base, transfer.fxRateScaled);
   const net = new Map([[transfer.fromMemberId, amount], [transfer.toMemberId, -amount]]);
   return toBase(net, transfer.currency, base, transfer.fxRateScaled, members);
 }

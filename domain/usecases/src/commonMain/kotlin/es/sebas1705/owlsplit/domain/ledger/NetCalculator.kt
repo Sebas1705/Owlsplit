@@ -19,6 +19,7 @@ object NetCalculator {
             is SplitResult.Invalid -> throw InvalidEntryException(expense.id, result.issue)
         }
         validatePayers(expense, members)
+        validateConversion(expense.id, expense.amountMinor, expense.currency, base, expense.fxRateToBase)
 
         val net = HashMap<String, Long>()
         expense.payers.forEach { (id, paid) -> net[id] = (net[id] ?: 0L) + paid }
@@ -36,6 +37,7 @@ object NetCalculator {
             else -> null
         }
         if (issue != null) throw InvalidEntryException(transfer.id, issue)
+        validateConversion(transfer.id, transfer.amountMinor, transfer.currency, base, transfer.fxRateToBase)
 
         val net = mapOf(transfer.fromMemberId to transfer.amountMinor, transfer.toMemberId to -transfer.amountMinor)
         return toBase(net, transfer.currency, base, transfer.fxRateToBase, members)
@@ -52,6 +54,19 @@ object NetCalculator {
             else -> null
         }
         if (issue != null) throw InvalidEntryException(expense.id, issue)
+    }
+
+    /**
+     * The amount is the largest figure converted for an entry (each net and the explanation's total are at most
+     * that), so if it converts, everything else does.
+     */
+    private fun validateConversion(entryId: String, amountMinor: Long, from: Currency, base: Currency, rate: FxRate) {
+        if (from == base) return
+        try {
+            Conversion.convert(amountMinor, from, base, rate)
+        } catch (_: ArithmeticException) {
+            throw InvalidEntryException(entryId, SplitIssue.ConversionOverflow)
+        }
     }
 
     /**
