@@ -11,6 +11,7 @@ import es.sebas1705.owlsplit.data.models.Member
 import es.sebas1705.owlsplit.data.models.PayMethods
 import es.sebas1705.owlsplit.data.models.Permission
 import es.sebas1705.owlsplit.data.models.MemberInput
+import es.sebas1705.owlsplit.data.models.MemberMerge
 import es.sebas1705.owlsplit.data.models.SyncMeta
 import es.sebas1705.owlsplit.data.models.SyncState
 import es.sebas1705.owlsplit.data.models.Transfer
@@ -124,6 +125,29 @@ class InMemoryLedger(var uid: String = "uid-ana") {
 
         override suspend fun setDeniedPermissions(id: String, denied: Set<Permission>) =
             editMember(id) { it.copy(deniedPermissions = denied) }
+
+        override suspend fun merge(absorbedId: String, intoId: String): String? {
+            val list = memberList.value
+            val (kept, absorbed) = MemberMerge.plan(list.first { it.id == absorbedId }, list.first { it.id == intoId })
+                ?: return null
+            expenseList.update { all -> all.map { MemberMerge.expense(it, absorbed.id, kept.id) ?: it } }
+            transferList.update { all ->
+                all.map { old ->
+                    val moved = MemberMerge.transfer(old, absorbed.id, kept.id) ?: return@map old
+                    if (moved.fromMemberId == moved.toMemberId) moved.copy(meta = moved.meta.copy(deleted = true)) else moved
+                }
+            }
+            memberList.update { all ->
+                all.mapNotNull {
+                    when (it.id) {
+                        kept.id -> MemberMerge.merged(kept, absorbed)
+                        absorbed.id -> it.copy(meta = it.meta.copy(deleted = true))
+                        else -> it
+                    }
+                }
+            }
+            return kept.id
+        }
 
         override suspend fun claim(id: String) = editMember(id) { it.copy(userUid = uid, active = true) }
 

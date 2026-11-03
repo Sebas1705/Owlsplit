@@ -85,7 +85,19 @@ class ExpenseRepositoryImpl(
         splitValues = q.splitsByExpense(row.id).executeAsList().associate { it.member_id to it.split_value },
     )
 
-    private fun save(recorded: Expense, old: Expense?, action: ChangeAction) {
+    private fun save(recorded: Expense, old: Expense?, action: ChangeAction) = save(db, writer, recorded, old, action)
+
+    internal companion object {
+        /** Every expense of the group, deleted ones included. */
+        fun all(db: AppDatabase, groupId: String): List<Expense> = db.expenseEntityQueries.selectAllByGroup(groupId).executeAsList().map { row ->
+            row.toModel(
+                payers = db.expenseEntityQueries.payersByExpense(row.id).executeAsList().associate { it.member_id to it.amount_minor },
+                splitValues = db.expenseEntityQueries.splitsByExpense(row.id).executeAsList().associate { it.member_id to it.split_value },
+            )
+        }
+
+        fun save(db: AppDatabase, writer: Writer, recorded: Expense, old: Expense?, action: ChangeAction) {
+        val q = db.expenseEntityQueries
         val expense = recorded.copy(byMember = writer.myMemberId(recorded.groupId))
         q.upsert(expense.toRow())
         q.deletePayers(expense.id)
@@ -101,5 +113,6 @@ class ExpenseRepositoryImpl(
         )
         val diff = if (action == ChangeAction.UPDATED) Diffs.expense(old, expense) else emptyList()
         writer.log(expense.groupId, EntityType.EXPENSE, expense.id, action, diff)
+        }
     }
 }

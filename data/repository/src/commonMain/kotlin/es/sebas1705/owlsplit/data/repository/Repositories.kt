@@ -48,6 +48,13 @@ interface MemberRepository {
     /** Deletes a member without movements; returns false (and changes nothing) otherwise. */
     suspend fun deleteIfUnused(id: String): Boolean
 
+    /**
+     * Merges two members of a group that are the same person: every expense and payment of [absorbedId]
+     * moves to the other, which keeps the account (or [intoId] when neither has one), and [absorbedId] is
+     * deleted. Returns the kept member, or null (changing nothing) when they cannot be merged.
+     */
+    suspend fun merge(absorbedId: String, intoId: String): String?
+
     /** Links a ghost member to me (after joining). */
     suspend fun claim(id: String)
 

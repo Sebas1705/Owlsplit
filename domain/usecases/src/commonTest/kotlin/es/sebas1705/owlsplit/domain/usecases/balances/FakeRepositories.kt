@@ -35,6 +35,7 @@ class FakeMembers(val members: MutableStateFlow<List<Member>>) : MemberRepositor
     override suspend fun add(groupId: String, input: MemberInput): String = error("unused")
     override suspend fun update(id: String, input: MemberInput) = error("unused")
     override suspend fun setActive(id: String, active: Boolean) = error("unused")
+    override suspend fun merge(absorbedId: String, intoId: String): String? = error("unused")
     override suspend fun setDeniedPermissions(id: String, denied: Set<Permission>) = error("unused")
     override suspend fun deleteIfUnused(id: String): Boolean = error("unused")
     override suspend fun claim(id: String) = error("unused")

@@ -4,8 +4,10 @@ import es.sebas1705.owlsplit.core.money.FxRate
 import es.sebas1705.owlsplit.data.models.Expense
 import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.data.models.GroupInput
+import es.sebas1705.owlsplit.data.models.GroupRoles
 import es.sebas1705.owlsplit.data.models.Member
 import es.sebas1705.owlsplit.data.models.MemberInput
+import es.sebas1705.owlsplit.data.models.Permission
 import es.sebas1705.owlsplit.data.models.Transfer
 import es.sebas1705.owlsplit.data.models.TransferInput
 import es.sebas1705.owlsplit.data.repository.ExpenseRepository
@@ -145,6 +147,19 @@ data class GroupDetail(
     val myUid: String?,
 ) {
     val archivedByMe: Boolean get() = myUid != null && myUid in group.archivedBy
+
+    /** Who runs the group; null for an old group nobody runs. */
+    val admin: Member? get() = GroupRoles.adminOf(group, members)
+    val isAdmin: Boolean get() = myUid != null && GroupRoles.isAdmin(group, members, myUid)
+
+    /** An old group whose creator left: any member may take it over. */
+    val adminless: Boolean get() = GroupRoles.isAdminless(group, members)
+
+    fun can(permission: Permission): Boolean = myUid != null && GroupRoles.can(permission, group, members, myUid)
+
+    /** The payments I may record: those I take part in, any for the admin. */
+    fun canSettle(fromMemberId: String, toMemberId: String): Boolean =
+        myUid != null && GroupRoles.canSettle(group, members, myUid, fromMemberId, toMemberId)
 }
 
 class ObserveGroupDetail(
