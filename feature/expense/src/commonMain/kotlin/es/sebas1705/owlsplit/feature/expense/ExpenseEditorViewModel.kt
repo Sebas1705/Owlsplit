@@ -11,6 +11,7 @@ import es.sebas1705.owlsplit.core.money.FxRate
 import es.sebas1705.owlsplit.core.ui.components.KeypadKey
 import es.sebas1705.owlsplit.data.models.ExpenseCategory
 import es.sebas1705.owlsplit.data.models.Member
+import es.sebas1705.owlsplit.data.models.Permission
 import es.sebas1705.owlsplit.data.models.SplitType
 import es.sebas1705.owlsplit.domain.usecases.expenses.DeleteExpense
 import es.sebas1705.owlsplit.domain.usecases.expenses.DraftCheck
@@ -55,6 +56,8 @@ data class ExpenseEditorState(
     val payerTexts: Map<String, String> = emptyMap(),
     val rate: RateState = RateState(),
     val confirmDelete: Boolean = false,
+    /** The admin did not allow me to save or delete this: the editor only shows it. */
+    val readOnly: Boolean = false,
     /** A new expense typed as a sentence ("Ana pagó 45 de cena con Luis"), until it fills the form. */
     val quickText: String = "",
     /** Saved or deleted: the editor closes. */
@@ -132,6 +135,7 @@ class ExpenseEditorViewModel(
                 loaded = true,
                 baseCurrency = base,
                 myMemberId = detail.myMemberId,
+                readOnly = !detail.can(if (expense == null) Permission.ADD_EXPENSES else Permission.EDIT_EXPENSES),
                 members = members,
                 amount = AmountInput.of(draft.amountMinor, Currency.of(draft.currency).decimals),
                 rate = RateState(text = draft.fxRateScaled?.let(::rateText).orEmpty()),
@@ -169,7 +173,7 @@ class ExpenseEditorViewModel(
             ExpenseEditorIntent.AskDelete -> updateState { it.copy(confirmDelete = true) }
             ExpenseEditorIntent.DismissDelete -> updateState { it.copy(confirmDelete = false) }
             ExpenseEditorIntent.ConfirmDelete -> {
-                expenseId?.let { deleteExpense(it) }
+                expenseId?.takeIf { !currentState.readOnly }?.let { deleteExpense(it) }
                 updateState { it.copy(confirmDelete = false, done = true) }
             }
         }
@@ -273,7 +277,7 @@ class ExpenseEditorViewModel(
 
     private suspend fun save() {
         val state = currentState
-        if (!state.check.canSave) return
+        if (!state.check.canSave || state.readOnly) return
         if (saveExpense(groupId, expenseId, state.draft, state.baseCurrency, state.members)) {
             updateState { it.copy(done = true) }
         }

@@ -29,6 +29,25 @@ service cloud.firestore {
     function isAmount(v) { return v is int && v > 0 && v <= 1000000000000; }
     function isRate(v) { return v is int && v > 0 && v <= 900000000000000; }
     function isMemberMap(m) { return m is map && m.size() > 0 && m.size() <= 50; }
+    function memberPath(groupId, memberId) {
+      return /databases/$(database)/documents/groups/$(groupId)/members/$(memberId);
+    }
+    // The admin of a group (docs/designs/2026-11-03-group-admin.md): the member `adminMemberId` when the
+    // group has one (and that member exists), otherwise the creator. [g] is the group's data.
+    function isAdminIn(groupId, g) {
+      let adminId = g.get('adminMemberId', null);
+      return signedIn() && ((adminId == null || !(adminId is string))
+        ? g.createdBy == uid()
+        : (exists(memberPath(groupId, adminId))
+          ? get(memberPath(groupId, adminId)).data.userUid == uid()
+          : g.createdBy == uid()));
+    }
+    function isAdmin(groupId) { return isAdminIn(groupId, group(groupId).data); }
+    // [memberId] is the author member: only called once its userUid is known to be the caller.
+    function isAdminMemberId(groupId, memberId) {
+      let g = group(groupId).data;
+      return g.get('adminMemberId', null) != null ? memberId == g.adminMemberId : g.createdBy == uid();
+    }
     function isMeta(d) { return d.version is int && d.updatedBy is string && d.deleted is bool; }
 
     // ── Users ────────────────────────────────────────────────────────────────
@@ -41,7 +60,8 @@ service cloud.firestore {
       function validGroup() {
         return data().keys().hasOnly(['name', 'icon', 'accent', 'baseCurrency', 'startDate', 'endDate',
             'inviteCode', 'memberUids', 'archivedBy', 'createdBy', 'createdAt', 'lastJoinCode',
-            'version', 'updatedAt', 'updatedBy', 'deleted'])
+            'adminMemberId', 'version', 'updatedAt', 'updatedBy', 'deleted'])
+          && isOptText(data().get('adminMemberId', null), 100)
           && isText(data().name, 1, 60) && isText(data().icon, 1, 40) && isText(data().accent, 1, 20)
           && isCurrency(data().baseCurrency) && isOptDate(data().startDate) && isOptDate(data().endDate)
           && data().inviteCode is string && data().inviteCode.size() == 8
@@ -54,16 +74,51 @@ service cloud.firestore {
         let after = data().archivedBy.toSet();
         return after.difference(before).hasOnly([uid()]) && before.difference(after).hasOnly([uid()]);
       }
+      function sameAdmin() {
+        return data().get('adminMemberId', null) == resource.data.get('adminMemberId', null);
+      }
+      // Handing over: the new admin is an existing, non-deleted member that belongs to a member of the group.
+      function handoverOk() {
+        let to = data().get('adminMemberId', null);
+        return to == null || (to is string && exists(memberPath(groupId, to))
+          && !get(memberPath(groupId, to)).data.deleted
+          && get(memberPath(groupId, to)).data.userUid is string
+          && get(memberPath(groupId, to)).data.userUid in resource.data.memberUids);
+      }
+      // Handing over while leaving: to somebody else, never to nobody.
+      function handoverOnLeaveOk() {
+        let to = data().get('adminMemberId', null);
+        return to is string && handoverOk() && get(memberPath(groupId, to)).data.userUid != uid();
+      }
+      // Everybody: only their own archive flag. The settings, the invite code and the admin: the admin.
+      function ownArchiveOnly() {
+        return sameAdmin() && changedKeys().hasOnly(['archivedBy', 'adminMemberId', 'version', 'updatedAt', 'updatedBy']);
+      }
       function editAsMember() {
-        return uid() in resource.data.memberUids && validGroup() && nextVersion()
+        return uid() in resource.data.memberUids && nextVersion()
           && !changedKeys().hasAny(['createdBy', 'createdAt', 'lastJoinCode'])
           && data().memberUids == resource.data.memberUids
-          && archiveIsOwn();
+          && archiveIsOwn()
+          && (ownArchiveOnly() || (isAdminIn(groupId, resource.data) && (sameAdmin() || handoverOk())))
+          && validGroup();
+      }
+      // An old group whose creator left has no admin: any member can take the role for their own member.
+      function claimAdmin() {
+        let to = data().get('adminMemberId', null);
+        return uid() in resource.data.memberUids
+          && !(resource.data.createdBy in resource.data.memberUids)
+          && resource.data.get('adminMemberId', null) == null
+          && changedKeys().hasOnly(['adminMemberId', 'version', 'updatedAt', 'updatedBy'])
+          && nextVersion() && validGroup()
+          && to is string && exists(memberPath(groupId, to))
+          && !get(memberPath(groupId, to)).data.deleted
+          && get(memberPath(groupId, to)).data.userUid == uid();
       }
       function leave() {
         return uid() in resource.data.memberUids && nextVersion()
-          && changedKeys().hasOnly(['memberUids', 'version', 'updatedAt', 'updatedBy'])
-          && data().memberUids.toSet() == resource.data.memberUids.toSet().difference([uid()].toSet());
+          && changedKeys().hasOnly(['memberUids', 'adminMemberId', 'version', 'updatedAt', 'updatedBy'])
+          && data().memberUids.toSet() == resource.data.memberUids.toSet().difference([uid()].toSet())
+          && (sameAdmin() || (isAdminIn(groupId, resource.data) && handoverOnLeaveOk()));
       }
       // Written with arrayUnion/increment/serverTimestamp: the joiner cannot read the group.
       function join() {
@@ -77,14 +132,16 @@ service cloud.firestore {
       allow read: if signedIn() && uid() in resource.data.memberUids;
       allow create: if signedIn() && validGroup() && created()
         && data().memberUids == [uid()] && data().createdBy == uid() && data().archivedBy == [];
-      allow update: if signedIn() && (editAsMember() || leave() || join());
+      allow update: if signedIn() && (editAsMember() || leave() || join() || claimAdmin());
       allow delete: if false;
 
       // ── Members ────────────────────────────────────────────────────────────
       match /members/{memberId} {
         function validMember() {
           return data().keys().hasOnly(['name', 'avatar', 'defaultWeight', 'userUid', 'active', 'sortKey',
-              'version', 'updatedAt', 'updatedBy', 'deleted', 'payMethods', 'pastUids', 'linked'])
+              'version', 'updatedAt', 'updatedBy', 'deleted', 'payMethods', 'pastUids', 'linked',
+              'deniedPermissions'])
+            && isDenied(data().get('deniedPermissions', []))
             && isText(data().name, 1, 40) && isOptText(data().avatar, 300)
             && data().defaultWeight is int && data().defaultWeight >= 1 && data().defaultWeight <= 100
             && (data().userUid == null || data().userUid is string)
@@ -92,6 +149,19 @@ service cloud.firestore {
             && isPayMethods(data().get('payMethods', null))
             && data().get('pastUids', []) is list && data().get('pastUids', []).size() <= 20
             && data().get('linked', false) is bool;
+        }
+        function isDenied(v) {
+          return v is list && v.size() <= 3 && v.hasOnly(['ADD_EXPENSES', 'EDIT_EXPENSES', 'RECORD_PAYMENTS']);
+        }
+        function sameDenied() {
+          return data().get('deniedPermissions', []) == resource.data.get('deniedPermissions', []);
+        }
+        function ownMember() { return resource.data.userUid == uid() || data().userUid == uid(); }
+        // What anybody may change on a member: the personal fields, the claim and release, and the name of their own.
+        function personalEdit() {
+          return changedKeys().hasOnly(['name', 'avatar', 'payMethods', 'linked', 'userUid', 'pastUids',
+              'deniedPermissions', 'version', 'updatedAt', 'updatedBy'])
+            && sameDenied() && (!changedKeys().hasAny(['name', 'avatar']) || ownMember());
         }
         // How to pay someone: only they publish it (on their own member); anyone may clear it.
         function isPayMethods(p) {
@@ -132,9 +202,10 @@ service cloud.firestore {
           && (data().userUid == null || data().userUid == uid())
           && (data().get('payMethods', null) == null || data().userUid == uid())
           && data().get('pastUids', []).size() == 0
-          && (data().get('linked', false) == false || data().userUid == uid());
+          && (data().get('linked', false) == false || data().userUid == uid())
+          && ((data().userUid == uid() && data().get('deniedPermissions', []).size() == 0) || isAdmin(groupId));
         allow update: if isMemberOf(groupId) && validMember() && nextVersion() && claimIsOwn()
-          && payMethodsAreOwn() && pastUidsAreOwn() && linkedIsOwn();
+          && payMethodsAreOwn() && pastUidsAreOwn() && linkedIsOwn() && (personalEdit() || isAdmin(groupId));
         allow delete: if false;
       }
 
@@ -145,7 +216,8 @@ service cloud.firestore {
         function validExpense() {
           return data().keys().hasOnly(['title', 'category', 'note', 'date', 'currency', 'amountMinor',
               'fxRateScaled', 'payers', 'splitType', 'splitValues', 'receiptUrl', 'recurrenceId',
-              'createdBy', 'createdAt', 'version', 'updatedAt', 'updatedBy', 'deleted'])
+              'createdBy', 'createdAt', 'byMember', 'version', 'updatedAt', 'updatedBy', 'deleted'])
+            && isOptText(data().get('byMember', null), 100)
             && isText(data().title, 1, 80)
             && data().category in ['FOOD', 'GROCERIES', 'TRANSPORT', 'ACCOMMODATION', 'LEISURE', 'SHOPPING',
               'HOME', 'UTILITIES', 'HEALTH', 'GIFTS', 'OTHER']
@@ -156,10 +228,20 @@ service cloud.firestore {
             && isOptText(data().receiptUrl, 500) && isOptText(data().recurrenceId, 100) && isMeta(data());
         }
 
+        // `byMember` (new clients) is the member that acts: it must be the caller's and not lack [flag].
+        // The admin has every flag. Absent or null (old clients): not checked.
+        function actorOk(flag) {
+          let by = data().get('byMember', null);
+          return by == null || (by is string && get(memberPath(groupId, by)).data.userUid == uid()
+            && (isAdminMemberId(groupId, by)
+              || !(flag in get(memberPath(groupId, by)).data.get('deniedPermissions', []))));
+        }
+
         allow read: if isMemberOf(groupId);
-        allow create: if isMemberOf(groupId) && validExpense() && created() && data().createdBy == uid();
+        allow create: if isMemberOf(groupId) && validExpense() && created() && data().createdBy == uid()
+          && actorOk('ADD_EXPENSES');
         allow update: if isMemberOf(groupId) && validExpense() && nextVersion()
-          && !changedKeys().hasAny(['createdBy', 'createdAt']);
+          && !changedKeys().hasAny(['createdBy', 'createdAt']) && actorOk('EDIT_EXPENSES');
         allow delete: if false;
       }
 
@@ -167,17 +249,29 @@ service cloud.firestore {
       match /transfers/{transferId} {
         function validTransfer() {
           return data().keys().hasOnly(['fromMemberId', 'toMemberId', 'amountMinor', 'currency', 'fxRateScaled',
-              'date', 'note', 'createdBy', 'createdAt', 'version', 'updatedAt', 'updatedBy', 'deleted'])
+              'date', 'note', 'createdBy', 'createdAt', 'byMember', 'version', 'updatedAt', 'updatedBy', 'deleted'])
+            && isOptText(data().get('byMember', null), 100)
             && data().fromMemberId is string && data().toMemberId is string
             && data().fromMemberId != data().toMemberId
             && isAmount(data().amountMinor) && isCurrency(data().currency) && isRate(data().fxRateScaled)
             && isDate(data().date) && isOptText(data().note, 500) && isMeta(data());
         }
 
+        // Same as for expenses; besides, a non-admin records only payments in which they are payer or receiver.
+        function actorOk() {
+          let by = data().get('byMember', null);
+          return by == null || (by is string && get(memberPath(groupId, by)).data.userUid == uid()
+            && (isAdminMemberId(groupId, by)
+              || (!('RECORD_PAYMENTS' in get(memberPath(groupId, by)).data.get('deniedPermissions', []))
+                && (by == data().fromMemberId || by == data().toMemberId))));
+        }
+
         allow read: if isMemberOf(groupId);
-        allow create: if isMemberOf(groupId) && validTransfer() && created() && data().createdBy == uid();
+        allow create: if isMemberOf(groupId) && validTransfer() && created() && data().createdBy == uid()
+          && actorOk();
         allow update: if isMemberOf(groupId) && validTransfer() && nextVersion()
-          && !changedKeys().hasAny(['createdBy', 'createdAt', 'fromMemberId', 'toMemberId', 'amountMinor']);
+          && !changedKeys().hasAny(['createdBy', 'createdAt', 'fromMemberId', 'toMemberId', 'amountMinor'])
+          && actorOk();
         allow delete: if false;
       }
 

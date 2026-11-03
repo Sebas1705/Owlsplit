@@ -53,15 +53,24 @@ class TransferRepositoryImpl(
         }
     }
 
-    private fun save(transfer: Transfer, old: Transfer?, action: ChangeAction) {
-        db.transferEntityQueries.upsert(transfer.toRow())
-        writer.enqueue(
-            transfer.groupId,
-            OutboxType.TRANSFER,
-            transfer.id,
-            old?.meta?.serverVersion ?: 0,
-            json.encodeToString(Transfer.serializer(), transfer),
-        )
-        writer.log(transfer.groupId, EntityType.TRANSFER, transfer.id, action, emptyList())
+    private fun save(recorded: Transfer, old: Transfer?, action: ChangeAction) = save(db, writer, recorded, old, action)
+
+    internal companion object {
+        /** Every payment of the group, deleted ones included. */
+        fun all(db: AppDatabase, groupId: String): List<Transfer> =
+            db.transferEntityQueries.selectAllByGroup(groupId).executeAsList().map { it.toModel() }
+
+        fun save(db: AppDatabase, writer: Writer, recorded: Transfer, old: Transfer?, action: ChangeAction) {
+            val transfer = recorded.copy(byMember = writer.myMemberId(recorded.groupId))
+            db.transferEntityQueries.upsert(transfer.toRow())
+            writer.enqueue(
+                transfer.groupId,
+                OutboxType.TRANSFER,
+                transfer.id,
+                old?.meta?.serverVersion ?: 0,
+                json.encodeToString(Transfer.serializer(), transfer),
+            )
+            writer.log(transfer.groupId, EntityType.TRANSFER, transfer.id, action, emptyList())
+        }
     }
 }

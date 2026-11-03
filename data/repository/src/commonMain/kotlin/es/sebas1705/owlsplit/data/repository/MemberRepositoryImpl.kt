@@ -6,10 +6,13 @@ import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import es.sebas1705.owlsplit.data.local.db.AppDatabase
 import es.sebas1705.owlsplit.data.models.ChangeAction
+import es.sebas1705.owlsplit.data.models.FieldChange
+import es.sebas1705.owlsplit.data.models.MemberMerge
 import es.sebas1705.owlsplit.data.models.EntityType
 import es.sebas1705.owlsplit.data.models.Member
 import es.sebas1705.owlsplit.data.models.OutboxType
 import es.sebas1705.owlsplit.data.models.PayMethods
+import es.sebas1705.owlsplit.data.models.Permission
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -46,12 +49,66 @@ class MemberRepositoryImpl(
 
     override suspend fun setActive(id: String, active: Boolean) = edit(id) { it.copy(active = active) }
 
+    override suspend fun setDeniedPermissions(id: String, denied: Set<Permission>) =
+        edit(id) { it.copy(deniedPermissions = denied) }
+
     override suspend fun deleteIfUnused(id: String): Boolean = withContext(io) {
         db.transactionWithResult {
             if (db.memberEntityQueries.countMovements(id).executeAsOne() > 0) return@transactionWithResult false
             val old = requireMember(id)
             save(db, writer, old.copy(meta = writer.editedMeta(old.meta, deleted = true)), old, ChangeAction.DELETED)
             true
+        }
+    }
+
+    override suspend fun merge(absorbedId: String, intoId: String): String? = withContext(io) {
+        db.transactionWithResult {
+            val first = requireMember(absorbedId)
+            val second = requireMember(intoId)
+            val (kept, absorbed) = MemberMerge.plan(first, second) ?: return@transactionWithResult null
+            // Movements first and the member last: an upload cut halfway never leaves one naming a deleted member.
+            ExpenseRepositoryImpl.all(db, kept.groupId).forEach { old ->
+                MemberMerge.expense(old, absorbed.id, kept.id)?.let {
+                    ExpenseRepositoryImpl.save(
+                        db,
+                        writer,
+                        it.copy(meta = writer.editedMeta(old.meta)),
+                        old,
+                        ChangeAction.UPDATED
+                    )
+                }
+            }
+            TransferRepositoryImpl.all(db, kept.groupId).forEach { old ->
+                val moved = MemberMerge.transfer(old, absorbed.id, kept.id) ?: return@forEach
+                // A payment between the two disappears: it was somebody paying themselves.
+                val gone = moved.fromMemberId == moved.toMemberId
+                val meta = writer.editedMeta(old.meta, deleted = old.meta.deleted || gone)
+                TransferRepositoryImpl.save(db, writer, moved.copy(meta = meta), old, ChangeAction.UPDATED)
+            }
+            save(
+                db,
+                writer,
+                MemberMerge.merged(kept, absorbed).copy(meta = writer.editedMeta(kept.meta)),
+                kept,
+                ChangeAction.UPDATED
+            )
+            val gone = absorbed.copy(meta = writer.editedMeta(absorbed.meta, deleted = true))
+            db.memberEntityQueries.upsert(gone.toRow())
+            writer.enqueue(
+                gone.groupId,
+                OutboxType.MEMBER,
+                gone.id,
+                absorbed.meta.serverVersion,
+                json.encodeToString(Member.serializer(), gone)
+            )
+            writer.log(
+                gone.groupId,
+                EntityType.MEMBER,
+                gone.id,
+                ChangeAction.DELETED,
+                Diffs.member(absorbed, gone) + FieldChange("mergedInto", null, kept.id),
+            )
+            kept.id
         }
     }
 

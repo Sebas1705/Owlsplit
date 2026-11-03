@@ -225,4 +225,21 @@
         <item quantity="one">%1$d pago</item>
         <item quantity="other">%1$d pagos</item>
     </plurals>
+    <string name="admin_badge">Admin</string>
+    <string name="admin_only_hint">Solo %1$s, quien administra el grupo, puede añadir o cambiar personas.</string>
+    <string name="take_over_group">Hacerme cargo del grupo</string>
+    <string name="take_over_body">Nadie administra ya este grupo. Hazte cargo para gestionar a sus miembros.</string>
+    <string name="permissions_title">Qué puede hacer</string>
+    <string name="perm_add_expenses">Añadir gastos</string>
+    <string name="perm_edit_expenses">Editar y borrar gastos</string>
+    <string name="perm_record_payments">Registrar pagos</string>
+    <string name="make_admin">Hacer admin</string>
+    <string name="make_admin_hint">Pasará a gestionar el grupo en lugar de ti.</string>
+    <string name="merge_member">Fusionar con otra persona…</string>
+    <string name="merge_title">Fusionar a %1$s con…</string>
+    <string name="merge_body">Elige quién es en realidad. Sus gastos y pagos pasan a esa persona y %1$s desaparece del grupo.</string>
+    <string name="merge_none">No hay nadie con quien fusionar a %1$s: dos personas con cuenta no se pueden fusionar.</string>
+    <string name="merge_confirm_title">¿Fusionar a %1$s con %2$s?</string>
+    <string name="merge_confirm_body">Todos los gastos y pagos de %1$s pasan a ser de %2$s. No se puede deshacer.</string>
+    <string name="merge_action">Fusionar</string>
 </resources>

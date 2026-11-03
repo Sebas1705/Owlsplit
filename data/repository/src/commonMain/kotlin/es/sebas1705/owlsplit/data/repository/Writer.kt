@@ -20,6 +20,10 @@ internal class Writer(private val db: AppDatabase, private val ctx: RepositoryCo
 
     fun newId(): String = ctx.ids.newId()
 
+    /** My member in [groupId]: the author the rules check a movement against. */
+    fun myMemberId(groupId: String): String? =
+        db.memberEntityQueries.selectByUser(uid()).executeAsList().firstOrNull { it.group_id == groupId }?.id
+
     fun newInviteCode(): String = ctx.inviteCodes.newCode()
 
     /** Metadata of a brand-new document. */

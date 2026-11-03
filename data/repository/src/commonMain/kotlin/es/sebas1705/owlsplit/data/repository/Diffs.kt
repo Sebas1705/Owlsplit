@@ -4,6 +4,7 @@ import es.sebas1705.owlsplit.data.models.Expense
 import es.sebas1705.owlsplit.data.models.FieldChange
 import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.data.models.Member
+import es.sebas1705.owlsplit.data.models.Permission
 
 /** Raw before/after values; the UI formats them (amounts with their currency, dates, names). */
 internal object Diffs {
@@ -12,6 +13,8 @@ internal object Diffs {
         val a = after?.let(::render)
         if (b != a) add(FieldChange(name, b, a))
     }
+
+    private fun Set<Permission>.names(): String? = sorted().joinToString(",").ifEmpty { null }
 
     private fun render(value: Any): String = when (value) {
         is Map<*, *> -> value.entries.sortedBy { it.key.toString() }.joinToString(",") { "${it.key}=${it.value}" }
@@ -38,6 +41,7 @@ internal object Diffs {
         field("baseCurrency", old?.baseCurrency, new.baseCurrency)
         field("startDate", old?.startDate, new.startDate)
         field("endDate", old?.endDate, new.endDate)
+        if (old != null) field("adminMemberId", old.adminMemberId, new.adminMemberId)
     }
 
     fun member(old: Member?, new: Member): List<FieldChange> = buildList {
@@ -47,6 +51,7 @@ internal object Diffs {
         // Who the member is (the uid already in every entry's author): lets the history name the
         // author of old entries after they leave, and tell "left the group" from an edit.
         field(USER_UID, old?.userUid, new.userUid)
+        if (old != null) field("deniedPermissions", old.deniedPermissions.names(), new.deniedPermissions.names())
     }
 
     const val USER_UID = "userUid"

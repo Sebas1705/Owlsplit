@@ -8,6 +8,7 @@ import es.sebas1705.owlsplit.data.local.db.AppDatabase
 import es.sebas1705.owlsplit.data.models.ChangeAction
 import es.sebas1705.owlsplit.data.models.EntityType
 import es.sebas1705.owlsplit.data.models.Group
+import es.sebas1705.owlsplit.data.models.GroupRoles
 import es.sebas1705.owlsplit.data.models.Member
 import es.sebas1705.owlsplit.data.models.OutboxType
 import kotlinx.coroutines.CoroutineDispatcher
@@ -30,15 +31,18 @@ class GroupRepositoryImpl(
 
     override suspend fun create(input: GroupInput, creatorName: String): String = withContext(io) {
         db.transactionWithResult {
+            val groupId = writer.newId()
+            val memberId = writer.newId()
             val group = Group(
-                id = writer.newId(), name = input.name, icon = input.icon, accent = input.accent,
+                id = groupId, name = input.name, icon = input.icon, accent = input.accent,
                 baseCurrency = input.baseCurrency, startDate = input.startDate, endDate = input.endDate,
                 inviteCode = writer.newInviteCode(), memberUids = listOf(writer.uid()), archivedBy = emptyList(),
                 createdBy = writer.uid(), createdAt = writer.now(), meta = writer.createdMeta(),
+                adminMemberId = memberId,
             )
             save(group, old = null, action = ChangeAction.CREATED)
             val member = Member(
-                id = writer.newId(), groupId = group.id, name = creatorName, avatar = null, defaultWeight = 1,
+                id = memberId, groupId = group.id, name = creatorName, avatar = null, defaultWeight = 1,
                 userUid = writer.uid(), active = true, sortKey = 0, meta = writer.createdMeta(),
             )
             MemberRepositoryImpl.save(db, writer, member, old = null, action = ChangeAction.CREATED)
@@ -76,6 +80,19 @@ class GroupRepositoryImpl(
         }
     }
 
+    override suspend fun setAdmin(id: String, memberId: String) = withContext(io) {
+        db.transaction {
+            val old = requireGroup(id)
+            if (old.adminMemberId != memberId) {
+                save(
+                    old.copy(adminMemberId = memberId, meta = writer.editedMeta(old.meta)),
+                    old,
+                    ChangeAction.UPDATED
+                )
+            }
+        }
+    }
+
     override suspend fun regenerateInviteCode(id: String) = withContext(io) {
         db.transaction {
             val old = requireGroup(id)
@@ -89,10 +106,10 @@ class GroupRepositoryImpl(
     override suspend fun leave(id: String) = withContext(io) {
         db.transaction {
             val me = writer.uid()
+            val members = db.memberEntityQueries.selectVisibleByGroup(id).executeAsList().map { it.toModel() }
             // First release my member (it stays as a ghost, the accounts do not change, and how to pay
             // me goes with me)...
-            db.memberEntityQueries.selectVisibleByGroup(id).executeAsList().map { it.toModel() }
-                .filter { it.userUid == me }
+            members.filter { it.userUid == me }
                 .forEach { old ->
                     val new = old.copy(
                         userUid = null,
@@ -106,7 +123,13 @@ class GroupRepositoryImpl(
             // ...then leave. No history entry: once out, the group can no longer be written.
             val old = requireGroup(id)
             if (me in old.memberUids) {
-                val new = old.copy(memberUids = old.memberUids - me, meta = writer.editedMeta(old.meta))
+                // The admin hands the group over in the same write, to the oldest member with an account.
+                val heir = GroupRoles.successor(members, me).takeIf { GroupRoles.isAdmin(old, members, me) }
+                val new = old.copy(
+                    memberUids = old.memberUids - me,
+                    adminMemberId = heir?.id ?: old.adminMemberId,
+                    meta = writer.editedMeta(old.meta),
+                )
                 db.groupEntityQueries.upsert(new.toRow())
                 writer.enqueue(new.id, OutboxType.GROUP, new.id, old.meta.serverVersion, payload(new), last = true)
             }

@@ -6,9 +6,12 @@ import es.sebas1705.owlsplit.data.models.Expense
 import es.sebas1705.owlsplit.data.models.ExpenseInput
 import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.data.models.GroupInput
+import es.sebas1705.owlsplit.data.models.GroupRoles
 import es.sebas1705.owlsplit.data.models.Member
 import es.sebas1705.owlsplit.data.models.PayMethods
+import es.sebas1705.owlsplit.data.models.Permission
 import es.sebas1705.owlsplit.data.models.MemberInput
+import es.sebas1705.owlsplit.data.models.MemberMerge
 import es.sebas1705.owlsplit.data.models.SyncMeta
 import es.sebas1705.owlsplit.data.models.SyncState
 import es.sebas1705.owlsplit.data.models.Transfer
@@ -48,12 +51,14 @@ class InMemoryLedger(var uid: String = "uid-ana") {
         override fun observeGroup(id: String): Flow<Group?> = groupList.map { list -> list.firstOrNull { it.id == id } }
 
         override suspend fun create(input: GroupInput, creatorName: String): String {
+            val groupId = id("g")
+            val memberId = id("m")
             val group = Group(
-                id("g"), input.name, input.icon, input.accent, input.baseCurrency, input.startDate, input.endDate,
-                "ABCDEFGH", listOf(uid), emptyList(), uid, now(), meta(),
+                groupId, input.name, input.icon, input.accent, input.baseCurrency, input.startDate, input.endDate,
+                "ABCDEFGH", listOf(uid), emptyList(), uid, now(), meta(), adminMemberId = memberId,
             )
             groupList.update { it + group }
-            memberList.update { it + Member(id("m"), group.id, creatorName, null, 1, uid, true, 0, meta()) }
+            memberList.update { it + Member(memberId, group.id, creatorName, null, 1, uid, true, 0, meta()) }
             return group.id
         }
 
@@ -72,11 +77,18 @@ class InMemoryLedger(var uid: String = "uid-ana") {
             it.copy(archivedBy = if (archived) it.archivedBy + uid else it.archivedBy - uid)
         }
 
+        override suspend fun setAdmin(id: String, memberId: String) = editGroup(
+            id
+        ) { it.copy(adminMemberId = memberId) }
+
         override suspend fun regenerateInviteCode(id: String) = editGroup(id) {
             it.copy(inviteCode = "ZXCVBNM" + "23456789"[++next % 8])
         }
 
         override suspend fun leave(id: String) {
+            val members = memberList.value.filter { it.groupId == id }
+            val group = groupList.value.first { it.id == id }
+            val heir = GroupRoles.successor(members, uid).takeIf { GroupRoles.isAdmin(group, members, uid) }
             val mine = { m: Member -> m.groupId == id && m.userUid == uid }
             memberList.update { list ->
                 list.map {
@@ -92,10 +104,11 @@ class InMemoryLedger(var uid: String = "uid-ana") {
                     }
                 }
             }
-            editGroup(id) { it.copy(memberUids = it.memberUids - uid) }
+            editGroup(id) { it.copy(memberUids = it.memberUids - uid, adminMemberId = heir?.id ?: it.adminMemberId) }
         }
     }
 
+    @Suppress("TooManyFunctions") // One per repository operation.
     val members: MemberRepository = object : MemberRepository {
         override fun observeMembers(groupId: String): Flow<List<Member>> =
             memberList.map { list -> list.filter { it.groupId == groupId && !it.meta.deleted }.sortedBy { it.sortKey } }
@@ -112,6 +125,38 @@ class InMemoryLedger(var uid: String = "uid-ana") {
             editMember(id) { it.copy(name = input.name, avatar = input.avatar, defaultWeight = input.defaultWeight) }
 
         override suspend fun setActive(id: String, active: Boolean) = editMember(id) { it.copy(active = active) }
+
+        override suspend fun setDeniedPermissions(id: String, denied: Set<Permission>) =
+            editMember(id) { it.copy(deniedPermissions = denied) }
+
+        override suspend fun merge(absorbedId: String, intoId: String): String? {
+            val list = memberList.value
+            val (kept, absorbed) = MemberMerge.plan(list.first { it.id == absorbedId }, list.first { it.id == intoId })
+                ?: return null
+            expenseList.update { all -> all.map { MemberMerge.expense(it, absorbed.id, kept.id) ?: it } }
+            transferList.update { all ->
+                all.map { old ->
+                    val moved = MemberMerge.transfer(old, absorbed.id, kept.id) ?: return@map old
+                    if (moved.fromMemberId == moved.toMemberId) {
+                        moved.copy(
+                            meta = moved.meta.copy(deleted = true)
+                        )
+                    } else {
+                        moved
+                    }
+                }
+            }
+            memberList.update { all ->
+                all.mapNotNull {
+                    when (it.id) {
+                        kept.id -> MemberMerge.merged(kept, absorbed)
+                        absorbed.id -> it.copy(meta = it.meta.copy(deleted = true))
+                        else -> it
+                    }
+                }
+            }
+            return kept.id
+        }
 
         override suspend fun claim(id: String) = editMember(id) { it.copy(userUid = uid, active = true) }
 
@@ -148,7 +193,7 @@ class InMemoryLedger(var uid: String = "uid-ana") {
             val expense = Expense(
                 id ?: id("e"), groupId, input.title, input.category, input.note, input.date, input.currency,
                 input.amountMinor, input.fxRateScaled, input.payers, input.splitType, input.splitValues,
-                null, input.recurrenceId, uid, now(), meta(),
+                null, input.recurrenceId, uid, now(), meta(), byMember = mine(groupId),
             )
             expenseList.update { it + expense }
             return expense.id
@@ -174,7 +219,7 @@ class InMemoryLedger(var uid: String = "uid-ana") {
         override suspend fun create(groupId: String, input: TransferInput): String {
             val transfer = Transfer(
                 id("t"), groupId, input.fromMemberId, input.toMemberId, input.amountMinor, input.currency,
-                input.fxRateScaled, input.date, input.note, uid, now(), meta(),
+                input.fxRateScaled, input.date, input.note, uid, now(), meta(), byMember = mine(groupId),
             )
             transferList.update { it + transfer }
             return transfer.id
@@ -190,6 +235,9 @@ class InMemoryLedger(var uid: String = "uid-ana") {
         ): Flow<List<ChangeLogEntry>> = log.map { list -> list.filter { it.groupId == groupId } }
         override fun observeRecent(limit: Long): Flow<List<ChangeLogEntry>> = log.map { it.take(limit.toInt()) }
     }
+
+    private fun mine(groupId: String): String? =
+        memberList.value.firstOrNull { it.groupId == groupId && it.userUid == uid }?.id
 
     private fun editGroup(id: String, change: (Group) -> Group) =
         groupList.update { list -> list.map { if (it.id == id) change(it) else it } }

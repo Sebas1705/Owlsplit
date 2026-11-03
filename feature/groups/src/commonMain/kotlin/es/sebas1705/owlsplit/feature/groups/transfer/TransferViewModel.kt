@@ -24,9 +24,12 @@ data class TransferState(
     /** Asking "has it really been paid?" before recording. */
     val confirming: Boolean = false,
     val done: Boolean = false,
+    /** Only the admin records payments between other people: anyone else takes part in theirs. */
+    val isAdmin: Boolean = true,
 ) : MVIBaseState {
     val sameMember: Boolean get() = fromId != null && fromId == toId
-    val canSave: Boolean get() = fromId != null && toId != null && !sameMember && amountMinor > 0
+    private val allowed: Boolean get() = isAdmin || (myMemberId != null && myMemberId in listOf(fromId, toId))
+    val canSave: Boolean get() = fromId != null && toId != null && !sameMember && amountMinor > 0 && allowed
 }
 
 sealed interface TransferIntent : MVIBaseIntent {
@@ -59,6 +62,7 @@ class TransferViewModel(
                     currency = detail.group.baseCurrency,
                     members = active,
                     myMemberId = detail.myMemberId,
+                    isAdmin = detail.isAdmin,
                     fromId = from,
                     toId = active.firstOrNull { m -> m.id != from }?.id,
                 )
@@ -68,8 +72,24 @@ class TransferViewModel(
 
     override fun intentHandler(intent: TransferIntent): Job = execute {
         when (intent) {
-            is TransferIntent.FromChanged -> updateState { it.copy(fromId = intent.memberId) }
-            is TransferIntent.ToChanged -> updateState { it.copy(toId = intent.memberId) }
+            is TransferIntent.FromChanged -> updateState {
+                if (it.isAdmin || intent.memberId == it.myMemberId) {
+                    it.copy(
+                        fromId = intent.memberId
+                    )
+                } else {
+                    it.copy(fromId = intent.memberId, toId = it.myMemberId)
+                }
+            }
+            is TransferIntent.ToChanged -> updateState {
+                if (it.isAdmin || intent.memberId == it.myMemberId) {
+                    it.copy(
+                        toId = intent.memberId
+                    )
+                } else {
+                    it.copy(toId = intent.memberId, fromId = it.myMemberId)
+                }
+            }
             is TransferIntent.AmountChanged -> updateState { state ->
                 val minor = parseDecimal(intent.text, Currency.of(state.currency).decimals) ?: return@updateState state
                 state.copy(amountText = intent.text, amountMinor = minor)

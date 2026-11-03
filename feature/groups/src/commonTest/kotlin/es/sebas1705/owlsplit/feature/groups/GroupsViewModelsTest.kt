@@ -12,8 +12,10 @@ import es.sebas1705.owlsplit.domain.usecases.account.ObserveAccount
 import es.sebas1705.owlsplit.domain.usecases.balances.ObserveGroupBalances
 import es.sebas1705.owlsplit.domain.usecases.expenses.ExpenseDrafts
 import es.sebas1705.owlsplit.domain.usecases.expenses.SaveExpense
+import es.sebas1705.owlsplit.data.models.Permission
 import es.sebas1705.owlsplit.domain.usecases.groups.DeleteTransfer
 import es.sebas1705.owlsplit.domain.usecases.groups.GroupActions
+import es.sebas1705.owlsplit.domain.usecases.groups.GroupAdmin
 import es.sebas1705.owlsplit.domain.usecases.groups.MemberActions
 import es.sebas1705.owlsplit.domain.usecases.groups.ObserveGroupDetail
 import es.sebas1705.owlsplit.domain.usecases.groups.RecordTransfer
@@ -204,7 +206,7 @@ class GroupsViewModelsTest {
     @Test
     fun membersAreAddedEditedAndDeactivatedWhenInUse() = runTest {
         val g = dinnerGroup()
-        val vm = MembersViewModel(g, detail, memberActions)
+        val vm = MembersViewModel(g, detail, memberActions, GroupAdmin(ledger.groups, ledger.members, accounts))
         vm.onEvent(MembersIntent.Add)
         vm.onEvent(MembersIntent.NameChanged("Marta"))
         vm.onEvent(MembersIntent.WeightChanged(2))
@@ -228,6 +230,53 @@ class GroupsViewModelsTest {
         assertTrue(vm.uiState.value.form!!.isMe)
         vm.onEvent(MembersIntent.ActiveChanged(false))
         assertTrue(vm.uiState.value.form!!.active)
+    }
+
+    @Test
+    fun onlyTheAdminManagesPeopleAndTheyCanMergeAndRestrict() = runTest {
+        val g = dinnerGroup()
+        val vm = MembersViewModel(g, detail, memberActions, GroupAdmin(ledger.groups, ledger.members, accounts))
+        assertTrue(vm.uiState.value.isAdmin)
+        val luis = vm.uiState.value.members.first { it.name == "Luis" }
+
+        vm.onEvent(MembersIntent.Edit(luis))
+        vm.onEvent(MembersIntent.PermissionChanged(Permission.ADD_EXPENSES, allowed = false))
+        assertEquals(
+            setOf(Permission.ADD_EXPENSES),
+            vm.uiState.value.members.first { it.id == luis.id }.deniedPermissions
+        )
+
+        vm.onEvent(MembersIntent.StartMerge)
+        assertEquals(luis.id, vm.uiState.value.merge?.absorbed?.id)
+        val ana = vm.uiState.value.members.first { it.userUid == "uid-ana" }
+        vm.onEvent(MembersIntent.MergeInto(ana))
+        vm.onEvent(MembersIntent.ConfirmMerge)
+        assertNull(vm.uiState.value.merge)
+        assertTrue(vm.uiState.value.members.none { it.name == "Luis" })
+    }
+
+    @Test
+    fun anOrdinaryMemberOnlyRenamesTheirOwnRow() = runTest {
+        val g = dinnerGroup()
+        val luis = ledger.memberList.value.first { it.name == "Luis" }
+        ledger.memberList.value = ledger.memberList.value.map { if (it.id == luis.id) it.copy(userUid = "uid-luis") else it }
+        accounts.session.value = accounts.session.value!!.copy(uid = "uid-luis")
+        val vm = MembersViewModel(g, detail, memberActions, GroupAdmin(ledger.groups, ledger.members, accounts))
+        assertFalse(vm.uiState.value.isAdmin)
+
+        vm.onEvent(MembersIntent.Add)
+        assertNull(vm.uiState.value.form)
+        vm.onEvent(MembersIntent.Edit(vm.uiState.value.members.first { it.userUid == "uid-ana" }))
+        assertNull(vm.uiState.value.form)
+
+        vm.onEvent(MembersIntent.Edit(vm.uiState.value.members.first { it.id == luis.id }))
+        assertTrue(vm.uiState.value.form!!.nameOnly)
+        vm.onEvent(MembersIntent.NameChanged("Luis G"))
+        vm.onEvent(MembersIntent.WeightChanged(5))
+        vm.onEvent(MembersIntent.Save)
+        val saved = vm.uiState.value.members.first { it.id == luis.id }
+        assertEquals("Luis G", saved.name)
+        assertEquals(1, saved.defaultWeight)
     }
 
     @Test

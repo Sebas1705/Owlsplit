@@ -166,7 +166,7 @@ fun ExpenseEditorScreen(
                 color = Owlsplit.colors.textPrimary,
                 modifier = Modifier.weight(1f).semantics { heading() },
             )
-            if (state.editing) {
+            if (state.editing && !state.readOnly) {
                 IconButton(onClick = { onEvent(ExpenseEditorIntent.AskDelete) }) {
                     Icon(TablerIcons.Trash, stringResource(Res.string.delete), tint = Owlsplit.colors.error)
                 }
@@ -186,7 +186,7 @@ fun ExpenseEditorScreen(
                 PrimaryPillButton(
                     stringResource(Res.string.save),
                     { onEvent(ExpenseEditorIntent.Save) },
-                    enabled = state.check.canSave
+                    enabled = state.check.canSave && !state.readOnly
                 )
             }
         }

@@ -143,4 +143,5 @@ class NoGroups : GroupRepository {
     override suspend fun setArchived(id: String, archived: Boolean) = error("unused")
     override suspend fun leave(id: String) = error("unused")
     override suspend fun regenerateInviteCode(id: String) = error("unused")
+    override suspend fun setAdmin(id: String, memberId: String) = error("unused")
 }

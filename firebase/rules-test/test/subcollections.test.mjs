@@ -23,8 +23,10 @@ const path = (p) => `groups/${GROUP}/${p}`;
 const replaced = (by) => ({ version: 2, updatedAt: serverTimestamp(), updatedBy: by });
 
 describe('members', () => {
-  test('a member adds a ghost member', async () => {
-    await assertSucceeds(setDoc(doc(as(env, 'luis'), path('members/m3')),
+  test('the admin adds a ghost member; another member cannot', async () => {
+    await assertSucceeds(setDoc(doc(as(env, 'ana'), path('members/m3')),
+      memberData({ name: 'Zoe', userUid: null, sortKey: 2, ...fresh('ana') })));
+    await assertFails(setDoc(doc(as(env, 'luis'), path('members/m4')),
       memberData({ name: 'Zoe', userUid: null, sortKey: 2, ...fresh('luis') })));
   });
   test('a stranger cannot add members', async () => {
@@ -42,8 +44,9 @@ describe('members', () => {
     await assertSucceeds(updateDoc(doc(as(env, 'ana'), path('members/m1')), { payMethods: pay, ...bump('ana') }));
     await assertFails(updateDoc(doc(as(env, 'luis'), path('members/m1')), { payMethods: { bizum: '699000000' }, ...bump('luis') }));
     await assertFails(updateDoc(doc(as(env, 'luis'), path('members/ghost')), { payMethods: pay, ...bump('luis') }));
-    // Anyone may still edit the rest of the member, and releasing clears them.
-    await assertSucceeds(updateDoc(doc(as(env, 'luis'), path('members/m1')), { name: 'Ana G.', ...bump('luis') }));
+    // Only the admin edits somebody else's name, and releasing clears them.
+    await assertFails(updateDoc(doc(as(env, 'luis'), path('members/m1')), { name: 'Ana G.', ...bump('luis') }));
+    await assertSucceeds(updateDoc(doc(as(env, 'ana'), path('members/m1')), { name: 'Ana G.', ...bump('ana') }));
     await assertSucceeds(updateDoc(doc(as(env, 'ana'), path('members/m1')), { userUid: null, payMethods: null, ...bump('ana') }));
   });
   test('pay methods have a fixed shape', async () => {

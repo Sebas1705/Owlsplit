@@ -88,6 +88,7 @@ import es.sebas1705.owlsplit.feature.groups.resources.balance_even
 import es.sebas1705.owlsplit.feature.groups.resources.balance_owed
 import es.sebas1705.owlsplit.feature.groups.resources.balance_owes
 import es.sebas1705.owlsplit.feature.groups.resources.cancel
+import es.sebas1705.owlsplit.data.models.Permission
 import es.sebas1705.owlsplit.feature.groups.resources.edit_group
 import es.sebas1705.owlsplit.feature.groups.resources.explain_open
 import es.sebas1705.owlsplit.feature.groups.resources.leave
@@ -180,7 +181,9 @@ fun GroupScreen(
         }
         if (state.tab == GroupTab.EXPENSES) {
             BottomActionBar(contentBelow = list.canScrollForward) {
-                PrimaryPillButton(stringResource(Res.string.add_expense), navigation.addExpense)
+                if (state.detail?.can(Permission.ADD_EXPENSES) != false) {
+                    PrimaryPillButton(stringResource(Res.string.add_expense), navigation.addExpense)
+                }
             }
         }
     }
@@ -193,8 +196,10 @@ private fun Actions(detail: GroupDetail, onEvent: (GroupIntent) -> Unit, navigat
     IconButton(onClick = navigation.members) {
         Icon(TablerIcons.Users, stringResource(Res.string.members), tint = Owlsplit.colors.textPrimary)
     }
-    IconButton(onClick = navigation.edit) {
-        Icon(TablerIcons.Pencil, stringResource(Res.string.edit_group), tint = Owlsplit.colors.textPrimary)
+    if (detail.isAdmin) {
+        IconButton(onClick = navigation.edit) {
+            Icon(TablerIcons.Pencil, stringResource(Res.string.edit_group), tint = Owlsplit.colors.textPrimary)
+        }
     }
     Box {
         IconButton(onClick = { menu = true }) {
@@ -367,7 +372,7 @@ private fun LazyListScope.settle(
                         subtitle = stringResource(Res.string.suggestion_step, index + 1, payments.size),
                         actionLabel = stringResource(Res.string.settle),
                         icon = TablerIcons.ArrowsLeftRight,
-                        onAction = { onEvent(GroupIntent.AskSettle(payment)) },
+                        onAction = settleAction(detail, payment, onEvent),
                         secondary = remindAction(payment, detail, currency, format, onEvent),
                     )
                 }
@@ -376,12 +381,8 @@ private fun LazyListScope.settle(
     }
     item { ExplainButton(onEvent) }
     // Pulled back by the button padding: the label lines up with the cards.
-    item {
-        TextActionButton(
-            stringResource(Res.string.record_payment),
-            onRecordPayment,
-            Modifier.offset(x = -Spacing.m)
-        )
+    if (detail.isAdmin || detail.can(Permission.RECORD_PAYMENTS)) {
+        item { RecordPaymentButton(onRecordPayment) }
     }
     if (detail.transfers.isNotEmpty()) {
         item {
@@ -568,11 +569,13 @@ private fun TransferDialog(
                     )
                 },
                 confirmButton = {
-                    TextActionButton(
-                        stringResource(Res.string.transfer_delete),
-                        { onEvent(GroupIntent.AskDeleteTransfer) },
-                        color = Owlsplit.colors.error,
-                    )
+                    if (detail.canSettle(transfer.fromMemberId, transfer.toMemberId)) {
+                        TextActionButton(
+                            stringResource(Res.string.transfer_delete),
+                            { onEvent(GroupIntent.AskDeleteTransfer) },
+                            color = Owlsplit.colors.error,
+                        )
+                    }
                 },
                 dismissButton = { TextActionButton(stringResource(Res.string.close), dismiss) },
             )
@@ -613,4 +616,22 @@ private fun ExplainButton(onEvent: (GroupIntent) -> Unit) {
         { onEvent(GroupIntent.ShowExplanation) },
         Modifier.offset(x = -Spacing.m),
     )
+}
+
+/** The settle button of a suggestion, only for payments the caller may record. */
+private fun settleAction(
+    detail: GroupDetail,
+    payment: SuggestedPayment,
+    onEvent: (GroupIntent) -> Unit
+): (() -> Unit)? =
+    if (detail.canSettle(payment.fromMemberId, payment.toMemberId)) {
+        { onEvent(GroupIntent.AskSettle(payment)) }
+    } else {
+        null
+    }
+
+/** Pulled back by the button padding: the label lines up with the cards. */
+@Composable
+private fun RecordPaymentButton(onClick: () -> Unit) {
+    TextActionButton(stringResource(Res.string.record_payment), onClick, Modifier.offset(x = -Spacing.m))
 }

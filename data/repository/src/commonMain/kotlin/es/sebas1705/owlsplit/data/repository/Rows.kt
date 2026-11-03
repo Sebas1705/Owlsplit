@@ -14,6 +14,7 @@ import es.sebas1705.owlsplit.data.models.FieldChange
 import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.data.models.Member
 import es.sebas1705.owlsplit.data.models.PayMethods
+import es.sebas1705.owlsplit.data.models.Permission
 import es.sebas1705.owlsplit.data.models.SplitType
 import es.sebas1705.owlsplit.data.models.SyncMeta
 import es.sebas1705.owlsplit.data.models.SyncState
@@ -40,6 +41,7 @@ internal fun Group_entity.toModel() = Group(
     inviteCode = invite_code, memberUids = json.decodeFromString(stringList, member_uids),
     archivedBy = json.decodeFromString(stringList, archived_by), createdBy = created_by, createdAt = created_at,
     meta = meta(version, server_version, updated_at, updated_by, deleted, sync_state),
+    adminMemberId = admin_member_id,
 )
 
 internal fun Group.toRow() = Group_entity(
@@ -53,6 +55,7 @@ internal fun Group.toRow() = Group_entity(
     created_by = createdBy, created_at = createdAt, version = meta.version, server_version = meta.serverVersion,
     updated_at = meta.updatedAt, updated_by = meta.updatedBy, deleted = meta.deleted.asInt(),
     sync_state = meta.syncState.name,
+    admin_member_id = adminMemberId,
 )
 
 internal fun Member_entity.toModel() = Member(
@@ -62,6 +65,8 @@ internal fun Member_entity.toModel() = Member(
     payMethods = pay_methods?.let { json.decodeFromString(PayMethods.serializer(), it) },
     pastUids = past_uids?.let { json.decodeFromString(stringList, it) }.orEmpty(),
     linked = linked.asFlag(),
+    deniedPermissions = denied_permissions?.let { json.decodeFromString(stringList, it) }.orEmpty()
+        .mapNotNull { name -> Permission.entries.firstOrNull { it.name == name } }.toSet(),
 )
 
 internal fun Member.toRow() = Member_entity(
@@ -72,6 +77,8 @@ internal fun Member.toRow() = Member_entity(
     pay_methods = payMethods?.let { json.encodeToString(PayMethods.serializer(), it) },
     past_uids = pastUids.takeIf { it.isNotEmpty() }?.let { json.encodeToString(stringList, it) },
     linked = linked.asInt(),
+    denied_permissions = deniedPermissions.takeIf { it.isNotEmpty() }
+        ?.let { json.encodeToString(stringList, it.map(Permission::name).sorted()) },
 )
 
 internal fun Expense_entity.toModel(payers: Map<String, Long>, splitValues: Map<String, Long>) = Expense(
@@ -80,6 +87,7 @@ internal fun Expense_entity.toModel(payers: Map<String, Long>, splitValues: Map<
     payers = payers, splitType = SplitType.valueOf(split_type), splitValues = splitValues,
     receiptUrl = receipt_url, recurrenceId = recurrence_id, createdBy = created_by, createdAt = created_at,
     meta = meta(version, server_version, updated_at, updated_by, deleted, sync_state),
+    byMember = by_member,
 )
 
 internal fun Expense.toRow() = Expense_entity(
@@ -88,6 +96,7 @@ internal fun Expense.toRow() = Expense_entity(
     receipt_url = receiptUrl, recurrence_id = recurrenceId, created_by = createdBy, created_at = createdAt,
     version = meta.version, server_version = meta.serverVersion, updated_at = meta.updatedAt,
     updated_by = meta.updatedBy, deleted = meta.deleted.asInt(), sync_state = meta.syncState.name,
+    by_member = byMember,
 )
 
 internal fun Transfer_entity.toModel() = Transfer(
@@ -95,6 +104,7 @@ internal fun Transfer_entity.toModel() = Transfer(
     amountMinor = amount_minor, currency = currency, fxRateScaled = fx_rate_scaled, date = LocalDate.parse(date),
     note = note, createdBy = created_by, createdAt = created_at,
     meta = meta(version, server_version, updated_at, updated_by, deleted, sync_state),
+    byMember = by_member,
 )
 
 internal fun Transfer.toRow() = Transfer_entity(
@@ -103,6 +113,7 @@ internal fun Transfer.toRow() = Transfer_entity(
     note = note, created_by = createdBy, created_at = createdAt, version = meta.version,
     server_version = meta.serverVersion, updated_at = meta.updatedAt, updated_by = meta.updatedBy,
     deleted = meta.deleted.asInt(), sync_state = meta.syncState.name,
+    by_member = byMember,
 )
 
 internal fun Change_log.toModel() = ChangeLogEntry(

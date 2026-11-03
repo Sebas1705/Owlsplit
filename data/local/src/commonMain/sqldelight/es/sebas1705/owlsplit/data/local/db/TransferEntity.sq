@@ -15,7 +15,9 @@ CREATE TABLE transfer_entity (
     updated_at INTEGER,
     updated_by TEXT NOT NULL,
     deleted INTEGER NOT NULL,
-    sync_state TEXT NOT NULL
+    sync_state TEXT NOT NULL,
+    -- The member who recorded it; added in schema 4.
+    by_member TEXT
 );
 
 CREATE INDEX transfer_by_group ON transfer_entity(group_id, deleted, date);

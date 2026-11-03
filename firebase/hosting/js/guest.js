@@ -193,6 +193,13 @@ const signed = (minor, currency) => `${minor > 0 ? '+' : minor < 0 ? '−' : ''}
 const today = () => new Date().toISOString().slice(0, 10);
 const nameOf = (id) => state.members.find((m) => m.id === id)?.name ?? '?';
 const me = () => state.members.find((m) => m.userUid === state.uid && !m.deleted);
+// Who runs the group and what I may do (docs/designs/2026-11-03-group-admin.md); the rules check the same.
+const adminMember = () => (state.group?.adminMemberId
+  ? state.members.find((m) => m.id === state.group.adminMemberId)
+  : state.members.find((m) => m.userUid === state.group?.createdBy));
+const isAdmin = () => !!me() && adminMember()?.userUid === state.uid;
+const can = (flag) => isAdmin() || !(me()?.deniedPermissions ?? []).includes(flag);
+const canSettle = (from, to) => isAdmin() || (can('RECORD_PAYMENTS') && !!me() && (me().id === from || me().id === to));
 const visibleMembers = () => state.members.filter((m) => !m.deleted).sort((a, b) => a.sortKey - b.sortKey || (a.id < b.id ? -1 : 1));
 
 function copy(text, button) {
@@ -299,13 +306,13 @@ function expensesTab(base) {
     .sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : b.createdAt - a.createdAt));
   const foreign = list.some((e) => e.currency !== base);
   return [
-    h('button', { class: 'button', type: 'button', onclick: () => openForm('new') }, `+ ${T.add}`),
+    can('ADD_EXPENSES') && h('button', { class: 'button', type: 'button', onclick: () => openForm('new') }, `+ ${T.add}`),
     list.length === 0
       ? h('p', { class: 'muted' }, T.noExpenses)
       : h('div', { class: 'list' }, list.map((e) => {
         const share = mine ? myShare(e, state.members, mine.id) : 0;
         const payers = Object.keys(e.payers).map(nameOf).join(', ');
-        return h('button', { class: 'row', type: 'button', onclick: () => openForm(e.id), 'aria-label': `${T.editExpense}: ${e.title}` },
+        return h('button', { class: 'row', type: 'button', onclick: () => (can('EDIT_EXPENSES') ? openForm(e.id) : null), 'aria-label': `${T.editExpense}: ${e.title}` },
           h('div', { class: 'main' },
             h('div', { class: 'title' }, e.title),
             h('div', { class: 'sub' }, `${e.date} · ${T.paidBy(payers)}`)),
@@ -430,7 +437,7 @@ function paymentsList() {
         h('div', { class: 'main' }, h('div', { class: 'title' }, T.paymentLine(nameOf(x.fromMemberId), nameOf(x.toMemberId))), h('div', { class: 'sub' }, x.date)),
         h('div', { class: 'end' }, money(x.amountMinor, x.currency))),
       confirming && h('p', { class: 'muted', style: 'padding: 0 16px 8px' }, T.confirmUndo),
-      h('div', { class: 'pay' },
+      canSettle(x.fromMemberId, x.toMemberId) && h('div', { class: 'pay' },
         h('button', { type: 'button', disabled: state.busy, onclick: () => (confirming ? undoPayment(x) : ((state.undoing = x.id), render())) }, T.undo),
         confirming && h('button', { type: 'button', onclick: () => { state.undoing = null; render(); } }, T.cancel)));
   }))];
@@ -451,7 +458,7 @@ function suggestionsList(result, base) {
       mineToPay && payOptions(p, base),
       confirming && h('p', { class: 'muted', style: 'padding: 0 16px 8px' },
         mineToPay ? T.confirmRecord(amount, nameOf(p.toMemberId)) : T.confirmOther(amount, nameOf(p.fromMemberId), nameOf(p.toMemberId))),
-      h('div', { class: 'pay' },
+      canSettle(p.fromMemberId, p.toMemberId) && h('div', { class: 'pay' },
         h('button', { type: 'button', disabled: state.busy, onclick: () => (confirming ? record(p) : askRecord(p)) }, T.record),
         confirming && h('button', { type: 'button', onclick: () => { state.confirming = null; render(); } }, T.cancel)));
   }))];
@@ -672,7 +679,7 @@ function addExpense({ title, category, date, amountMinor, payerId, ids, currency
     const split = defaultSplit(state.members, ids);
     const batch = writeBatch(db);
     batch.set(sub('expenses', id), newExpense(f, state.uid, {
-      title, category, date, currency, amountMinor, payerId, ...split, now, fxRateScaled,
+      title, category, date, currency, amountMinor, payerId, ...split, now, fxRateScaled, byMember: me()?.id ?? null,
     }));
     batch.set(sub('changelog', uuid()), changelogEntry(f, state.uid, { entityType: 'EXPENSE', entityId: id, action: 'CREATED', now }));
     await batch.commit();
@@ -702,7 +709,7 @@ function saveEdit(old, values, full) {
     if (diff.length === 0) { state.adding = false; return; }
     const changes = Object.fromEntries(diff.map((c) => [c.field, next[c.field]]));
     const batch = writeBatch(db);
-    batch.update(sub('expenses', old.id), expenseUpdate(f, state.uid, old, changes));
+    batch.update(sub('expenses', old.id), expenseUpdate(f, state.uid, old, changes, me()?.id ?? null));
     batch.set(sub('changelog', uuid()), changelogEntry(f, state.uid, { entityType: 'EXPENSE', entityId: old.id, action: 'UPDATED', diff, now: Date.now() }));
     await batch.commit();
     state.adding = false;
@@ -713,7 +720,7 @@ function saveEdit(old, values, full) {
 function deleteExpense(old) {
   return busy(async () => {
     const batch = writeBatch(db);
-    batch.update(sub('expenses', old.id), markDeleted(f, state.uid, old));
+    batch.update(sub('expenses', old.id), markDeleted(f, state.uid, old, true, me()?.id ?? null));
     batch.set(sub('changelog', uuid()), changelogEntry(f, state.uid, { entityType: 'EXPENSE', entityId: old.id, action: 'DELETED', now: Date.now() }));
     await batch.commit();
     state.adding = false;
@@ -725,7 +732,7 @@ function deleteExpense(old) {
 function undoPayment(old) {
   return busy(async () => {
     const batch = writeBatch(db);
-    batch.update(sub('transfers', old.id), markDeleted(f, state.uid, old));
+    batch.update(sub('transfers', old.id), markDeleted(f, state.uid, old, true, me()?.id ?? null));
     batch.set(sub('changelog', uuid()), changelogEntry(f, state.uid, { entityType: 'TRANSFER', entityId: old.id, action: 'DELETED', now: Date.now() }));
     await batch.commit();
     state.undoing = null;
@@ -809,7 +816,7 @@ function record(payment) {
     const id = uuid();
     const now = Date.now();
     const batch = writeBatch(db);
-    batch.set(sub('transfers', id), newTransfer(f, state.uid, { ...payment, currency: state.group.baseCurrency, date: today(), now }));
+    batch.set(sub('transfers', id), newTransfer(f, state.uid, { ...payment, currency: state.group.baseCurrency, date: today(), now, byMember: me()?.id ?? null }));
     batch.set(sub('changelog', uuid()), changelogEntry(f, state.uid, { entityType: 'TRANSFER', entityId: id, action: 'CREATED', now }));
     await batch.commit();
     state.confirming = null;

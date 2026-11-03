@@ -51,22 +51,23 @@ describe('edit', () => {
   test('the app has to merge group edits: lastJoinCode is not in its document', async () => {
     await seed(env, { [`groups/${GROUP}`]: groupData({ memberUids: ['ana', 'luis'], lastJoinCode: CODE }) });
     const { lastJoinCode, ...withoutCode } = groupData({
-      name: 'Ibiza', memberUids: ['ana', 'luis'], version: 2, updatedAt: serverTimestamp(), updatedBy: 'luis',
+      name: 'Ibiza', memberUids: ['ana', 'luis'], version: 2, updatedAt: serverTimestamp(), updatedBy: 'ana',
     });
-    const ref = doc(as(env, 'luis'), `groups/${GROUP}`);
+    const ref = doc(as(env, 'ana'), `groups/${GROUP}`);
     await assertFails(setDoc(ref, withoutCode));
     await assertSucceeds(setDoc(ref, withoutCode, { merge: true }));
   });
-  test('a member renames with a chained version', async () => {
-    await assertSucceeds(updateDoc(doc(as(env, 'luis'), `groups/${GROUP}`), { name: 'Ibiza', ...bump('luis') }));
+  test('the admin renames with a chained version; another member cannot', async () => {
+    await assertSucceeds(updateDoc(doc(as(env, 'ana'), `groups/${GROUP}`), { name: 'Ibiza', ...bump('ana') }));
+    await assertFails(updateDoc(doc(as(env, 'luis'), `groups/${GROUP}`), { name: 'Otro', ...bump('luis') }));
   });
   test('a stale version is rejected', async () => {
-    await assertFails(updateDoc(doc(as(env, 'luis'), `groups/${GROUP}`), {
-      name: 'Ibiza', version: 1, updatedAt: serverTimestamp(), updatedBy: 'luis',
+    await assertFails(updateDoc(doc(as(env, 'ana'), `groups/${GROUP}`), {
+      name: 'Ibiza', version: 1, updatedAt: serverTimestamp(), updatedBy: 'ana',
     }));
   });
   test('updatedBy must be the caller', async () => {
-    await assertFails(updateDoc(doc(as(env, 'luis'), `groups/${GROUP}`), { name: 'Ibiza', ...bump('ana') }));
+    await assertFails(updateDoc(doc(as(env, 'ana'), `groups/${GROUP}`), { name: 'Ibiza', ...bump('luis') }));
   });
   test('a member cannot remove someone else', async () => {
     await assertFails(updateDoc(doc(as(env, 'luis'), `groups/${GROUP}`), { memberUids: ['luis'], ...bump('luis') }));
@@ -105,7 +106,7 @@ describe('join and leave', () => {
   test('leaving cannot carry other edits: the client uploads them first, as a separate version', async () => {
     // The outbox compacts an offline rename and a later leave into one write; the app splits it again.
     await assertFails(updateDoc(doc(as(env, 'luis'), `groups/${GROUP}`), { name: 'Mío', memberUids: arrayRemove('luis'), ...bump('luis') }));
-    await assertSucceeds(updateDoc(doc(as(env, 'luis'), `groups/${GROUP}`), { name: 'Mío', ...bump('luis') }));
+    await assertSucceeds(updateDoc(doc(as(env, 'ana'), `groups/${GROUP}`), { name: 'Mío', ...bump('ana') }));
     await assertSucceeds(updateDoc(doc(as(env, 'luis'), `groups/${GROUP}`), { memberUids: arrayRemove('luis'), ...bump('luis') }));
   });
 });

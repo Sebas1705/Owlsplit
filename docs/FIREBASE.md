@@ -50,7 +50,7 @@ Written by `FirestoreRemoteStore` (`data:remote/.../Dtos.kt`):
 
 ## Rules
 
-Implemented in `firebase/firestore.rules` and tested with the emulator in `firebase/rules-test` (33 tests; job `Firestore rules (emulator)` in CI). Locally:
+Implemented in `firebase/firestore.rules` and tested with the emulator in `firebase/rules-test` (246 tests, 48 of them for the admin; job `Firestore rules (emulator)` in CI). Locally:
 
 ```bash
 cd firebase && npx firebase-tools emulators:exec --only firestore --project demo-owlsplit "npm --prefix rules-test test"
@@ -63,11 +63,14 @@ cd firebase && npx firebase-tools emulators:exec --only firestore --project demo
 - `groups/{id}`:
   - **Read**: members (`uid in memberUids`); the list of my groups is queried with `array-contains`.
   - **Create**: `memberUids == [uid]`, `createdBy == uid`, `archivedBy == []`.
-  - **Edit (member)**: does not change `memberUids`, `createdBy`, `createdAt` or `lastJoinCode`; in `archivedBy` only adds or removes their own uid.
+  - **Edit (member)**: does not change `memberUids`, `createdBy`, `createdAt` or `lastJoinCode`; in `archivedBy` only adds or removes their own uid. Anything else (name, icon, accent, currency, dates, `inviteCode`, `adminMemberId`) is **admin only**.
+  - **Admin** (docs/designs/2026-11-03-group-admin.md): the member `adminMemberId` (optional; its `userUid` is the caller), or, when the group has none, the `createdBy` uid. Handing over (`adminMemberId` changes) needs the new one to be an existing, non-deleted member whose `userUid` is a member of the group. Leaving as the admin may hand over in the same write (to somebody else); a non-admin leaving cannot touch `adminMemberId`. A group without `adminMemberId` whose creator is no longer in `memberUids` lets any member set `adminMemberId` to their own member (and change nothing else).
   - **Join (non-member)**: since they cannot read the group, they write with transforms: `memberUids: arrayUnion(uid)`, `version: increment(1)`, `updatedAt: serverTimestamp()`, `lastJoinCode` = code. The rules require the code to be the current one and that only their own uid is added (max. 50 members).
   - **Leave**: only removes their own uid (`arrayRemove`).
 - `members`, `expenses`, `transfers`: read and write only by group members (`get()` of the group). Types, ranges and sizes are validated: texts with maximum length, ISO currency, `YYYY-MM-DD` date, integer amount in (0, 10¹²], integer exchange rate, category and split type from the list, payer and split maps with 1–50 entries, weight 1–100.
   - **Sums are not validated** (payers = amount, exact shares = amount): rules have no loops. The client guarantees them (P3 domain) and `ObserveGroupBalances` (P4) leaves out and flags any inconsistent expense.
+  - **Members are admin only** to create (except one's own, `userUid == uid`, when joining), soft delete, and to change `deniedPermissions` (optional list of `ADD_EXPENSES`, `EDIT_EXPENSES`, `RECORD_PAYMENTS`; absent = empty), `active`, `defaultWeight`, `sortKey` and somebody else's name or avatar. Anybody changes their own name, avatar, pay methods, `linked`, and claims or releases.
+  - **`byMember`** (optional, expenses and transfers): when present, the member must be the caller's and must not have the flag in `deniedPermissions` (`ADD_EXPENSES` creating an expense, `EDIT_EXPENSES` editing or soft deleting it, `RECORD_PAYMENTS` for transfers). The admin's member ignores the flags. A non-admin's payment must have `byMember` as payer or receiver. Absent or null (old clients, or a document replaced whole by one) is not checked. It is the member that acts, so an edit must write the editor's id.
   - **Claim member**: `userUid` only goes from null to one's own uid or from one's own uid to null; nobody else's is ever taken or released. The client checks that a user does not claim two members of the same group.
   - On expenses and transfers `createdBy` and `createdAt` do not change; on transfers neither do source, destination or amount (they are deleted and created again).
 - `changelog`: create if you are a member, `authorUid == uid` and `updatedAt == request.time` (downloaded by server time); **never** edit or delete.
