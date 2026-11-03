@@ -45,7 +45,7 @@ export function claimMember(f, uid, member) {
  * [fxRateScaled] is the rate frozen in it (group currency per unit, ×10⁹), as the apps do.
  */
 export function newExpense(f, uid, {
-  title, category, date, currency, amountMinor, payerId, splitType, splitValues, now, fxRateScaled = RATE_ONE,
+  title, category, date, currency, amountMinor, payerId, splitType, splitValues, now, fxRateScaled = RATE_ONE, byMember = null,
 }) {
   return {
     title: title.trim().slice(0, 80),
@@ -62,12 +62,13 @@ export function newExpense(f, uid, {
     recurrenceId: null,
     createdBy: uid,
     createdAt: now,
+    byMember,
     ...stamp(f, uid, 1),
   };
 }
 
 /** A payment from one member to another, in the group currency (a suggested payment, recorded). */
-export function newTransfer(f, uid, { fromMemberId, toMemberId, amountMinor, currency, date, now }) {
+export function newTransfer(f, uid, { fromMemberId, toMemberId, amountMinor, currency, date, now, byMember = null }) {
   return {
     fromMemberId,
     toMemberId,
@@ -78,6 +79,7 @@ export function newTransfer(f, uid, { fromMemberId, toMemberId, amountMinor, cur
     note: null,
     createdBy: uid,
     createdAt: now,
+    byMember,
     ...stamp(f, uid, 1),
   };
 }
@@ -128,13 +130,13 @@ export function expenseDiff(before, after) {
 }
 
 /** An edit of [old]: the changed fields, the next version and the stamp (the rules check the version). */
-export function expenseUpdate(f, uid, old, changes) {
-  return { ...changes, version: old.version + 1, updatedAt: f.serverTimestamp(), updatedBy: uid };
+export function expenseUpdate(f, uid, old, changes, byMember = null) {
+  return { ...changes, byMember, version: old.version + 1, updatedAt: f.serverTimestamp(), updatedBy: uid };
 }
 
 /** Deleting (or restoring) an expense or a payment: it stays, marked, so it can be restored. */
-export function markDeleted(f, uid, old, deleted = true) {
-  return { deleted, version: old.version + 1, updatedAt: f.serverTimestamp(), updatedBy: uid };
+export function markDeleted(f, uid, old, deleted = true, byMember = null) {
+  return { deleted, byMember, version: old.version + 1, updatedAt: f.serverTimestamp(), updatedBy: uid };
 }
 
 /**
