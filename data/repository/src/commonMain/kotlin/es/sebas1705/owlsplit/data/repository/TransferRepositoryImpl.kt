@@ -53,7 +53,8 @@ class TransferRepositoryImpl(
         }
     }
 
-    private fun save(transfer: Transfer, old: Transfer?, action: ChangeAction) {
+    private fun save(recorded: Transfer, old: Transfer?, action: ChangeAction) {
+        val transfer = recorded.copy(byMember = writer.myMemberId(recorded.groupId))
         db.transferEntityQueries.upsert(transfer.toRow())
         writer.enqueue(
             transfer.groupId,

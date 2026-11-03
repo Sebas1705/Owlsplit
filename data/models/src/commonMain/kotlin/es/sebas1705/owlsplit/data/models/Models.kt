@@ -36,6 +36,8 @@ data class Group(
     val createdBy: String,
     val createdAt: Long,
     val meta: SyncMeta,
+    /** The member who runs the group; absent in groups from before the admin role (the creator then). */
+    val adminMemberId: String? = null,
 )
 
 @Serializable
@@ -55,10 +57,15 @@ data class Member(
     val pastUids: List<String> = emptyList(),
     /** The account behind it is linked to Google, so it is never lost (shown to the group). */
     val linked: Boolean = false,
+    /** What the admin took away from this member; missing means everything is allowed. */
+    val deniedPermissions: Set<Permission> = emptySet(),
 ) {
     /** Somebody had it and left: their expenses and history wait here for them. */
     val abandoned: Boolean get() = userUid == null && pastUids.isNotEmpty()
 }
+
+/** What the admin can allow or deny each member; the admin themselves always can. */
+enum class Permission { ADD_EXPENSES, EDIT_EXPENSES, RECORD_PAYMENTS }
 
 enum class ExpenseCategory {
     FOOD, GROCERIES, TRANSPORT, ACCOMMODATION, LEISURE, SHOPPING, HOME, UTILITIES, HEALTH, GIFTS, OTHER,
@@ -85,6 +92,8 @@ data class Expense(
     val createdBy: String,
     val createdAt: Long,
     val meta: SyncMeta,
+    /** The member who recorded it (checked against their permissions); absent in older documents. */
+    val byMember: String? = null,
 )
 
 @Serializable
@@ -101,6 +110,8 @@ data class Transfer(
     val createdBy: String,
     val createdAt: Long,
     val meta: SyncMeta,
+    /** The member who recorded it (checked against their permissions); absent in older documents. */
+    val byMember: String? = null,
 )
 
 enum class EntityType { GROUP, MEMBER, EXPENSE, TRANSFER }

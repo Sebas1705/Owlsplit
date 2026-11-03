@@ -85,7 +85,8 @@ class ExpenseRepositoryImpl(
         splitValues = q.splitsByExpense(row.id).executeAsList().associate { it.member_id to it.split_value },
     )
 
-    private fun save(expense: Expense, old: Expense?, action: ChangeAction) {
+    private fun save(recorded: Expense, old: Expense?, action: ChangeAction) {
+        val expense = recorded.copy(byMember = writer.myMemberId(recorded.groupId))
         q.upsert(expense.toRow())
         q.deletePayers(expense.id)
         expense.payers.forEach { (member, amount) -> q.insertPayer(Expense_payer(expense.id, member, amount)) }

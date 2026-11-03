@@ -12,6 +12,7 @@ import es.sebas1705.owlsplit.data.models.FieldChange
 import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.data.models.Member
 import es.sebas1705.owlsplit.data.models.PayMethods
+import es.sebas1705.owlsplit.data.models.Permission
 import es.sebas1705.owlsplit.data.models.SplitType
 import es.sebas1705.owlsplit.data.models.SyncMeta
 import es.sebas1705.owlsplit.data.models.SyncState
@@ -41,6 +42,8 @@ internal data class GroupDto(
     val updatedAt: BaseTimestamp?,
     val updatedBy: String,
     val deleted: Boolean,
+    /** Missing in groups from before the admin role. */
+    val adminMemberId: String? = null,
 )
 
 @Serializable
@@ -60,6 +63,8 @@ internal data class MemberDto(
     /** Missing in documents written before P14. */
     val pastUids: List<String> = emptyList(),
     val linked: Boolean = false,
+    /** Missing means nothing is denied. */
+    val deniedPermissions: List<Permission> = emptyList(),
 )
 
 @Serializable
@@ -82,6 +87,8 @@ internal data class ExpenseDto(
     val updatedAt: BaseTimestamp?,
     val updatedBy: String,
     val deleted: Boolean,
+    /** Missing in documents written before the admin role. */
+    val byMember: String? = null,
 )
 
 @Serializable
@@ -99,6 +106,7 @@ internal data class TransferDto(
     val updatedAt: BaseTimestamp?,
     val updatedBy: String,
     val deleted: Boolean,
+    val byMember: String? = null,
 )
 
 @Serializable
@@ -117,7 +125,7 @@ internal class Stamp(val version: Long, val uid: String)
 
 internal fun Group.toDto(s: Stamp) = GroupDto(
     name, icon, accent, baseCurrency, startDate, endDate, inviteCode, memberUids, archivedBy,
-    createdBy, createdAt, s.version, Timestamp.ServerTimestamp, s.uid, meta.deleted,
+    createdBy, createdAt, s.version, Timestamp.ServerTimestamp, s.uid, meta.deleted, adminMemberId,
 )
 
 internal fun Member.toDto(s: Stamp) = MemberDto(
@@ -125,16 +133,18 @@ internal fun Member.toDto(s: Stamp) = MemberDto(
     payMethods,
     pastUids,
     linked,
+    deniedPermissions.sorted(),
 )
 
 internal fun Expense.toDto(s: Stamp) = ExpenseDto(
     title, category, note, date, currency, amountMinor, fxRateScaled, payers, splitType, splitValues,
     receiptUrl, recurrenceId, createdBy, createdAt, s.version, Timestamp.ServerTimestamp, s.uid, meta.deleted,
+    byMember,
 )
 
 internal fun Transfer.toDto(s: Stamp) = TransferDto(
     fromMemberId, toMemberId, amountMinor, currency, fxRateScaled, date, note, createdBy, createdAt,
-    s.version, Timestamp.ServerTimestamp, s.uid, meta.deleted,
+    s.version, Timestamp.ServerTimestamp, s.uid, meta.deleted, byMember,
 )
 
 internal fun ChangeLogEntry.toDto() =
@@ -149,20 +159,20 @@ private fun meta(version: Long, updatedAt: BaseTimestamp?, updatedBy: String, de
 internal fun GroupDto.toModel(id: String): Group? = meta(version, updatedAt, updatedBy, deleted)?.let {
     Group(
         id, name, icon, accent, baseCurrency, startDate, endDate, inviteCode, memberUids, archivedBy,
-        createdBy, createdAt, it,
+        createdBy, createdAt, it, adminMemberId,
     )
 }
 
 internal fun MemberDto.toModel(groupId: String, id: String): Member? =
     meta(version, updatedAt, updatedBy, deleted)?.let {
-        Member(id, groupId, name, avatar, defaultWeight, userUid, active, sortKey, it, payMethods, pastUids, linked)
+        Member(id, groupId, name, avatar, defaultWeight, userUid, active, sortKey, it, payMethods, pastUids, linked, deniedPermissions.toSet())
     }
 
 internal fun ExpenseDto.toModel(groupId: String, id: String): Expense? =
     meta(version, updatedAt, updatedBy, deleted)?.let {
         Expense(
             id, groupId, title, category, note, date, currency, amountMinor, fxRateScaled, payers, splitType,
-            splitValues, receiptUrl, recurrenceId, createdBy, createdAt, it,
+            splitValues, receiptUrl, recurrenceId, createdBy, createdAt, it, byMember,
         )
     }
 
@@ -170,7 +180,7 @@ internal fun TransferDto.toModel(groupId: String, id: String): Transfer? =
     meta(version, updatedAt, updatedBy, deleted)?.let {
         Transfer(
             id, groupId, fromMemberId, toMemberId, amountMinor, currency, fxRateScaled, date, note,
-            createdBy, createdAt, it,
+            createdBy, createdAt, it, byMember,
         )
     }
 

@@ -10,6 +10,7 @@ import es.sebas1705.owlsplit.data.models.TransferInput
 import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.data.models.Member
 import es.sebas1705.owlsplit.data.models.PayMethods
+import es.sebas1705.owlsplit.data.models.Permission
 import es.sebas1705.owlsplit.data.models.Transfer
 import kotlinx.coroutines.flow.Flow
 
@@ -28,6 +29,9 @@ interface GroupRepository {
      */
     suspend fun leave(id: String)
 
+    /** Hands the group over to [memberId] (or takes over an old group nobody runs). */
+    suspend fun setAdmin(id: String, memberId: String)
+
     /** A new invite code: links with the old one stop working once it is withdrawn. */
     suspend fun regenerateInviteCode(id: String)
 }
@@ -37,6 +41,9 @@ interface MemberRepository {
     suspend fun add(groupId: String, input: MemberInput): String
     suspend fun update(id: String, input: MemberInput)
     suspend fun setActive(id: String, active: Boolean)
+
+    /** What the admin takes away from a member; empty gives everything back. */
+    suspend fun setDeniedPermissions(id: String, denied: Set<Permission>)
 
     /** Deletes a member without movements; returns false (and changes nothing) otherwise. */
     suspend fun deleteIfUnused(id: String): Boolean

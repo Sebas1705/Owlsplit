@@ -1,0 +1,5 @@
+-- 3 → 4 (group admin): who runs the group, what each member may do, and who recorded each movement.
+ALTER TABLE group_entity ADD COLUMN admin_member_id TEXT;
+ALTER TABLE member_entity ADD COLUMN denied_permissions TEXT;
+ALTER TABLE expense_entity ADD COLUMN by_member TEXT;
+ALTER TABLE transfer_entity ADD COLUMN by_member TEXT;

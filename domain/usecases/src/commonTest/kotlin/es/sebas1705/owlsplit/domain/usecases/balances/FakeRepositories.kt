@@ -8,6 +8,7 @@ import es.sebas1705.owlsplit.data.models.Expense
 import es.sebas1705.owlsplit.data.models.Group
 import es.sebas1705.owlsplit.data.models.Member
 import es.sebas1705.owlsplit.data.models.PayMethods
+import es.sebas1705.owlsplit.data.models.Permission
 import es.sebas1705.owlsplit.data.models.Transfer
 import es.sebas1705.owlsplit.data.repository.ExpenseRepository
 import es.sebas1705.owlsplit.data.repository.GroupRepository
@@ -26,6 +27,7 @@ class FakeGroups(val group: MutableStateFlow<Group?>) : GroupRepository {
     override suspend fun setArchived(id: String, archived: Boolean) = error("unused")
     override suspend fun leave(id: String) = error("unused")
     override suspend fun regenerateInviteCode(id: String) = error("unused")
+    override suspend fun setAdmin(id: String, memberId: String) = error("unused")
 }
 
 class FakeMembers(val members: MutableStateFlow<List<Member>>) : MemberRepository {
@@ -33,6 +35,7 @@ class FakeMembers(val members: MutableStateFlow<List<Member>>) : MemberRepositor
     override suspend fun add(groupId: String, input: MemberInput): String = error("unused")
     override suspend fun update(id: String, input: MemberInput) = error("unused")
     override suspend fun setActive(id: String, active: Boolean) = error("unused")
+    override suspend fun setDeniedPermissions(id: String, denied: Set<Permission>) = error("unused")
     override suspend fun deleteIfUnused(id: String): Boolean = error("unused")
     override suspend fun claim(id: String) = error("unused")
     override suspend fun addMe(groupId: String, name: String, avatar: String?): String = error("unused")

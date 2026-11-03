@@ -10,6 +10,7 @@ import es.sebas1705.owlsplit.data.models.EntityType
 import es.sebas1705.owlsplit.data.models.Member
 import es.sebas1705.owlsplit.data.models.OutboxType
 import es.sebas1705.owlsplit.data.models.PayMethods
+import es.sebas1705.owlsplit.data.models.Permission
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -45,6 +46,9 @@ class MemberRepositoryImpl(
     }
 
     override suspend fun setActive(id: String, active: Boolean) = edit(id) { it.copy(active = active) }
+
+    override suspend fun setDeniedPermissions(id: String, denied: Set<Permission>) =
+        edit(id) { it.copy(deniedPermissions = denied) }
 
     override suspend fun deleteIfUnused(id: String): Boolean = withContext(io) {
         db.transactionWithResult {

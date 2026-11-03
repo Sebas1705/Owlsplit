@@ -18,7 +18,9 @@ CREATE TABLE expense_entity (
     updated_at INTEGER,
     updated_by TEXT NOT NULL,
     deleted INTEGER NOT NULL,
-    sync_state TEXT NOT NULL
+    sync_state TEXT NOT NULL,
+    -- The member who recorded it; added in schema 4.
+    by_member TEXT
 );
 
 CREATE INDEX expense_by_group ON expense_entity(group_id, deleted, date);

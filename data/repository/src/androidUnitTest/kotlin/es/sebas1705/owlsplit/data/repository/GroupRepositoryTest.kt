@@ -1,6 +1,8 @@
 package es.sebas1705.owlsplit.data.repository
 
 import es.sebas1705.owlsplit.data.models.GroupInput
+import es.sebas1705.owlsplit.data.models.MemberInput
+import es.sebas1705.owlsplit.data.models.Permission
 import app.cash.turbine.test
 import es.sebas1705.owlsplit.data.models.ChangeAction
 import es.sebas1705.owlsplit.data.models.EntityType
@@ -98,6 +100,35 @@ class GroupRepositoryTest {
         assertTrue(env.outbox().first().payload.contains("\"userUid\":null"))
     }
 
+
+    @Test
+    fun `the creator's member runs the group and hands it over when leaving`() = runTest {
+        val env = TestEnv(this)
+        val groupId = env.groups.create(input, creatorName = "Ana")
+        val ana = env.members.observeMembers(groupId).first().single()
+        assertEquals(ana.id, env.groups.observeGroup(groupId).first()!!.adminMemberId)
+
+        val luis = env.members.add(groupId, MemberInput("Luis"))
+        env.members.claim(luis)
+        env.groups.leave(groupId)
+        // Luis still has no account in this fake env's uid, so only a member with one can inherit: nobody.
+        assertEquals(ana.id, env.groups.observeGroup(groupId).first()!!.adminMemberId)
+    }
+
+    @Test
+    fun `the admin can hand the group over and take permissions away`() = runTest {
+        val env = TestEnv(this)
+        val groupId = env.groups.create(input, creatorName = "Ana")
+        val luis = env.members.add(groupId, MemberInput("Luis"))
+
+        env.groups.setAdmin(groupId, luis)
+        assertEquals(luis, env.groups.observeGroup(groupId).first()!!.adminMemberId)
+
+        env.members.setDeniedPermissions(luis, setOf(Permission.RECORD_PAYMENTS))
+        val stored = env.members.observeMembers(groupId).first().first { it.id == luis }
+        assertEquals(setOf(Permission.RECORD_PAYMENTS), stored.deniedPermissions)
+        assertTrue(env.outbox().last { OutboxType.valueOf(it.entity_type) == OutboxType.MEMBER }.payload.contains("RECORD_PAYMENTS"))
+    }
     @Test
     fun `wiping removes every local row`() = runTest {
         val env = TestEnv(this)

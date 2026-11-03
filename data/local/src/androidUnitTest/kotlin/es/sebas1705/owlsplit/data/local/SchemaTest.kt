@@ -20,6 +20,7 @@ class SchemaTest {
         id = id, group_id = group, name = id, avatar = null, default_weight = 1, user_uid = null,
         active = 1, sort_key = sortKey, version = 1, server_version = 0, updated_at = null,
         updated_by = "u1", deleted = 0, sync_state = "PENDING", pay_methods = null, past_uids = null, linked = 0,
+        denied_permissions = null,
     )
 
     private fun expense(id: String, deleted: Boolean = false) = Expense_entity(
@@ -27,7 +28,7 @@ class SchemaTest {
         currency = "EUR", amount_minor = 1000, fx_rate_scaled = 1_000_000_000, split_type = "EQUAL",
         receipt_url = null, recurrence_id = null, created_by = "u1", created_at = 1, version = 1,
         server_version = 0, updated_at = null, updated_by = "u1", deleted = if (deleted) 1 else 0,
-        sync_state = "PENDING",
+        sync_state = "PENDING", by_member = null,
     )
 
     @Test

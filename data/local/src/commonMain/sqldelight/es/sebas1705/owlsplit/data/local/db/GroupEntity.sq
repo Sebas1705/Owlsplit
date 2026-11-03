@@ -16,7 +16,9 @@ CREATE TABLE group_entity (
     updated_at INTEGER,
     updated_by TEXT NOT NULL,
     deleted INTEGER NOT NULL,
-    sync_state TEXT NOT NULL
+    sync_state TEXT NOT NULL,
+    -- The member who runs the group; added in schema 4.
+    admin_member_id TEXT
 );
 
 upsert:
