@@ -1,6 +1,6 @@
 # Group admin, permissions and merging people — Design
 
-**Date:** 2026-11-03 · **Status:** proposed; implemented in staged pull requests (A: model and rules, B: admin and permissions UI, C: merging people).
+**Date:** 2026-11-03 · **Status:** implemented (pull request 105).
 
 Three requests, one design:
 

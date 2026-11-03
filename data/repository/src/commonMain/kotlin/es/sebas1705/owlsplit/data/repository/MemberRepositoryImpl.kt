@@ -69,7 +69,13 @@ class MemberRepositoryImpl(
             // Movements first and the member last: an upload cut halfway never leaves one naming a deleted member.
             ExpenseRepositoryImpl.all(db, kept.groupId).forEach { old ->
                 MemberMerge.expense(old, absorbed.id, kept.id)?.let {
-                    ExpenseRepositoryImpl.save(db, writer, it.copy(meta = writer.editedMeta(old.meta)), old, ChangeAction.UPDATED)
+                    ExpenseRepositoryImpl.save(
+                        db,
+                        writer,
+                        it.copy(meta = writer.editedMeta(old.meta)),
+                        old,
+                        ChangeAction.UPDATED
+                    )
                 }
             }
             TransferRepositoryImpl.all(db, kept.groupId).forEach { old ->
@@ -79,12 +85,27 @@ class MemberRepositoryImpl(
                 val meta = writer.editedMeta(old.meta, deleted = old.meta.deleted || gone)
                 TransferRepositoryImpl.save(db, writer, moved.copy(meta = meta), old, ChangeAction.UPDATED)
             }
-            save(db, writer, MemberMerge.merged(kept, absorbed).copy(meta = writer.editedMeta(kept.meta)), kept, ChangeAction.UPDATED)
+            save(
+                db,
+                writer,
+                MemberMerge.merged(kept, absorbed).copy(meta = writer.editedMeta(kept.meta)),
+                kept,
+                ChangeAction.UPDATED
+            )
             val gone = absorbed.copy(meta = writer.editedMeta(absorbed.meta, deleted = true))
             db.memberEntityQueries.upsert(gone.toRow())
-            writer.enqueue(gone.groupId, OutboxType.MEMBER, gone.id, absorbed.meta.serverVersion, json.encodeToString(Member.serializer(), gone))
+            writer.enqueue(
+                gone.groupId,
+                OutboxType.MEMBER,
+                gone.id,
+                absorbed.meta.serverVersion,
+                json.encodeToString(Member.serializer(), gone)
+            )
             writer.log(
-                gone.groupId, EntityType.MEMBER, gone.id, ChangeAction.DELETED,
+                gone.groupId,
+                EntityType.MEMBER,
+                gone.id,
+                ChangeAction.DELETED,
                 Diffs.member(absorbed, gone) + FieldChange("mergedInto", null, kept.id),
             )
             kept.id

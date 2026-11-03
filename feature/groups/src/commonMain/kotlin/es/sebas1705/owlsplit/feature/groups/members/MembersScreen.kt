@@ -1,11 +1,29 @@
 package es.sebas1705.owlsplit.feature.groups.members
 
+import es.sebas1705.owlsplit.feature.groups.resources.admin_badge
+import es.sebas1705.owlsplit.feature.groups.resources.admin_only_hint
+import es.sebas1705.owlsplit.feature.groups.resources.take_over_body
+import es.sebas1705.owlsplit.feature.groups.resources.take_over_group
+import es.sebas1705.owlsplit.feature.groups.resources.permissions_title
+import es.sebas1705.owlsplit.feature.groups.resources.perm_add_expenses
+import es.sebas1705.owlsplit.feature.groups.resources.perm_edit_expenses
+import es.sebas1705.owlsplit.feature.groups.resources.perm_record_payments
+import es.sebas1705.owlsplit.feature.groups.resources.make_admin
+import es.sebas1705.owlsplit.feature.groups.resources.make_admin_hint
+import es.sebas1705.owlsplit.feature.groups.resources.merge_member
+import es.sebas1705.owlsplit.feature.groups.resources.merge_title
+import es.sebas1705.owlsplit.feature.groups.resources.merge_body
+import es.sebas1705.owlsplit.feature.groups.resources.merge_none
+import es.sebas1705.owlsplit.feature.groups.resources.merge_confirm_title
+import es.sebas1705.owlsplit.feature.groups.resources.merge_confirm_body
+import es.sebas1705.owlsplit.feature.groups.resources.merge_action
 import es.sebas1705.owlsplit.feature.groups.resources.left_group
 import es.sebas1705.owlsplit.feature.groups.resources.with_google
 import es.sebas1705.owlsplit.core.ui.theme.OwlsplitShapes
 import es.sebas1705.owlsplit.core.ui.components.BottomActionBar
 import es.sebas1705.owlsplit.core.ui.components.ProfileAvatar
 import es.sebas1705.owlsplit.core.ui.theme.memberAccent
+import es.sebas1705.owlsplit.data.models.Permission
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -82,21 +100,48 @@ fun MembersScreen(
         TopBar(stringResource(Res.string.members), onBack)
         val scroll = rememberScrollState()
         Column(Modifier.weight(1f).verticalScroll(scroll).padding(Spacing.l)) {
+            if (state.adminless) {
+                Text(
+                    stringResource(Res.string.take_over_body),
+                    style = Owlsplit.type.caption,
+                    color = Owlsplit.colors.textSecondary,
+                )
+                TextActionButton(stringResource(Res.string.take_over_group), { onEvent(MembersIntent.TakeOver) })
+            } else if (!state.isAdmin) {
+                val admin = state.members.firstOrNull { it.id == state.adminId }?.name.orEmpty()
+                Text(
+                    stringResource(Res.string.admin_only_hint, admin),
+                    style = Owlsplit.type.caption,
+                    color = Owlsplit.colors.textSecondary,
+                    modifier = Modifier.padding(bottom = Spacing.s),
+                )
+            }
             OwlsplitContainer {
                 state.members.forEach { member ->
-                    MemberRow(member, isMe = member.id == state.myMemberId) { onEvent(MembersIntent.Edit(member)) }
+                    val isMe = member.id == state.myMemberId
+                    MemberRow(
+                        member,
+                        isMe = isMe,
+                        isAdmin = member.id == state.adminId,
+                        enabled = state.isAdmin || isMe
+                    ) {
+                        onEvent(MembersIntent.Edit(member))
+                    }
                 }
             }
         }
-        BottomActionBar(contentBelow = scroll.canScrollForward) {
-            PrimaryPillButton(stringResource(Res.string.add_member), { onEvent(MembersIntent.Add) })
+        if (state.isAdmin) {
+            BottomActionBar(contentBelow = scroll.canScrollForward) {
+                PrimaryPillButton(stringResource(Res.string.add_member), { onEvent(MembersIntent.Add) })
+            }
         }
     }
     state.form?.let { MemberDialog(it, onEvent) }
+    state.merge?.let { MergeDialogs(it, state.mergeCandidates, onEvent) }
 }
 
 @Composable
-private fun MemberRow(member: Member, isMe: Boolean, onClick: () -> Unit) {
+private fun MemberRow(member: Member, isMe: Boolean, isAdmin: Boolean, enabled: Boolean, onClick: () -> Unit) {
     val colors = Owlsplit.colors
     val details = listOfNotNull(
         stringResource(
@@ -109,12 +154,13 @@ private fun MemberRow(member: Member, isMe: Boolean, onClick: () -> Unit) {
         ),
         stringResource(Res.string.weight_value, member.defaultWeight.toInt()),
         if (member.active) null else stringResource(Res.string.inactive),
+        if (isAdmin) stringResource(Res.string.admin_badge) else null,
     ).joinToString(" · ")
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.rowMinHeight)
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = Spacing.m, vertical = Spacing.s),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.m),
@@ -145,15 +191,20 @@ private fun MemberDialog(form: MemberForm, onEvent: (MembersIntent) -> Unit) {
             )
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
+            Column(
+                Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(Spacing.m)
+            ) {
                 OwlsplitTextField(
                     value = form.name,
                     onValueChange = { onEvent(MembersIntent.NameChanged(it)) },
                     label = stringResource(Res.string.member_name),
                     capitalization = KeyboardCapitalization.Words,
                 )
-                WeightStepper(form.weight) { onEvent(MembersIntent.WeightChanged(it)) }
-                if (form.memberId != null && !form.isMe) {
+                if (!form.nameOnly) WeightStepper(form.weight) { onEvent(MembersIntent.WeightChanged(it)) }
+                if (form.memberId != null && !form.nameOnly && !form.isAdmin) PermissionSwitches(form, onEvent)
+                if (form.memberId != null && !form.isMe && !form.nameOnly) {
+                    AdminActions(form, onEvent)
                     SwitchRow(
                         stringResource(Res.string.active_label),
                         form.active,
@@ -199,4 +250,86 @@ private fun WeightStepper(weight: Long, onChange: (Long) -> Unit) {
         }
         Text(stringResource(Res.string.weight_hint), style = Owlsplit.type.caption, color = colors.textSecondary)
     }
+}
+
+@Composable
+private fun PermissionSwitches(form: MemberForm, onEvent: (MembersIntent) -> Unit) {
+    val colors = Owlsplit.colors
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        Text(stringResource(Res.string.permissions_title), style = Owlsplit.type.label, color = colors.textSecondary)
+        Permission.entries.forEach { permission ->
+            SwitchRow(
+                stringResource(permission.label()),
+                permission !in form.denied,
+                { onEvent(MembersIntent.PermissionChanged(permission, it)) },
+                shape = OwlsplitShapes.control,
+            )
+        }
+    }
+}
+
+private fun Permission.label() = when (this) {
+    Permission.ADD_EXPENSES -> Res.string.perm_add_expenses
+    Permission.EDIT_EXPENSES -> Res.string.perm_edit_expenses
+    Permission.RECORD_PAYMENTS -> Res.string.perm_record_payments
+}
+
+/** Choosing who to merge into, then asking to confirm: it cannot be undone. */
+@Composable
+private fun MergeDialogs(draft: MergeDraft, candidates: List<Member>, onEvent: (MembersIntent) -> Unit) {
+    val colors = Owlsplit.colors
+    val target = draft.target
+    val name = draft.absorbed.name
+    AlertDialog(
+        onDismissRequest = { onEvent(MembersIntent.CancelMerge) },
+        containerColor = colors.surface,
+        title = {
+            val title = if (target == null) {
+                stringResource(Res.string.merge_title, name)
+            } else {
+                stringResource(Res.string.merge_confirm_title, name, target.name)
+            }
+            Text(title, style = Owlsplit.type.title, color = colors.textPrimary)
+        },
+        text = {
+            if (target == null) {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
+                    val body = if (candidates.isEmpty()) Res.string.merge_none else Res.string.merge_body
+                    Text(stringResource(body, name), style = Owlsplit.type.caption, color = colors.textSecondary)
+                    candidates.forEach { candidate ->
+                        TextActionButton(candidate.name, { onEvent(MembersIntent.MergeInto(candidate)) })
+                    }
+                }
+            } else {
+                Text(
+                    stringResource(Res.string.merge_confirm_body, name, target.name),
+                    style = Owlsplit.type.body,
+                    color = colors.textSecondary,
+                )
+            }
+        },
+        confirmButton = {
+            if (target != null) {
+                TextActionButton(
+                    stringResource(Res.string.merge_action),
+                    { onEvent(MembersIntent.ConfirmMerge) },
+                    color = colors.error,
+                )
+            }
+        },
+        dismissButton = { TextActionButton(stringResource(Res.string.cancel), { onEvent(MembersIntent.CancelMerge) }) },
+    )
+}
+
+@Composable
+private fun AdminActions(form: MemberForm, onEvent: (MembersIntent) -> Unit) {
+    if (form.hasAccount && !form.isAdmin) {
+        TextActionButton(stringResource(Res.string.make_admin), { onEvent(MembersIntent.MakeAdmin) })
+        Text(
+            stringResource(Res.string.make_admin_hint),
+            style = Owlsplit.type.caption,
+            color = Owlsplit.colors.textSecondary,
+        )
+    }
+    TextActionButton(stringResource(Res.string.merge_member), { onEvent(MembersIntent.StartMerge) })
 }

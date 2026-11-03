@@ -271,9 +271,20 @@ class GroupsScreenshotTest {
 
     @Test
     fun members() {
-        compose.setContent { OwlsplitTheme { MembersScreen(MembersState(true, members, "ana"), {}, {}) } }
+        compose.setContent {
+            OwlsplitTheme { MembersScreen(MembersState(true, members, "ana", isAdmin = true, adminId = "ana"), {}, {}) }
+        }
         compose.assertAccessible()
         compose.onRoot().captureRoboImage("screenshots/group_members.png")
+    }
+
+    @Test
+    fun membersAsAnOrdinaryMember() {
+        compose.setContent {
+            OwlsplitTheme { MembersScreen(MembersState(true, members, "luis", adminId = "ana"), {}, {}) }
+        }
+        compose.assertAccessible()
+        compose.onRoot().captureRoboImage("screenshots/group_members_ordinary.png")
     }
 
     @Test

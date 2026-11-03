@@ -77,7 +77,9 @@ class InMemoryLedger(var uid: String = "uid-ana") {
             it.copy(archivedBy = if (archived) it.archivedBy + uid else it.archivedBy - uid)
         }
 
-        override suspend fun setAdmin(id: String, memberId: String) = editGroup(id) { it.copy(adminMemberId = memberId) }
+        override suspend fun setAdmin(id: String, memberId: String) = editGroup(
+            id
+        ) { it.copy(adminMemberId = memberId) }
 
         override suspend fun regenerateInviteCode(id: String) = editGroup(id) {
             it.copy(inviteCode = "ZXCVBNM" + "23456789"[++next % 8])
@@ -106,6 +108,7 @@ class InMemoryLedger(var uid: String = "uid-ana") {
         }
     }
 
+    @Suppress("TooManyFunctions") // One per repository operation.
     val members: MemberRepository = object : MemberRepository {
         override fun observeMembers(groupId: String): Flow<List<Member>> =
             memberList.map { list -> list.filter { it.groupId == groupId && !it.meta.deleted }.sortedBy { it.sortKey } }
@@ -134,7 +137,13 @@ class InMemoryLedger(var uid: String = "uid-ana") {
             transferList.update { all ->
                 all.map { old ->
                     val moved = MemberMerge.transfer(old, absorbed.id, kept.id) ?: return@map old
-                    if (moved.fromMemberId == moved.toMemberId) moved.copy(meta = moved.meta.copy(deleted = true)) else moved
+                    if (moved.fromMemberId == moved.toMemberId) {
+                        moved.copy(
+                            meta = moved.meta.copy(deleted = true)
+                        )
+                    } else {
+                        moved
+                    }
                 }
             }
             memberList.update { all ->

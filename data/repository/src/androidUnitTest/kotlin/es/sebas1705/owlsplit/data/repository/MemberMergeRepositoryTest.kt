@@ -44,7 +44,9 @@ class MemberMergeRepositoryTest {
         // Paying yourself disappears.
         assertTrue(env.transfers.observeTransfers(g).first().isEmpty())
         assertEquals(setOf(ana, luis), env.members.observeMembers(g).first().map { it.id }.toSet())
-        val order = env.outbox().map { OutboxType.valueOf(it.entity_type) to it.entity_id }.filter { it.first != OutboxType.CHANGE_LOG }
+        val order = env.outbox().map {
+            OutboxType.valueOf(it.entity_type) to it.entity_id
+        }.filter { it.first != OutboxType.CHANGE_LOG }
         assertEquals(listOf(OutboxType.EXPENSE to e, OutboxType.TRANSFER to t), order.take(2))
         assertEquals(OutboxType.MEMBER to luis2, order.last())
         val history = env.changeLog.observe(g).first().first { it.entityId == luis2 }

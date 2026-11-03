@@ -225,4 +225,21 @@
         <item quantity="one">%1$d payment</item>
         <item quantity="other">%1$d payments</item>
     </plurals>
+    <string name="admin_badge">Admin</string>
+    <string name="admin_only_hint">Only %1$s, the group admin, can add or change people.</string>
+    <string name="take_over_group">Take over the group</string>
+    <string name="take_over_body">Nobody runs this group any more. Take it over to manage its people.</string>
+    <string name="permissions_title">What they can do</string>
+    <string name="perm_add_expenses">Add expenses</string>
+    <string name="perm_edit_expenses">Edit and delete expenses</string>
+    <string name="perm_record_payments">Record payments</string>
+    <string name="make_admin">Make admin</string>
+    <string name="make_admin_hint">They will manage the group instead of you.</string>
+    <string name="merge_member">Merge with another person…</string>
+    <string name="merge_title">Merge %1$s into…</string>
+    <string name="merge_body">Pick the person they really are. Their expenses and payments move there, and %1$s disappears from the group.</string>
+    <string name="merge_none">There is nobody %1$s can be merged with: two people with an account cannot be merged.</string>
+    <string name="merge_confirm_title">Merge %1$s into %2$s?</string>
+    <string name="merge_confirm_body">All the expenses and payments of %1$s become %2$s’s. This cannot be undone.</string>
+    <string name="merge_action">Merge</string>
 </resources>

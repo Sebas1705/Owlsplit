@@ -83,7 +83,13 @@ class GroupRepositoryImpl(
     override suspend fun setAdmin(id: String, memberId: String) = withContext(io) {
         db.transaction {
             val old = requireGroup(id)
-            if (old.adminMemberId != memberId) save(old.copy(adminMemberId = memberId, meta = writer.editedMeta(old.meta)), old, ChangeAction.UPDATED)
+            if (old.adminMemberId != memberId) {
+                save(
+                    old.copy(adminMemberId = memberId, meta = writer.editedMeta(old.meta)),
+                    old,
+                    ChangeAction.UPDATED
+                )
+            }
         }
     }
 

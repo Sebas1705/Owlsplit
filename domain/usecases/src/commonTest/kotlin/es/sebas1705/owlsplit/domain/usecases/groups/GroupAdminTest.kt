@@ -34,7 +34,9 @@ class GroupAdminTest {
     }
 
     private suspend fun denied(memberId: String) =
-        ledger.members.observeMembers(ledger.groupList.value.first().id).first().first { it.id == memberId }.deniedPermissions
+        ledger.members.observeMembers(
+            ledger.groupList.value.first().id
+        ).first().first { it.id == memberId }.deniedPermissions
 
     @Test
     fun `the admin takes permissions away and gives them back`() = runTest {
@@ -80,7 +82,7 @@ class GroupAdminTest {
         assertEquals(luis, ledger.memberList.value.first { it.id == luis }.id)
     }
 
-    private fun balances(g: String) =
+    private fun balances() =
         ObserveGroupBalances(ledger.groups, ledger.members, ledger.expenses, ledger.transfers)
 
     @Test
@@ -94,14 +96,14 @@ class GroupAdminTest {
         ledger.expenses.create(g, input(ana, ana, luis, luisAgain))
         ledger.expenses.create(g, input(luisAgain, ana, luisAgain))
         ledger.transfers.create(g, TransferInput(luisAgain, ana, 500, "EUR", 1_000_000_000L, LocalDate(2026, 7, 13)))
-        val before = balances(g)(g).first()!!.balances
+        val before = balances()(g).first()!!.balances
 
         assertEquals(luis, admin.merge(g, luisAgain, luis))
 
         assertEquals(setOf(ana, luis), ledger.members.observeMembers(g).first().map { it.id }.toSet())
         assertTrue(ledger.expenseList.value.all { luisAgain !in it.payers && luisAgain !in it.splitValues })
         assertEquals(luis, ledger.transferList.value.single().fromMemberId)
-        val after = balances(g)(g).first()!!.balances
+        val after = balances()(g).first()!!.balances
         assertEquals(before[luis]!! + before[luisAgain]!!, after[luis])
         assertEquals(before[ana], after[ana])
     }

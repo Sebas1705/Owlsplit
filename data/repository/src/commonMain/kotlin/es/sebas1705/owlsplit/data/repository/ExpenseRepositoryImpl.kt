@@ -89,30 +89,36 @@ class ExpenseRepositoryImpl(
 
     internal companion object {
         /** Every expense of the group, deleted ones included. */
-        fun all(db: AppDatabase, groupId: String): List<Expense> = db.expenseEntityQueries.selectAllByGroup(groupId).executeAsList().map { row ->
+        fun all(db: AppDatabase, groupId: String): List<Expense> = db.expenseEntityQueries.selectAllByGroup(
+            groupId
+        ).executeAsList().map { row ->
             row.toModel(
-                payers = db.expenseEntityQueries.payersByExpense(row.id).executeAsList().associate { it.member_id to it.amount_minor },
-                splitValues = db.expenseEntityQueries.splitsByExpense(row.id).executeAsList().associate { it.member_id to it.split_value },
+                payers = db.expenseEntityQueries.payersByExpense(
+                    row.id
+                ).executeAsList().associate { it.member_id to it.amount_minor },
+                splitValues = db.expenseEntityQueries.splitsByExpense(
+                    row.id
+                ).executeAsList().associate { it.member_id to it.split_value },
             )
         }
 
         fun save(db: AppDatabase, writer: Writer, recorded: Expense, old: Expense?, action: ChangeAction) {
-        val q = db.expenseEntityQueries
-        val expense = recorded.copy(byMember = writer.myMemberId(recorded.groupId))
-        q.upsert(expense.toRow())
-        q.deletePayers(expense.id)
-        expense.payers.forEach { (member, amount) -> q.insertPayer(Expense_payer(expense.id, member, amount)) }
-        q.deleteSplits(expense.id)
-        expense.splitValues.forEach { (member, value) -> q.insertSplit(Expense_split(expense.id, member, value)) }
-        writer.enqueue(
-            expense.groupId,
-            OutboxType.EXPENSE,
-            expense.id,
-            old?.meta?.serverVersion ?: 0,
-            json.encodeToString(Expense.serializer(), expense),
-        )
-        val diff = if (action == ChangeAction.UPDATED) Diffs.expense(old, expense) else emptyList()
-        writer.log(expense.groupId, EntityType.EXPENSE, expense.id, action, diff)
+            val q = db.expenseEntityQueries
+            val expense = recorded.copy(byMember = writer.myMemberId(recorded.groupId))
+            q.upsert(expense.toRow())
+            q.deletePayers(expense.id)
+            expense.payers.forEach { (member, amount) -> q.insertPayer(Expense_payer(expense.id, member, amount)) }
+            q.deleteSplits(expense.id)
+            expense.splitValues.forEach { (member, value) -> q.insertSplit(Expense_split(expense.id, member, value)) }
+            writer.enqueue(
+                expense.groupId,
+                OutboxType.EXPENSE,
+                expense.id,
+                old?.meta?.serverVersion ?: 0,
+                json.encodeToString(Expense.serializer(), expense),
+            )
+            val diff = if (action == ChangeAction.UPDATED) Diffs.expense(old, expense) else emptyList()
+            writer.log(expense.groupId, EntityType.EXPENSE, expense.id, action, diff)
         }
     }
 }

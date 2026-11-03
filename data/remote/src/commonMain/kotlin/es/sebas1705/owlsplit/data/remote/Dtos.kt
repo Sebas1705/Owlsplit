@@ -165,7 +165,10 @@ internal fun GroupDto.toModel(id: String): Group? = meta(version, updatedAt, upd
 
 internal fun MemberDto.toModel(groupId: String, id: String): Member? =
     meta(version, updatedAt, updatedBy, deleted)?.let {
-        Member(id, groupId, name, avatar, defaultWeight, userUid, active, sortKey, it, payMethods, pastUids, linked, deniedPermissions.toSet())
+        Member(
+            id, groupId, name, avatar, defaultWeight, userUid, active, sortKey, it, payMethods, pastUids, linked,
+            deniedPermissions.toSet(),
+        )
     }
 
 internal fun ExpenseDto.toModel(groupId: String, id: String): Expense? =

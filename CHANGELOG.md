@@ -4,6 +4,11 @@ What changes for Owlsplit users in each version. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Added
+
+- Every group now has an admin: its creator, who can hand the role over. The admin is the only one who adds, edits, deactivates and deletes people, edits the group, and records payments in which they are not involved. They also choose what each member may do (add expenses, edit and delete expenses, record payments); everyone else can still rename themselves, leave, and see everything. The web for guests follows the same roles. Groups from before this change are run by their creator, or can be taken over by any member if the creator already left (#105).
+- The admin can merge two people of a group that are really the same one: their expenses and payments move to the person kept (the one with an account), the shares and balances stay as they were, and the other disappears from the group (#105).
+
 ### Fixed
 
 - One expense with a currency the app does not know, a rate out of range or an amount too large to convert no longer breaks the balances of the whole group: it is left out and reported like any other inconsistent entry, and the web for guests does the same instead of counting it (#98).

@@ -36,6 +36,7 @@ interface GroupRepository {
     suspend fun regenerateInviteCode(id: String)
 }
 
+@Suppress("TooManyFunctions") // One per kind of write.
 interface MemberRepository {
     fun observeMembers(groupId: String): Flow<List<Member>>
     suspend fun add(groupId: String, input: MemberInput): String

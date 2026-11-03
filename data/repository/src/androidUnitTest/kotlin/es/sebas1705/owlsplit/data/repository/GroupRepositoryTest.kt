@@ -100,7 +100,6 @@ class GroupRepositoryTest {
         assertTrue(env.outbox().first().payload.contains("\"userUid\":null"))
     }
 
-
     @Test
     fun `the creator's member runs the group and hands it over when leaving`() = runTest {
         val env = TestEnv(this)
@@ -127,8 +126,13 @@ class GroupRepositoryTest {
         env.members.setDeniedPermissions(luis, setOf(Permission.RECORD_PAYMENTS))
         val stored = env.members.observeMembers(groupId).first().first { it.id == luis }
         assertEquals(setOf(Permission.RECORD_PAYMENTS), stored.deniedPermissions)
-        assertTrue(env.outbox().last { OutboxType.valueOf(it.entity_type) == OutboxType.MEMBER }.payload.contains("RECORD_PAYMENTS"))
+        assertTrue(
+            env.outbox().last {
+                OutboxType.valueOf(it.entity_type) == OutboxType.MEMBER
+            }.payload.contains("RECORD_PAYMENTS")
+        )
     }
+
     @Test
     fun `wiping removes every local row`() = runTest {
         val env = TestEnv(this)

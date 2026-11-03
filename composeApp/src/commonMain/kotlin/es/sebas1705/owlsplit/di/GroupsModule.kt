@@ -15,6 +15,7 @@ import es.sebas1705.owlsplit.domain.usecases.expenses.SaveExpense
 import es.sebas1705.owlsplit.domain.usecases.expenses.GenerateRecurring
 import es.sebas1705.owlsplit.domain.usecases.groups.DeleteTransfer
 import es.sebas1705.owlsplit.domain.usecases.groups.GroupActions
+import es.sebas1705.owlsplit.domain.usecases.groups.GroupAdmin
 import es.sebas1705.owlsplit.domain.usecases.importer.ImportGroup
 import es.sebas1705.owlsplit.domain.usecases.groups.MemberActions
 import es.sebas1705.owlsplit.domain.usecases.groups.ObserveGroupDetail
@@ -56,6 +57,7 @@ val groupsModule = module {
     factory { RejoinGroup(get(), get(), get(), get()) }
     factory { ImportGroup(get(), get(), get(), get(), get()) }
     factory { MemberActions(get()) }
+    factory { GroupAdmin(get(), get(), get()) }
     factory { SettleUp(get()) }
     factory { DeleteTransfer(get()) }
     factory { SaveExpense(get()) }
@@ -81,7 +83,7 @@ val groupsModule = module {
     viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { (groupId: String?) -> GroupEditorViewModel(groupId, get(), get(), get()) }
     viewModel { (groupId: String, tab: GroupTab) -> GroupViewModel(groupId, tab, get(), get(), get(), get(), get()) }
-    viewModel { (groupId: String) -> MembersViewModel(groupId, get(), get()) }
+    viewModel { (groupId: String) -> MembersViewModel(groupId, get(), get(), get()) }
     viewModel { (groupId: String) -> TransferViewModel(groupId, get(), get()) }
     viewModel { (groupId: String) -> StatsViewModel(groupId, get()) }
     viewModel { MySpendingViewModel(get()) }

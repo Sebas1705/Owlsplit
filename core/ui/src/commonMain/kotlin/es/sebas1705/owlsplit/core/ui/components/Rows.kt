@@ -143,7 +143,8 @@ fun SettleSuggestionRow(
     subtitle: String,
     actionLabel: String,
     icon: ImageVector,
-    onAction: () -> Unit,
+    /** Null: the row only informs (the caller may not record this payment). */
+    onAction: (() -> Unit)?,
     modifier: Modifier = Modifier,
     secondary: RowAction? = null,
 ) {
@@ -169,15 +170,17 @@ fun SettleSuggestionRow(
         // No gap between the actions: the icon's 48 dp touch target already separates them.
         Row(verticalAlignment = Alignment.CenterVertically) {
             secondary?.let { SecondaryIconAction(it) }
-            TextButton(
-                onClick = onAction,
-                shape = OwlsplitShapes.pill,
-                colors = ButtonDefaults.textButtonColors(
-                    containerColor = colors.accent,
-                    contentColor = colors.onAccent
-                ),
-            ) {
-                Text(actionLabel, style = Owlsplit.type.label)
+            if (onAction != null) {
+                TextButton(
+                    onClick = onAction,
+                    shape = OwlsplitShapes.pill,
+                    colors = ButtonDefaults.textButtonColors(
+                        containerColor = colors.accent,
+                        contentColor = colors.onAccent
+                    ),
+                ) {
+                    Text(actionLabel, style = Owlsplit.type.label)
+                }
             }
         }
     }
