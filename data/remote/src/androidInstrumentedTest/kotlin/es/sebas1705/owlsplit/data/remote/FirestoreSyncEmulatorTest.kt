@@ -21,6 +21,7 @@ import dev.gitlive.firebase.initialize
 import es.sebas1705.owlsplit.data.local.db.AppDatabase
 import es.sebas1705.owlsplit.data.models.ExpenseCategory
 import es.sebas1705.owlsplit.data.models.MemberInput
+import es.sebas1705.owlsplit.data.models.Permission
 import es.sebas1705.owlsplit.data.models.OutboxType
 import es.sebas1705.owlsplit.data.models.PayMethods
 import es.sebas1705.owlsplit.data.models.SplitType
@@ -251,11 +252,10 @@ class FirestoreSyncEmulatorTest {
         val luisUid = luis.start()
         val t = trip(ana, luis, luisUid)
 
-        // Group: a full replace would drop lastJoinCode, and the rules reject that.
-        eventually { luis.groups.observeGroup(t.group).first() != null }
-        luis.groups.update(t.group, GroupInput("Ibiza 2027", "plane", "BLUE", "EUR"))
-        luis.idle()
-        val group = luis.groupDoc(t.group).get(Source.SERVER)
+        // Group (edited by its admin, Ana): a full replace would drop lastJoinCode, and the rules reject that.
+        ana.groups.update(t.group, GroupInput("Ibiza 2027", "plane", "BLUE", "EUR"))
+        ana.idle()
+        val group = ana.groupDoc(t.group).get(Source.SERVER)
         assertEquals("Ibiza 2027", group.get<String>("name"))
         assertEquals(t.code, group.get<String>("lastJoinCode"))
         assertEquals(anaUid, group.get<String>("createdBy"))
@@ -281,6 +281,48 @@ class FirestoreSyncEmulatorTest {
         val transfer = luis.serverTransfer(t.group, p)
         assertEquals(true, transfer.deleted)
         assertEquals(anaUid, transfer.createdBy)
+        assertEquals(0L, ana.conflicts() + luis.conflicts())
+    }
+
+    @Test
+    fun theAdminRoleThePermissionsAndAMergeReachTheOtherDevice() = runBlocking {
+        val ana = Device("ana")
+        val luis = Device("luis")
+        ana.start()
+        val luisUid = luis.start()
+        val t = trip(ana, luis, luisUid)
+        // Luis is Beto in this group.
+        luis.members.claim(t.beto)
+        luis.idle()
+        val luisMember = t.beto
+        eventually { ana.members.observeMembers(t.group).first().first { it.id == t.beto }.userUid == luisUid }
+        val anaGroup = ana.groups.observeGroup(t.group).first()!!
+        assertEquals(t.ana, anaGroup.adminMemberId)
+
+        // The admin restricts Luis: the other device sees it.
+        ana.members.setDeniedPermissions(luisMember, setOf(Permission.RECORD_PAYMENTS))
+        ana.idle()
+        eventually {
+            luis.members.observeMembers(t.group).first().first { it.id == luisMember }.deniedPermissions ==
+                setOf(Permission.RECORD_PAYMENTS)
+        }
+
+        // Handing the group over: Luis can now edit it, and merge people.
+        ana.groups.setAdmin(t.group, luisMember)
+        ana.idle()
+        eventually { luis.groups.observeGroup(t.group).first()?.adminMemberId == luisMember }
+        luis.members.setDeniedPermissions(luisMember, emptySet())
+        luis.groups.update(t.group, GroupInput("Ibiza 2028", "plane", "BLUE", "EUR"))
+        luis.idle()
+        assertEquals("Ibiza 2028", luis.groupDoc(t.group).get(Source.SERVER).get<String>("name"))
+
+        val e = ana.expenses.create(t.group, shared("Cena", mapOf(t.carla to AMOUNT), t.ana, t.beto, t.carla))
+        ana.idle()
+        eventually { luis.expenses.get(e) != null }
+        assertEquals(t.beto, luis.members.merge(t.carla, t.beto))
+        luis.idle()
+        eventually { ana.expenses.get(e)?.payers?.keys == setOf(t.beto) }
+        eventually { ana.members.observeMembers(t.group).first().none { it.id == t.carla } }
         assertEquals(0L, ana.conflicts() + luis.conflicts())
     }
 
