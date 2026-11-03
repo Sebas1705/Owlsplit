@@ -1,11 +1,16 @@
 package es.sebas1705.owlsplit.data.repository.sync
 
+import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToOneOrNull
 import es.sebas1705.owlsplit.data.local.db.AppDatabase
 import es.sebas1705.owlsplit.data.local.db.Outbox
 import es.sebas1705.owlsplit.data.models.OutboxType
 import es.sebas1705.owlsplit.data.repository.Writer
 import es.sebas1705.owlsplit.data.repository.json
 import es.sebas1705.owlsplit.data.repository.toModel
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 
@@ -116,6 +121,9 @@ internal class PullMarks(private val db: AppDatabase) {
         db.metaQueries.get(bootstrappedKey(groupId)).executeAsOneOrNull() == "1"
 
     fun setBootstrapped(groupId: String) = db.metaQueries.put(bootstrappedKey(groupId), "1")
+
+    fun observeBootstrapped(groupId: String, io: CoroutineDispatcher): Flow<Boolean> =
+        db.metaQueries.get(bootstrappedKey(groupId)).asFlow().mapToOneOrNull(io).map { it == "1" }
 
     /** The history entry is already here: written on this device, or pulled with what it points at. */
     fun isChangeLogKnown(id: String): Boolean = db.changeLogQueries.selectById(id).executeAsOneOrNull() != null

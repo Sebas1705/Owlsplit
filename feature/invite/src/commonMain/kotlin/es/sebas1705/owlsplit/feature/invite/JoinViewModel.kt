@@ -11,9 +11,14 @@ import es.sebas1705.owlsplit.domain.usecases.invite.ClaimMember
 import es.sebas1705.owlsplit.domain.usecases.invite.InviteCodes
 import es.sebas1705.owlsplit.domain.usecases.invite.JoinGroup
 import es.sebas1705.owlsplit.domain.usecases.invite.JoinResult
+import es.sebas1705.owlsplit.domain.usecases.invite.ObserveGroupLoaded
 import es.sebas1705.owlsplit.domain.usecases.invite.PreviewInvite
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.takeWhile
 
 enum class JoinStep { ENTER, SEARCHING, PREVIEW, JOINING, PICK, DONE }
 
@@ -59,6 +64,7 @@ class JoinViewModel(
     private val claimMember: ClaimMember,
     private val observeDetail: ObserveGroupDetail,
     private val observeAccount: ObserveAccount,
+    private val observeLoaded: ObserveGroupLoaded,
 ) : MVIBaseViewModel<JoinState, JoinIntent>() {
 
     override fun initState() = JoinState()
@@ -120,22 +126,32 @@ class JoinViewModel(
         }
     }
 
-    /** Once the members are here: done if I already am one (rejoining), otherwise choose. */
+    /**
+     * Once the group is fully here: done if I already am one (rejoining), otherwise choose. The list
+     * follows the group while the picker is open, so members that arrive late still show up.
+     */
     private suspend fun awaitMembers(groupId: String) {
-        val detail = observeDetail(groupId).first { it != null && it.members.isNotEmpty() } ?: return
-        // Already mine, or a member I had and left: back to it without asking.
-        if (detail.myMemberId != null || claimMember.reclaim(groupId)) {
-            updateState { it.copy(step = JoinStep.DONE, joinedGroupId = groupId) }
-            return
-        }
-        val former = claimMember.formerAccounts(groupId)
-        val ghosts = detail.members
-            // Any member nobody has: active, deactivated or left by someone.
-            .filter { it.userUid == null }
-            .map { Ghost(it.id, it.name, abandoned = former[it.id].orEmpty().isNotEmpty(), linked = it.linked) }
-            // People who left first: they are the ones most likely coming back.
-            .sortedByDescending { it.abandoned }
-        updateState { it.copy(ghosts = ghosts) }
+        var checked = false
+        combine(observeDetail(groupId), observeLoaded(groupId)) { detail, loaded -> detail.takeIf { loaded } }
+            .filterNotNull()
+            .filter { it.members.isNotEmpty() }
+            .takeWhile { uiState.value.step == JoinStep.PICK }
+            .collect { detail ->
+                // Already mine, or a member I had and left: back to it without asking.
+                if (!checked && (detail.myMemberId != null || claimMember.reclaim(groupId))) {
+                    updateState { it.copy(step = JoinStep.DONE, joinedGroupId = groupId) }
+                    return@collect
+                }
+                checked = true
+                val former = claimMember.formerAccounts(groupId)
+                val ghosts = detail.members
+                    // Any member nobody has: active, deactivated or left by someone.
+                    .filter { it.userUid == null }
+                    .map { Ghost(it.id, it.name, abandoned = former[it.id].orEmpty().isNotEmpty(), linked = it.linked) }
+                    // People who left first: they are the ones most likely coming back.
+                    .sortedByDescending { it.abandoned }
+                updateState { it.copy(ghosts = ghosts) }
+            }
     }
 
     private suspend fun pick(memberId: String?) {

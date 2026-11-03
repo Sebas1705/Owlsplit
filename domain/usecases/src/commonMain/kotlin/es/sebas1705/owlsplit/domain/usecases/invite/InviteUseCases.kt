@@ -12,6 +12,7 @@ import es.sebas1705.owlsplit.data.repository.invite.InviteService
 import es.sebas1705.owlsplit.data.models.PreviewResult
 import es.sebas1705.owlsplit.data.repository.sync.SyncControl
 import es.sebas1705.owlsplit.domain.usecases.groups.mine
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration
@@ -176,4 +177,9 @@ class ClaimMember(
         const val DEFAULT_NAME = "Yo"
         const val GOOGLE = "google.com"
     }
+}
+
+/** Whether a group just joined is fully here: until then its members may be only part of the list. */
+class ObserveGroupLoaded(private val sync: SyncControl) {
+    operator fun invoke(groupId: String): Flow<Boolean> = sync.isGroupLoaded(groupId)
 }
