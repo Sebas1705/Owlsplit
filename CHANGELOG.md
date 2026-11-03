@@ -4,17 +4,30 @@ What changes for Owlsplit users in each version. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Fixed
+
+- One expense with a currency the app does not know, a rate out of range or an amount too large to convert no longer breaks the balances of the whole group: it is left out and reported like any other inconsistent entry, and the web for guests does the same instead of counting it (#98).
+- An expense edited again offline right after an upload timed out is no longer reported as a conflict that brings back the earlier version, and a group edited offline and then left no longer stays stuck waiting to sync (#99).
+
+## [1.0.2] - 2026-11-01
+
 ### Added
 
 - "Where does this come from?" is now on the web for guests too: a sheet on Balances and Settle up that shows how each balance adds up and why settling needs so few payments, as in the app (#96).
 
 ### Fixed
 
-- New users no longer see "Something went wrong" on the first screen: finishing the anonymous sign-in was reported as an error.
 - Editing an expense now really removes the people you take out of it. Changing who paid kept the old payer as well, so the amounts stopped adding up and other devices and the web left the expense out of the balances; someone removed from a split stayed charged. Expenses already affected are fixed the next time they are edited (#97).
-- One expense with a currency the app does not know, a rate out of range or an amount too large to convert no longer breaks the balances of the whole group: it is left out and reported like any other inconsistent entry, and the web for guests does the same instead of counting it.
 
-## [1.0.0] - Unreleased
+## [1.0.1] - 2026-10-30
+
+Withdrawn and replaced by 1.0.2, which includes everything in it.
+
+### Fixed
+
+- New users no longer see "Something went wrong" on the first screen: finishing the anonymous sign-in was reported as an error (#95).
+
+## [1.0.0] - 2026-10-30
 
 The first stable version, after fifteen pre-releases (`1.0.0-beta.1` to `1.0.0-beta.15`, 8–16 October 2026) tested through Firebase App Distribution and Google Play closed testing. Android and iOS, in Spanish and English.
 
@@ -84,5 +97,7 @@ The first stable version, after fifteen pre-releases (`1.0.0-beta.1` to `1.0.0-b
 
 - No user-facing changes: dependency updates (#39, #40, #41), code coverage in CI (#81) and project docs (#87, #88).
 
-[Unreleased]: https://github.com/Sebas1705/Owlsplit/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Sebas1705/Owlsplit/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/Sebas1705/Owlsplit/compare/v1.0.1...v1.0.2
+[1.0.1]: https://github.com/Sebas1705/Owlsplit/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/Sebas1705/Owlsplit/compare/v1.0.0-beta.15...v1.0.0
