@@ -5,6 +5,7 @@ import es.sebas1705.owlsplit.data.remote.FirestoreInviteService
 import es.sebas1705.owlsplit.data.repository.invite.InviteService
 import es.sebas1705.owlsplit.domain.usecases.invite.ClaimMember
 import es.sebas1705.owlsplit.domain.usecases.invite.JoinGroup
+import es.sebas1705.owlsplit.domain.usecases.invite.ObserveGroupLoaded
 import es.sebas1705.owlsplit.domain.usecases.invite.PreviewInvite
 import es.sebas1705.owlsplit.domain.usecases.invite.RegenerateInvite
 import es.sebas1705.owlsplit.domain.usecases.invite.ShareInvite
@@ -19,9 +20,10 @@ val inviteModule = module {
     factory { ShareInvite(get(), get(), get(), get(), AppConfig.INVITE_BASE_URL) }
     factory { RegenerateInvite(get(), get(), get(), get()) }
     factory { PreviewInvite(get()) }
+    factory { ObserveGroupLoaded(get()) }
     factory { JoinGroup(get(), get(), get()) }
     factory { ClaimMember(get(), get(), get(), get(), get(), get()) }
 
     viewModel { (groupId: String) -> InviteViewModel(groupId, get(), get(), get()) }
-    viewModel { (code: String?) -> JoinViewModel(code, get(), get(), get(), get(), get()) }
+    viewModel { (code: String?) -> JoinViewModel(code, get(), get(), get(), get(), get(), get()) }
 }

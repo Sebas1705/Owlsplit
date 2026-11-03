@@ -1,6 +1,7 @@
 package es.sebas1705.owlsplit.data.repository.sync
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 /** What the rest of the app needs from the sync engine. */
 interface SyncControl {
@@ -17,4 +18,10 @@ interface SyncControl {
      * personal fields of members). Returns at once; the engine does it in the background, throttled.
      */
     fun refreshGroup(groupId: String) = Unit
+
+    /**
+     * True once the group had its first full pull (members, expenses, payments): before that the
+     * database holds at most part of it. Fakes and platforms without sync report it loaded.
+     */
+    fun isGroupLoaded(groupId: String): Flow<Boolean> = flowOf(true)
 }
