@@ -15,6 +15,7 @@ import es.sebas1705.owlsplit.domain.usecases.balances.ObserveGroupBalances
 import es.sebas1705.owlsplit.domain.usecases.groups.ObserveGroupDetail
 import es.sebas1705.owlsplit.domain.usecases.invite.ClaimMember
 import es.sebas1705.owlsplit.domain.usecases.invite.JoinGroup
+import es.sebas1705.owlsplit.domain.usecases.invite.ObserveGroupLoaded
 import es.sebas1705.owlsplit.domain.usecases.invite.PreviewInvite
 import es.sebas1705.owlsplit.domain.usecases.invite.RegenerateInvite
 import es.sebas1705.owlsplit.domain.usecases.invite.ShareInvite
@@ -58,6 +59,7 @@ class InviteViewModelsTest {
         ClaimMember(ledger.members, profiles, accounts),
         detail,
         ObserveAccount(accounts, profiles),
+        ObserveGroupLoaded(sync),
     )
 
     /** Ana's group with Luis apuntado (no account yet), shared; then Luis signs in on his phone. */
@@ -116,6 +118,32 @@ class InviteViewModelsTest {
         vm.onEvent(JoinIntent.Pick(luis))
         assertEquals(g, vm.uiState.value.joinedGroupId)
         assertEquals("uid-luis", ledger.members.observeMembers(g).first().first { it.id == luis }.userUid)
+    }
+
+    @Test
+    fun theListWaitsForTheWholeGroupAndFollowsItWhileOpen() = runTest {
+        val (g, luis) = sharedGroupAsLuis()
+        sync.loaded.value = false
+        val vm = joinVm("ABCDEFGH")
+        vm.onEvent(JoinIntent.Join)
+        // Only part of the group has arrived: no list yet, instead of a partial one.
+        assertEquals(JoinStep.PICK, vm.uiState.value.step)
+        assertEquals(null, vm.uiState.value.ghosts)
+
+        val marta = ledger.members.add(g, MemberInput("Marta"))
+        ledger.memberList.update { list ->
+            list.map { if (it.id == marta) it.copy(pastUids = listOf("uid-marta")) else it }
+        }
+        sync.loaded.value = true
+        assertEquals(setOf(luis, marta), vm.uiState.value.ghosts?.map { it.id }?.toSet())
+        assertEquals(true, vm.uiState.value.ghosts?.first { it.id == marta }?.abandoned)
+
+        // A member that shows up while the picker is open is offered too.
+        val pablo = ledger.members.add(g, MemberInput("Pablo"))
+        assertEquals(setOf(luis, marta, pablo), vm.uiState.value.ghosts?.map { it.id }?.toSet())
+
+        vm.onEvent(JoinIntent.Pick(marta))
+        assertEquals(g, vm.uiState.value.joinedGroupId)
     }
 
     @Test

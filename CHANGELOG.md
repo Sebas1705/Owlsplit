@@ -12,6 +12,7 @@ What changes for Owlsplit users in each version. The format follows [Keep a Chan
 ### Fixed
 
 - One expense with a currency the app does not know, a rate out of range or an amount too large to convert no longer breaks the balances of the whole group: it is left out and reported like any other inconsistent entry, and the web for guests does the same instead of counting it (#98).
+- Joining a group no longer hides the people without an account in the picker when they arrive a moment after the group: the list now waits for the whole group and keeps up with it while it is open, so those a former account left behind can be taken with one tap (#104).
 - An expense edited again offline right after an upload timed out is no longer reported as a conflict that brings back the earlier version, and a group edited offline and then left no longer stays stuck waiting to sync (#99).
 
 ## [1.0.2] - 2026-11-01

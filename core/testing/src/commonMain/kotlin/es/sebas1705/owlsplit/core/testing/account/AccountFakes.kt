@@ -105,6 +105,11 @@ class FakeSync(var online: Boolean = true) : SyncControl {
 
     override fun isAccessLost(groupId: String) = false
 
+    /** Whether groups count as fully pulled (see [SyncControl.isGroupLoaded]). */
+    val loaded = MutableStateFlow(true)
+
+    override fun isGroupLoaded(groupId: String) = loaded
+
     /** Groups whose catch-up was requested, in order. */
     val refreshed = mutableListOf<String>()
 

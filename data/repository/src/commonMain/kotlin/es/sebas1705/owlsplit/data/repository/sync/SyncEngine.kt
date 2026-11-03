@@ -45,7 +45,8 @@ class SyncEngine(
     private val inFlight = InFlightUpload()
     private val processor = OutboxProcessor(local, applier, remote, random, inFlight)
     private val pushLock = Mutex()
-    private val puller = GroupPuller(local, PullMarks(db), remote, ::receive)
+    private val marks = PullMarks(db)
+    private val puller = GroupPuller(local, marks, remote, ::receive)
     private val refreshRequests =
         MutableSharedFlow<String>(extraBufferCapacity = 16, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
@@ -53,6 +54,8 @@ class SyncEngine(
     override val pendingCount: Flow<Long> = db.outboxQueries.countUploadable().asFlow().mapToOne(io)
 
     override fun isAccessLost(groupId: String): Boolean = local.isAccessLost(groupId)
+
+    override fun isGroupLoaded(groupId: String): Flow<Boolean> = marks.observeBootstrapped(groupId, io)
 
     suspend fun pushNow() = withContext(io) { pushLock.withLock { processor.processReady() } }
 
