@@ -4,6 +4,8 @@ What changes for Owlsplit users in each version. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-03
+
 ### Added
 
 - Every group now has an admin: its creator, who can hand the role over. The admin is the only one who adds, edits, deactivates and deletes people, edits the group, and records payments in which they are not involved. They also choose what each member may do (add expenses, edit and delete expenses, record payments); everyone else can still rename themselves, leave, and see everything. The web for guests follows the same roles. Groups from before this change are run by their creator, or can be taken over by any member if the creator already left (#105).
