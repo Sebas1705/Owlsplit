@@ -388,3 +388,20 @@ describe('transfers: author, permissions and pair', () => {
     await assertSucceeds(setDoc(g(as(env, 'luis'), GROUP, 'transfers/t1'), transferData({ fromMemberId: 'm1', toMemberId: 'm3', deleted: true, ...replaced('luis') })));
   });
 });
+
+describe('merging members: the admin adds the accounts of the member merged in', () => {
+  const merged = (by, pastUids) => ({ pastUids, ...bump(by) });
+  test('the admin can add past accounts to another member', async () => {
+    await assertSucceeds(updateDoc(g(as(env, 'ana'), GROUP, 'members/m4'), merged('ana', ['old-uid'])));
+  });
+  test('the list can only grow, and only the admin grows it for someone else', async () => {
+    await setup({ m4: { pastUids: ['a', 'b'] } });
+    await assertSucceeds(updateDoc(g(as(env, 'ana'), GROUP, 'members/m4'), merged('ana', ['a', 'b', 'c'])));
+    await assertFails(updateDoc(g(as(env, 'ana'), GROUP, 'members/m4'), merged('ana', ['a'])));
+    await assertFails(updateDoc(g(as(env, 'luis'), GROUP, 'members/m4'), merged('luis', ['a', 'b', 'c', 'd'])));
+  });
+  test('it stays within 20 accounts', async () => {
+    const many = Array.from({ length: 21 }, (_, i) => `u${i}`);
+    await assertFails(updateDoc(g(as(env, 'ana'), GROUP, 'members/m4'), merged('ana', many)));
+  });
+});
