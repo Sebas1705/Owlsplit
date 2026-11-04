@@ -138,8 +138,8 @@ class InMemoryLedger(var uid: String = "uid-ana") {
                 all.map { old ->
                     val moved = MemberMerge.transfer(old, absorbed.id, kept.id) ?: return@map old
                     if (moved.fromMemberId == moved.toMemberId) {
-                        moved.copy(
-                            meta = moved.meta.copy(deleted = true)
+                        old.copy(
+                            meta = old.meta.copy(deleted = true)
                         )
                     } else {
                         moved

@@ -4,6 +4,10 @@ What changes for Owlsplit users in each version. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Fixed
+
+- Merging two people no longer stays pending when they have payments: the server refused moving a payment to the person kept, and the payment between the two could not be rewritten. The rules now let the admin move payments while merging, and a payment between the two is simply deleted (#108).
+
 ## [1.1.1] - 2026-11-04
 
 ### Added
