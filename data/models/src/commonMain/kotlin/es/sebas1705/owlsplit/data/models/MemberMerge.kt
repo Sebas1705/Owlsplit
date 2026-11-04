@@ -15,11 +15,12 @@ object MemberMerge {
         else -> b to a
     }
 
-    /** [kept] with what [absorbed] had: the accounts that left, the Google link and the pay methods it lacked. */
+    /**
+     * [kept] with the accounts that left [absorbed], so they get the merged member back when they return.
+     * Pay methods and the Google link stay as they are: only the person behind a member publishes those.
+     */
     fun merged(kept: Member, absorbed: Member): Member = kept.copy(
         pastUids = (kept.pastUids + absorbed.pastUids).distinct(),
-        linked = kept.linked || absorbed.linked,
-        payMethods = kept.payMethods ?: absorbed.payMethods,
         active = kept.active || absorbed.active,
     )
 
