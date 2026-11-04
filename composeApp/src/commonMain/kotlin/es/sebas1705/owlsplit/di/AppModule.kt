@@ -44,7 +44,10 @@ import es.sebas1705.owlsplit.domain.usecases.account.CarryGroups
 import es.sebas1705.owlsplit.domain.usecases.account.SwitchToGoogle
 import es.sebas1705.owlsplit.domain.usecases.account.UnlinkGoogle
 import es.sebas1705.owlsplit.feature.onboarding.OnboardingViewModel
+import es.sebas1705.owlsplit.domain.usecases.support.ReportProblem
+import es.sebas1705.owlsplit.domain.usecases.support.SyncNow
 import es.sebas1705.owlsplit.feature.profile.ProfileViewModel
+import es.sebas1705.owlsplit.feature.profile.SupportViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import org.koin.core.module.dsl.viewModel
@@ -98,6 +101,9 @@ val accountModule = module {
 
     viewModel { OnboardingViewModel(get(), get()) }
     viewModel { ProfileViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory { SyncNow(get()) }
+    factory { ReportProblem(get()) }
+    viewModel { SupportViewModel(get(), get(), get()) }
 }
 
 /** Whether this build has a Firebase configuration (google-services.json / GoogleService-Info.plist). */

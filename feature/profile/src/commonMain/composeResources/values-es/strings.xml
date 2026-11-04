@@ -53,4 +53,18 @@
     <string name="pay_iban_invalid">Ese IBAN no es correcto: revisa las letras y los números</string>
     <string name="pay_iban_holder">Titular de la cuenta</string>
     <string name="pay_iban_holder_hint">Como lo tiene tu banco: los bancos comprueban el nombre con el IBAN. Si lo dejas vacío, se usa tu nombre.</string>
+    <string name="support">Ayuda</string>
+    <string name="sync_now">Sincronizar ahora</string>
+    <string name="sync_running">Sincronizando…</string>
+    <string name="sync_synced">Todo está sincronizado.</string>
+    <string name="sync_offline">No se pudo sincronizar todo: revisa tu conexión e inténtalo de nuevo.</string>
+    <plurals name="sync_pending">
+        <item quantity="one">%1$d cambio pendiente de sincronizar.</item>
+        <item quantity="other">%1$d cambios pendientes de sincronizar.</item>
+    </plurals>
+    <string name="report_problem">Informar de un problema</string>
+    <string name="report_body">Cuéntanos qué ha fallado. Junto con tus palabras enviamos la versión de la app, tu dispositivo, cuántos cambios esperan a sincronizarse y los últimos errores que registró la app. Sin nombres, importes ni contenido de los grupos.</string>
+    <string name="report_hint">¿Qué ha pasado?</string>
+    <string name="report_send">Enviar</string>
+    <string name="report_sent">Gracias, el informe se ha enviado.</string>
 </resources>

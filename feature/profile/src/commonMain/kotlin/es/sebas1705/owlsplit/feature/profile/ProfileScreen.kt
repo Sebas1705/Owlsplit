@@ -134,7 +134,9 @@ private const val MAX_IBAN_HOLDER = 70
 fun ProfileRoute(onOpenCatalog: (() -> Unit)?, modifier: Modifier = Modifier) {
     val viewModel = koinViewModel<ProfileViewModel>()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    ProfileScreen(state, viewModel::onEvent, onOpenCatalog, modifier)
+    val support = koinViewModel<SupportViewModel>()
+    val supportState by support.uiState.collectAsStateWithLifecycle()
+    ProfileScreen(state, viewModel::onEvent, onOpenCatalog, modifier) { SupportSection(supportState, support::onEvent) }
 }
 
 @Composable
@@ -143,6 +145,8 @@ fun ProfileScreen(
     onEvent: (ProfileIntent) -> Unit,
     onOpenCatalog: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    /** Sync and problem reports; a slot because they have their own state. */
+    support: @Composable () -> Unit = {},
 ) {
     LaunchedEffect(state.message) {
         if (state.message != null) {
@@ -173,6 +177,7 @@ fun ProfileScreen(
         }
         if (state.isAnonymous) Protect(state, onEvent)
         Preferences(state, onEvent)
+        support()
         Session(state, onEvent)
         if (onOpenCatalog != null) {
             OwlsplitContainer(title = stringResource(Res.string.developer)) {
@@ -448,7 +453,7 @@ private fun Session(state: ProfileState, onEvent: (ProfileIntent) -> Unit) {
 }
 
 @Composable
-private fun ActionRow(
+internal fun ActionRow(
     icon: ImageVector,
     text: String,
     color: Color = Owlsplit.colors.textPrimary,

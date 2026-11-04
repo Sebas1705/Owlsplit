@@ -53,4 +53,18 @@
     <string name="pay_iban_invalid">That IBAN is not right: check the letters and digits</string>
     <string name="pay_iban_holder">Account holder</string>
     <string name="pay_iban_holder_hint">As your bank has it: banks check the name against the IBAN. Blank uses your name.</string>
+    <string name="support">Help</string>
+    <string name="sync_now">Sync now</string>
+    <string name="sync_running">Syncing…</string>
+    <string name="sync_synced">Everything is synced.</string>
+    <string name="sync_offline">Could not sync everything: check your connection and try again.</string>
+    <plurals name="sync_pending">
+        <item quantity="one">%1$d change waiting to sync.</item>
+        <item quantity="other">%1$d changes waiting to sync.</item>
+    </plurals>
+    <string name="report_problem">Report a problem</string>
+    <string name="report_body">Tell us what went wrong. Along with your words we send the app version, your device, how many changes are waiting to sync and the last errors the app logged. No names, amounts or group contents.</string>
+    <string name="report_hint">What happened?</string>
+    <string name="report_send">Send</string>
+    <string name="report_sent">Thanks, the report was sent.</string>
 </resources>

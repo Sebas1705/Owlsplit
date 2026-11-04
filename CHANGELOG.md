@@ -4,6 +4,11 @@ What changes for Owlsplit users in each version. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Added
+
+- "Sync now" in the profile: uploads whatever is waiting right away (ignoring the retry delays) and says how many changes are still pending or whether you are offline (#107).
+- "Report a problem" in the profile: sends what you write, the app version and device, how many changes are waiting and the last errors the app logged. Only when you tap Send (#107).
+
 ## [1.1.0] - 2026-11-03
 
 ### Added
