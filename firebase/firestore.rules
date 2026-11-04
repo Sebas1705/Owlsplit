@@ -178,12 +178,14 @@ service cloud.firestore {
           return !changedKeys().hasAny(['payMethods']) || data().get('payMethods', null) == null
             || data().userUid == uid();
         }
-        // Who had this member (P14): the list only grows, and only by my own uid when I release it.
+        // Who had this member (P14): the list only grows. A person adds their own uid when they release it;
+        // the admin adds the ones of a member merged into this one.
         function pastUidsAreOwn() {
           let before = resource.data.get('pastUids', []);
           let after = data().get('pastUids', []);
           return after == before
-            || (resource.data.userUid == uid() && data().userUid == null && after == before.concat([uid()]));
+            || (resource.data.userUid == uid() && data().userUid == null && after == before.concat([uid()]))
+            || (isAdmin(groupId) && data().userUid == resource.data.userUid && after.hasAll(before) && after.size() <= 20);
         }
         // "Linked to Google": only the person behind the member says so; releasing clears it.
         function linkedIsOwn() {
