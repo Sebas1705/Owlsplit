@@ -80,10 +80,11 @@ class MemberRepositoryImpl(
             }
             TransferRepositoryImpl.all(db, kept.groupId).forEach { old ->
                 val moved = MemberMerge.transfer(old, absorbed.id, kept.id) ?: return@forEach
-                // A payment between the two disappears: it was somebody paying themselves.
-                val gone = moved.fromMemberId == moved.toMemberId
-                val meta = writer.editedMeta(old.meta, deleted = old.meta.deleted || gone)
-                TransferRepositoryImpl.save(db, writer, moved.copy(meta = meta), old, ChangeAction.UPDATED)
+                // A payment between the two disappears (it was somebody paying themselves): it is deleted as it
+                // was, because the server does not take a payment from a member to the same one.
+                val result = if (moved.fromMemberId == moved.toMemberId) old else moved
+                val meta = writer.editedMeta(old.meta, deleted = old.meta.deleted || result === old)
+                TransferRepositoryImpl.save(db, writer, result.copy(meta = meta), old, ChangeAction.UPDATED)
             }
             save(
                 db,

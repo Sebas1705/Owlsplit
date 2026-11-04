@@ -405,3 +405,24 @@ describe('merging members: the admin adds the accounts of the member merged in',
     await assertFails(updateDoc(g(as(env, 'ana'), GROUP, 'members/m4'), merged('ana', many)));
   });
 });
+
+describe('merging members: the admin moves payments to the member kept', () => {
+  const T = `groups/${GROUP}/transfers/t1`;
+  beforeEach(async () => {
+    await seed(env, { [T]: transferData({ fromMemberId: 'm4', toMemberId: 'm1', createdBy: 'ana' }) });
+  });
+  const moved = (by, fields) => ({ ...fields, ...bump(by) });
+  test('the admin can replace a member on a payment', async () => {
+    await assertSucceeds(updateDoc(doc(as(env, 'ana'), T), moved('ana', { fromMemberId: 'm3' })));
+  });
+  test('nobody else can change who pays whom, nor the amount', async () => {
+    await assertFails(updateDoc(doc(as(env, 'luis'), T), moved('luis', { fromMemberId: 'm3' })));
+    await assertFails(updateDoc(doc(as(env, 'ana'), T), moved('ana', { amountMinor: 5 })));
+  });
+  test('a payment cannot end up between the same member', async () => {
+    await assertFails(updateDoc(doc(as(env, 'ana'), T), moved('ana', { fromMemberId: 'm1' })));
+  });
+  test('a payment between the two merged members is deleted as it was', async () => {
+    await assertSucceeds(updateDoc(doc(as(env, 'ana'), T), moved('ana', { deleted: true })));
+  });
+});

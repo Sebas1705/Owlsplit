@@ -317,8 +317,18 @@ class FirestoreSyncEmulatorTest {
         assertEquals("Ibiza 2028", luis.groupDoc(t.group).get(Source.SERVER).get<String>("name"))
 
         val e = ana.expenses.create(t.group, shared("Cena", mapOf(t.carla to AMOUNT), t.ana, t.beto, t.carla))
+        // Payments of the member merged in, recorded by the new admin: one moves to Beto, one between the two disappears.
+        val toBeto = luis.transfers.create(
+            t.group,
+            TransferInput(t.carla, t.ana, AMOUNT, "EUR", RATE_ONE, LocalDate(2026, 7, 13))
+        )
+        val between = luis.transfers.create(
+            t.group,
+            TransferInput(t.carla, t.beto, AMOUNT, "EUR", RATE_ONE, LocalDate(2026, 7, 13))
+        )
         ana.idle()
         eventually { luis.expenses.get(e) != null }
+        eventually { luis.transfers.observeTransfers(t.group).first().size == 2 }
         // Carla was somebody's abandoned profile: merging hands her old account to Beto (the server must allow it).
         luis.db.memberEntityQueries.upsert(
             luis.db.memberEntityQueries.selectById(t.carla).executeAsOne().copy(past_uids = "[\"old-uid\"]"),
@@ -329,6 +339,8 @@ class FirestoreSyncEmulatorTest {
         luis.idle()
         eventually { ana.expenses.get(e)?.payers?.keys == setOf(t.beto) }
         eventually { ana.members.observeMembers(t.group).first().none { it.id == t.carla } }
+        assertEquals(t.beto, ana.serverTransfer(t.group, toBeto).fromMemberId)
+        assertEquals(true, ana.serverTransfer(t.group, between).deleted)
         assertEquals(0L, ana.conflicts() + luis.conflicts())
     }
 

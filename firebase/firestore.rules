@@ -272,7 +272,9 @@ service cloud.firestore {
         allow create: if isMemberOf(groupId) && validTransfer() && created() && data().createdBy == uid()
           && actorOk();
         allow update: if isMemberOf(groupId) && validTransfer() && nextVersion()
-          && !changedKeys().hasAny(['createdBy', 'createdAt', 'fromMemberId', 'toMemberId', 'amountMinor'])
+          && !changedKeys().hasAny(['createdBy', 'createdAt', 'amountMinor'])
+          // Who pays whom is fixed, except when the admin merges two members into one.
+          && (!changedKeys().hasAny(['fromMemberId', 'toMemberId']) || isAdmin(groupId))
           && actorOk();
         allow delete: if false;
       }
