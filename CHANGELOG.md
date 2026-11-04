@@ -4,6 +4,13 @@ What changes for Owlsplit users in each version. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-11-04
+
+### Added
+
+- "Sync now" in the profile: uploads whatever is waiting right away (ignoring the retry delays) and says how many changes are still pending or whether you are offline (#107).
+- "Report a problem" in the profile: sends what you write, the app version and device, how many changes are waiting and the last errors the app logged. Only when you tap Send (#107).
+
 ### Fixed
 
 - Merging two people no longer leaves changes pending forever: the server refused the merged person taking the accounts that had left the other one, and nothing queued after it uploaded. The rules now let the admin do it, and a merge leaves each person's pay methods and Google link alone (#106).

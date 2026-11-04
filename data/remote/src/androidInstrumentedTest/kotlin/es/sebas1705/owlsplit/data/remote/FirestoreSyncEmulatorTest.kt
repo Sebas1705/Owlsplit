@@ -319,7 +319,13 @@ class FirestoreSyncEmulatorTest {
         val e = ana.expenses.create(t.group, shared("Cena", mapOf(t.carla to AMOUNT), t.ana, t.beto, t.carla))
         ana.idle()
         eventually { luis.expenses.get(e) != null }
+        // Carla was somebody's abandoned profile: merging hands her old account to Beto (the server must allow it).
+        luis.db.memberEntityQueries.upsert(
+            luis.db.memberEntityQueries.selectById(t.carla).executeAsOne().copy(past_uids = "[\"old-uid\"]"),
+        )
         assertEquals(t.beto, luis.members.merge(t.carla, t.beto))
+        luis.idle()
+        assertEquals(listOf("old-uid"), ana.serverMember(t.group, t.beto).pastUids)
         luis.idle()
         eventually { ana.expenses.get(e)?.payers?.keys == setOf(t.beto) }
         eventually { ana.members.observeMembers(t.group).first().none { it.id == t.carla } }
