@@ -34,7 +34,7 @@ robolectric             = "4.17"
 androidx-compose-test   = "1.11.3"
 junit4                  = "4.13.2"
 
-gitlive-firebase        = "2.7.0"
+gitlive-firebase        = "2.8.0"
 google-services         = "4.5.0"
 crashlytics-plugin      = "3.0.8"
 androidx-test-runner    = "1.7.0"
