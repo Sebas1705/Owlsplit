@@ -436,7 +436,7 @@ function paymentsList() {
       h('div', { class: 'row' },
         h('div', { class: 'main' }, h('div', { class: 'title' }, T.paymentLine(nameOf(x.fromMemberId), nameOf(x.toMemberId))), h('div', { class: 'sub' }, x.date)),
         h('div', { class: 'end' }, money(x.amountMinor, x.currency))),
-      confirming && h('p', { class: 'muted', style: 'padding: 0 16px 8px' }, T.confirmUndo),
+      confirming && h('p', { class: 'muted confirm-note' }, T.confirmUndo),
       canSettle(x.fromMemberId, x.toMemberId) && h('div', { class: 'pay' },
         h('button', { type: 'button', disabled: state.busy, onclick: () => (confirming ? undoPayment(x) : ((state.undoing = x.id), render())) }, T.undo),
         confirming && h('button', { type: 'button', onclick: () => { state.undoing = null; render(); } }, T.cancel)));
@@ -456,7 +456,7 @@ function suggestionsList(result, base) {
     return h('div', {},
       h('div', { class: 'row' }, h('div', { class: 'main title' }, label), h('div', { class: 'end' }, amount)),
       mineToPay && payOptions(p, base),
-      confirming && h('p', { class: 'muted', style: 'padding: 0 16px 8px' },
+      confirming && h('p', { class: 'muted confirm-note' },
         mineToPay ? T.confirmRecord(amount, nameOf(p.toMemberId)) : T.confirmOther(amount, nameOf(p.fromMemberId), nameOf(p.toMemberId))),
       canSettle(p.fromMemberId, p.toMemberId) && h('div', { class: 'pay' },
         h('button', { type: 'button', disabled: state.busy, onclick: () => (confirming ? record(p) : askRecord(p)) }, T.record),

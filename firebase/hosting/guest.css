@@ -65,3 +65,6 @@ html:has(.sheet[open]) { overflow: hidden; }
 .why .detail { font-size: 13px; }
 .suggestion { display: flex; align-items: baseline; gap: 12px; padding: 8px 16px; overflow-wrap: anywhere; }
 .suggestion-arrow { color: var(--accent-text); font-weight: 700; }
+
+/* The line that asks to confirm an undo or a payment (no inline style: the page's CSP forbids it). */
+.confirm-note { padding: 0 16px 8px; }
