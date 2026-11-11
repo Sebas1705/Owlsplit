@@ -28,7 +28,19 @@ service cloud.firestore {
     function isCurrency(v) { return v is string && v.matches('^[A-Z]{3}$'); }
     function isAmount(v) { return v is int && v > 0 && v <= 1000000000000; }
     function isRate(v) { return v is int && v > 0 && v <= 900000000000000; }
-    function isMemberMap(m) { return m is map && m.size() > 0 && m.size() <= 50; }
+    // A map of member id -> whole number between 0 and 10^12 (minor units, weights or basis points), as
+    // payers and splitValues are. Rules cannot loop over a map, so it is checked as text: the keys and the
+    // values are joined with commas and matched against one pattern each. join() prints an int exactly as
+    // its digits (a float prints a point or an exponent, a negative a sign, so they do not match), and
+    // hasAny() against the same text split again catches strings of digits, which print the same as ints.
+    // A key with a comma would pass for two ids, so the pieces are counted against the entries.
+    function isMemberMap(m) {
+      return m is map && m.size() > 0 && m.size() <= 50
+        && m.keys().join(',').matches('^[A-Za-z0-9_-]{1,100}(,[A-Za-z0-9_-]{1,100})*$')
+        && m.keys().join(',').split(',').size() == m.size()
+        && m.values().join(',').matches('^(0|[1-9][0-9]{0,11}|1000000000000)(,(0|[1-9][0-9]{0,11}|1000000000000))*$')
+        && !m.values().hasAny(m.values().join(',').split(','));
+    }
     function memberPath(groupId, memberId) {
       return /databases/$(database)/documents/groups/$(groupId)/members/$(memberId);
     }

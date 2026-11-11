@@ -4,6 +4,10 @@ What changes for Owlsplit users in each version. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Fixed
+
+- A group member could no longer break the balances of the group web page and the apps by saving an expense whose payers or shares were not whole numbers (a fraction, a negative, a text). The server now refuses them, and the guest page leaves such an entry out instead of failing.
+
 ## [1.1.2] - 2026-11-04
 
 ### Fixed
