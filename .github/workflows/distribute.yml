@@ -14,8 +14,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  distribute:
+  # Chooses where the build runs: this PC (self-hosted runner, see Sebas1705/ci-runner) when its heartbeat
+  # variable is under 3 minutes old, otherwise a GitHub-hosted runner. Only push and manual runs can use the
+  # PC: pull requests (and every other event) always stay on ubuntu-latest.
+  pick-runner:
+    name: Pick the runner
     runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      runner: ${{ steps.pick.outputs.runner }}
+    steps:
+      - id: pick
+        env:
+          HEARTBEAT: ${{ vars.PC_RUNNER_HEARTBEAT }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          runner='"ubuntu-latest"'
+          if { [ "$EVENT" = push ] || [ "$EVENT" = workflow_dispatch ]; } && [ -n "${HEARTBEAT:-}" ]; then
+            age=$(( $(date +%s) - HEARTBEAT ))
+            if [ "$age" -ge 0 ] && [ "$age" -lt 180 ]; then runner='["self-hosted","pc"]'; fi
+          fi
+          echo "Runner: $runner"
+          echo "runner=$runner" >> "$GITHUB_OUTPUT"
+
+  distribute:
+    needs: pick-runner
+    runs-on: ${{ fromJSON(needs.pick-runner.outputs.runner) }}
     timeout-minutes: 45
     env:
       DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
@@ -32,6 +56,11 @@ jobs:
         with:
           version-name: ${{ steps.ver.outputs.name }}
           extra-secrets: FIREBASE_SERVICE_ACCOUNT_JSON
+
+      # npx (firebase-tools) needs Node: preinstalled on GitHub-hosted images, not on the PC runner.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
 
       - name: Upload to Firebase App Distribution
         env:

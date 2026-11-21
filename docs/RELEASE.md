@@ -34,6 +34,15 @@ The APK is not uploaded to Hosting because the Spark plan forbids executables.
 
 All secrets come from Doppler `owlsplit/prd`; GitHub only stores `DOPPLER_TOKEN`, a read-only token.
 
+## Where CI builds run (PC runner)
+
+The Android build of `ci.yml` and the whole of `distribute.yml` (builds of `main`) run on the owner's PC when it is free, and on GitHub-hosted runners otherwise. Each workflow starts with a `pick-runner` job (on `ubuntu-latest`) that reads the repository variable `PC_RUNNER_HEARTBEAT`, an epoch timestamp that a watcher on the PC refreshes every minute only while the PC is idle ([Sebas1705/ci-runner](https://github.com/Sebas1705/ci-runner)). When it is under 180 seconds old the job runs on `["self-hosted","pc"]`; when it is missing or stale (PC off, busy or short of resources) the job falls back to `ubuntu-latest` by itself, with no manual step.
+
+- **Only `push` and `workflow_dispatch` can use the PC.** Pull requests and every other event always stay on GitHub-hosted runners, because the PC must never run untrusted code from forks.
+- Steps that only make sense on a GitHub-hosted image are guarded with `runner.environment`; the PC runner is a minimal Linux image (JDK 21 and the Android command-line tools), so Node comes from `actions/setup-node`.
+- `release.yml` (tags) and the Play workflows stay on `ubuntu-latest`: they publish, and they rely on tools (`gh`, Ruby with native gems for fastlane) that the PC image is not known to have.
+- Jobs that need macOS (iOS) or are short (Firestore rules and brand checks) also stay on GitHub-hosted runners.
+
 ## Setup (done on 2026-10-08)
 
 - Project `owlsplit`: Firestore `eur3`, Android (release and debug) and iOS apps, rules, indexes and Hosting.
