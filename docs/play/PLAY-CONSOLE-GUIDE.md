@@ -64,7 +64,7 @@ With our key as the *app signing key*, Google re-signs with the same key and eve
 
 1. **Where:** when creating the first release (Phase 6), in the **App integrity (Integridad de la app)** section tap **Change app signing key (Cambiar clave de firma de apps)**. It is also under *Protected with Play → Play Store distribution → Go to Play App Signing → Change app signing key (Protegido con Play → Distribución en Play Store → Ir a Play App Signing → Cambiar la clave de firma de apps)*.
 2. Choose **"Export and upload a key from Java keystore" ("Exportar y subir una clave de un almacén de claves Java")**. The Console offers two downloads: **`pepk.jar`** and **`encryption_public_key.pem`**.
-3. Extract the keystore from Doppler to a temporary folder **outside the repo** (or use your copy `Documents\owlsplit-release.jks`):
+3. Extract the keystore from Doppler to a temporary folder **outside the repo** (or use your copy `D:\AndroidKeys\owlsplit-release.jks`):
 
    ```bash
    # Git Bash. Write the .jks outside the repo and delete it when done.
