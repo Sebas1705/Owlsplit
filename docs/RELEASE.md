@@ -47,6 +47,6 @@ The Android build of `ci.yml` and the whole of `distribute.yml` (builds of `main
 
 - Project `owlsplit`: Firestore `eur3`, Android (release and debug) and iOS apps, rules, indexes and Hosting.
 - Firebase configuration in Doppler (`scripts/setup-firebase-env.sh`).
-- Release key `Documents\owlsplit-release.jks` in Doppler (`scripts/setup-release-keystore.sh`); SHA-1 `D9:45:BC:07:…:08:C3`, SHA-256 `99:0B:AD:25:…:18:C3`, registered in the release app and in `assetlinks.json`. **Keep a copy of the `.jks` off the PC**: it cannot be replaced.
+- Release key `D:\AndroidKeys\owlsplit-release.jks` in Doppler (`scripts/setup-release-keystore.sh`); SHA-1 `D9:45:BC:07:…:08:C3`, SHA-256 `99:0B:AD:25:…:18:C3`, registered in the release app and in `assetlinks.json`. **Keep a copy of the `.jks` off the PC**: it cannot be replaced.
 - Service account `owlsplit-ci@owlsplit`, its key in Doppler, `DOPPLER_TOKEN` in GitHub and the `testers` group (`scripts/setup-ci-access.mjs`).
 - Authentication enabled (Anonymous and Google) since 2026-10-08; `google-services.json` includes the Google web client.
