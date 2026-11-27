@@ -22,7 +22,12 @@ export function decimalsOf(code) {
   return 2;
 }
 
-const big = (v) => BigInt(v);
+/** A stored number as BigInt. Anything that is not a whole number is an inconsistent entry, not a crash. */
+const big = (v) => {
+  if (typeof v === "bigint") return v;
+  if (typeof v === "number" && Number.isSafeInteger(v)) return BigInt(v);
+  throw new InvalidEntry("not a whole number");
+};
 const pow10 = (n) => 10n ** BigInt(n);
 
 /** Members in the ledger's order: sortKey, then id. */
